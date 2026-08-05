@@ -13,7 +13,7 @@
 ## 배포
 
 Cloudflare Workers — GitHub 저장소 연결 후 push마다 자동 배포(`npx wrangler deploy`).
-주소: https://now-paju.pesticides.workers.dev
+주소: https://now-paju.pajulab.workers.dev
 
 `pages.dev` 도메인이 사무실 네트워크에서 차단되어(2026-08-05 실측: 요청 0바이트·provisional headers)
 사내에서 접속 가능한 `workers.dev`로 배포한다. `public/_worker.js` 한 파일이 Workers 진입점 겸
