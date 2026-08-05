@@ -6,24 +6,61 @@ const UPSTREAM = 'https://gg.whitescan.com';
 const LIST_PATH = '/api/itrst-rgn?page=0&size=300&interestRegionType=0';
 const MARKERS_PATH = '/api/itrst-rgn/markers?interestRegionType=0&labels=%EC%97%AC%EC%9C%A0&labels=%EB%B3%B4%ED%86%B5&labels=%EC%95%BD%EA%B0%84+%ED%98%BC%EC%9E%A1&labels=%ED%98%BC%EC%9E%A1&labels=%EB%A7%A4%EC%9A%B0+%ED%98%BC%EC%9E%A1';
 
-// 상류가 브라우저 요청만 받아들이는 경우가 있어 동일한 헤더를 실어 보낸다.
+// 상류가 브라우저 요청만 받아들이므로 동일한 요청 지문(헤더 + 세션 쿠키)을 만들어 보낸다.
+const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36';
 const UP_HEADERS = {
   'accept': 'application/json, text/plain, */*',
   'accept-language': 'ko-KR,ko;q=0.9,en;q=0.8',
-  'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36',
+  'user-agent': UA,
   'referer': UPSTREAM + '/',
-  'origin': UPSTREAM
+  'origin': UPSTREAM,
+  'sec-fetch-site': 'same-origin',
+  'sec-fetch-mode': 'cors',
+  'sec-fetch-dest': 'empty',
+  'x-requested-with': 'XMLHttpRequest'
 };
+
+let sessionCookie = null;
+async function ensureCookie(force) {
+  if (sessionCookie && !force) return sessionCookie;
+  try {
+    const r = await fetch(UPSTREAM + '/', {
+      headers: {
+        'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'accept-language': 'ko-KR,ko;q=0.9,en;q=0.8',
+        'user-agent': UA,
+        'sec-fetch-site': 'none',
+        'sec-fetch-mode': 'navigate',
+        'sec-fetch-dest': 'document',
+        'upgrade-insecure-requests': '1'
+      }
+    });
+    const list = typeof r.headers.getSetCookie === 'function'
+      ? r.headers.getSetCookie()
+      : (r.headers.get('set-cookie') ? [r.headers.get('set-cookie')] : []);
+    sessionCookie = list.map(c => c.split(';')[0]).filter(Boolean).join('; ') || null;
+  } catch (e) { sessionCookie = null; }
+  return sessionCookie;
+}
+
+async function callUpstream(path, cookie) {
+  const headers = Object.assign({}, UP_HEADERS);
+  if (cookie) headers.cookie = cookie;
+  return fetch(UPSTREAM + path, { headers });
+}
 
 async function upstreamJson(path, ttl, ctx) {
   const cache = caches.default;
   const cacheKey = new Request('https://cache.now-paju.internal' + encodeURI(path));
   const hit = await cache.match(cacheKey);
   if (hit) return hit.json();
-  const up = await fetch(UPSTREAM + path, { headers: UP_HEADERS });
+  let up = await callUpstream(path, await ensureCookie(false));
+  if (up.status === 401 || up.status === 403) {
+    up = await callUpstream(path, await ensureCookie(true));   // 세션 재발급 후 1회 재시도
+  }
   if (!up.ok) {
-    const peek = (await up.text().catch(() => '')).slice(0, 120);
-    throw new Error('upstream ' + up.status + ' @' + path.slice(0, 40) + ' :: ' + peek);
+    const peek = (await up.text().catch(() => '')).replace(/\s+/g, ' ').slice(0, 140);
+    throw new Error('upstream ' + up.status + ' @' + path.slice(0, 34) + ' cookie=' + (sessionCookie ? 'yes' : 'no') + ' :: ' + peek);
   }
   const body = await up.text();
   const store = new Response(body, { headers: { 'content-type': 'application/json', 'cache-control': 'public, max-age=' + ttl } });
