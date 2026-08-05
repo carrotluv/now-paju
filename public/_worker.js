@@ -6,13 +6,25 @@ const UPSTREAM = 'https://gg.whitescan.com';
 const LIST_PATH = '/api/itrst-rgn?page=0&size=300&interestRegionType=0';
 const MARKERS_PATH = '/api/itrst-rgn/markers?interestRegionType=0&labels=%EC%97%AC%EC%9C%A0&labels=%EB%B3%B4%ED%86%B5&labels=%EC%95%BD%EA%B0%84+%ED%98%BC%EC%9E%A1&labels=%ED%98%BC%EC%9E%A1&labels=%EB%A7%A4%EC%9A%B0+%ED%98%BC%EC%9E%A1';
 
+// 상류가 브라우저 요청만 받아들이는 경우가 있어 동일한 헤더를 실어 보낸다.
+const UP_HEADERS = {
+  'accept': 'application/json, text/plain, */*',
+  'accept-language': 'ko-KR,ko;q=0.9,en;q=0.8',
+  'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36',
+  'referer': UPSTREAM + '/',
+  'origin': UPSTREAM
+};
+
 async function upstreamJson(path, ttl, ctx) {
   const cache = caches.default;
   const cacheKey = new Request('https://cache.now-paju.internal' + encodeURI(path));
   const hit = await cache.match(cacheKey);
   if (hit) return hit.json();
-  const up = await fetch(UPSTREAM + path, { headers: { accept: 'application/json' } });
-  if (!up.ok) throw new Error('upstream ' + up.status);
+  const up = await fetch(UPSTREAM + path, { headers: UP_HEADERS });
+  if (!up.ok) {
+    const peek = (await up.text().catch(() => '')).slice(0, 120);
+    throw new Error('upstream ' + up.status + ' @' + path.slice(0, 40) + ' :: ' + peek);
+  }
   const body = await up.text();
   const store = new Response(body, { headers: { 'content-type': 'application/json', 'cache-control': 'public, max-age=' + ttl } });
   ctx.waitUntil(cache.put(cacheKey, store));
@@ -71,7 +83,7 @@ export default {
 
       return json({ error: 'not found' }, 404);
     } catch (e) {
-      return json({ error: 'upstream unavailable', detail: String(e).slice(0, 120) }, 503);
+      return json({ error: 'upstream unavailable', detail: String(e && e.message || e).slice(0, 300) }, 503);
     }
   }
 };
