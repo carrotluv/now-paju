@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>지금 파주 — 파주 실시간 인파 지도</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<style>
+  :root{
+    --bg:#f7f5ef; --ink:#23272f; --ink-2:#55514a; --sub:#6b665b; --hair:#dcd7cb; --hair2:#f0ece1;
+    --card:#ffffff; --panel:#fcfaf5; --banner:#fbf9f4; --hover:#faf8f2; --sel-bg:#f6f3ea;
+    --s1:#2fa876; --s2:#d9a62e; --s3:#e07b2f; --s4:#d94f3d;
+    --t1:#17714b; --t2:#7a5f0e; --t3:#8f4713; --t4:#b03225; --dd:#31648f;
+    --bar:#e3ddcf; --demo-bg:#ffffff; --float-bg:#ffffff; --float-bg2:rgba(255,255,255,.88); --pill-bg:rgba(255,255,255,.93);
+    --btn-dark:#23272f; --btn-dark-ink:#f2efe6; --btn-dark-hover:#3a404d;
+    --tint-hot:#fdf0ec; --tint-cool:#eef7f2; --halo:#ffffff;
+    --radius:6px; --radius-lg:10px;
+    --shadow-1:0 1px 3px rgba(35,39,47,.10); --shadow-2:0 2px 6px rgba(35,39,47,.25); --shadow-3:0 12px 32px rgba(0,0,0,.28);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:var(--bg);color:var(--ink);font-family:'Pretendard Variable','Pretendard','Malgun Gothic',-apple-system,BlinkMacSystemFont,system-ui,sans-serif;word-break:keep-all}
+  .num{font-variant-numeric:tabular-nums}
+
+  header{display:flex;align-items:center;gap:20px;padding:16px 24px;border-bottom:1px solid var(--hair);flex-wrap:wrap;background:var(--bg);position:relative;z-index:1200}
+  header .t{display:flex;align-items:center;gap:10px}
+  header .t svg{flex:none}
+  header .t b{font-size:21px;display:block;letter-spacing:-.5px;font-weight:800;line-height:1.2}
+  header .t span{font-size:12px;letter-spacing:2.5px;color:var(--sub);margin-top:1px;display:block}
+  .tabs{display:flex;gap:8px}
+  .tab{display:flex;align-items:center;padding:8px 15px;font-size:13px;color:var(--sub);cursor:pointer;border:1.5px solid var(--hair);border-radius:var(--radius);background:var(--float-bg);box-shadow:var(--shadow-1);font-family:inherit}
+  .tab b{font-size:14px;margin-right:5px}
+  .tab.on{color:var(--btn-dark-ink);background:var(--btn-dark);border-color:var(--btn-dark);font-weight:700}
+  .legend{margin-left:auto;display:flex;gap:13px;font-size:12px;color:var(--sub);align-items:center;flex-wrap:wrap}
+  .legend i{width:10px;height:10px;border-radius:50%;display:inline-block;margin-right:5px;vertical-align:-1px}
+  .asof{font-size:12px;color:var(--sub);border-left:1px solid var(--hair);padding-left:13px}
+
+  .banner{padding:9px 24px;font-size:14px;border-bottom:1px solid var(--hair);background:var(--banner)}
+  .banner b{font-weight:700}
+
+  .wrap{display:grid;grid-template-columns:352px 1fr;height:calc(100vh - 144px);min-height:540px}
+  .mapwrap{position:relative}
+  #map{position:absolute;inset:0;background:#eee9dd}
+  .mapbtns{position:absolute;top:12px;right:12px;z-index:1000;display:flex;gap:6px}
+  .mbtn{background:var(--float-bg);border:1px solid var(--hair);border-radius:var(--radius);padding:7px 12px;font-size:13px;font-weight:600;color:var(--ink);cursor:pointer;box-shadow:var(--shadow-1);font-family:inherit}
+  .mbtn:hover{background:#f6f3ea}
+  .msel{appearance:none;-webkit-appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6'><path d='M1 1l4 4 4-4' stroke='%2323272f' stroke-width='1.6' fill='none'/></svg>") no-repeat right 10px center;background-color:var(--float-bg);border:1px solid var(--hair);border-radius:var(--radius);padding:7px 28px 7px 12px;font-size:13px;font-weight:600;color:var(--ink);cursor:pointer;box-shadow:var(--shadow-1);font-family:inherit}
+  .maptag{position:absolute;left:12px;bottom:12px;z-index:1000;background:var(--float-bg2);border:1px solid var(--hair);border-radius:var(--radius);padding:5px 10px;font-size:11px;color:var(--sub)}
+
+  /* 지도 노드 */
+  .nd{position:relative}
+  .nd .core{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);border-radius:50%;border:2.5px solid #fff;box-shadow:0 1px 5px rgba(0,0,0,.3);cursor:pointer;transition:transform .12s}
+  .nd:hover .core{transform:translate(-50%,-50%) scale(1.12)}
+  .nd .pulse{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);border-radius:50%;pointer-events:none;animation:pw 1.7s ease-out infinite;border:2px solid var(--s4)}
+  .nd.pulse-gold .pulse{border-color:#d9a62e}
+  @keyframes pw{0%{width:18px;height:18px;opacity:.8}100%{width:52px;height:52px;opacity:0}}
+  .nd .selring{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);border-radius:50%;border:1.6px dashed var(--ink);pointer-events:none}
+  .nd .lb{position:absolute;left:calc(50% + var(--r) + 7px);top:50%;transform:translateY(-50%);white-space:nowrap;font-size:14px;font-weight:700;color:var(--ink);pointer-events:none;
+    text-shadow:0 1px 0 var(--halo),0 -1px 0 var(--halo),1px 0 0 var(--halo),-1px 0 0 var(--halo),0 0 6px var(--halo)}
+  .nd.west .lb{left:auto;right:calc(50% + var(--r) + 7px);text-align:right}
+  .nd.up .lb{left:50%;right:auto;top:auto;bottom:calc(50% + var(--r) + 5px);transform:translateX(-50%);text-align:center}
+  .nd .chip{display:block;font-size:11px;font-weight:700;margin-top:1px}
+  .z-lo .nd.small .lb{display:none}
+  .z-lo .lpill span{display:none}
+  .z-lo .lpill{padding:4px 9px}
+  .z-lo .lpill b{font-size:12px}
+  .llb{font-size:12px;font-weight:600;color:var(--sub);white-space:nowrap;letter-spacing:.6px;pointer-events:none;
+    text-shadow:0 1px 0 var(--halo),0 -1px 0 var(--halo),1px 0 0 var(--halo),-1px 0 0 var(--halo)}
+  .lpill{width:max-content;background:var(--pill-bg);border:1.5px dashed #a49d90;border-radius:var(--radius);padding:5px 10px;white-space:nowrap;box-shadow:var(--shadow-1);text-align:center;pointer-events:none}
+  .lpill b{display:block;font-size:13px;font-weight:800;color:var(--ink-2);letter-spacing:.3px}
+  .lpill span{display:block;font-weight:500;font-size:11px;margin-top:2px;color:var(--sub)}
+  .clusterbadge{width:max-content;background:var(--btn-dark);color:var(--btn-dark-ink);border-radius:var(--radius);padding:7px 12px;font-size:13px;font-weight:600;white-space:nowrap;box-shadow:var(--shadow-2);cursor:pointer}
+  .clusterbadge span{opacity:.65;font-weight:400;margin-left:5px}
+  .z-hi .clusterbadge{display:none}
+  .cam{width:20px;height:20px;background:#23272f;border-radius:6px;border:1.5px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;cursor:pointer}
+  .cam:hover{background:#3a404d}
+  .cam svg{width:11px;height:11px;fill:#fff}
+  .z-lo .cam{display:none}
+
+  /* 우측 리스트 */
+  .list{order:-1;border-right:1px solid var(--hair);background:var(--card);overflow-y:auto;display:flex;flex-direction:column}
+  .list-head{padding:13px 18px 11px;border-bottom:1px solid var(--hair);display:flex;align-items:baseline;gap:8px;position:sticky;top:0;background:var(--card);z-index:5}
+  .list-head b{font-size:14px}
+  .list-head span{font-size:12px;color:var(--sub);margin-left:auto}
+  .row{display:flex;align-items:center;gap:10px;padding:12px 18px;border-bottom:1px solid var(--hair2);cursor:pointer}
+  .row:hover{background:var(--hover)}
+  .row.sel{background:var(--sel-bg)}
+  .row.tint-hot{background:var(--tint-hot)}
+  .row.tint-cool{background:var(--tint-cool)}
+  .rk{font-size:12px;color:var(--sub);width:20px;flex:none}
+  .info{flex:1;min-width:0}
+  .info b{font-size:14px;font-weight:600;display:block;line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .info span{font-size:12px;color:var(--sub)}
+  .pill{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;white-space:nowrap;flex:none;color:var(--ink)}
+  .pill::before{content:"";width:8px;height:8px;border-radius:50%;flex:none}
+  .p1::before{background:var(--s1)} .p2::before{background:var(--s2)}
+  .p3::before{background:var(--s3)} .p4::before{background:var(--s4)}
+  .p3{color:var(--t3)} .p4{color:var(--t4);font-weight:700}
+  .p0{color:var(--sub)} .p0::before{background:#b5afa3}
+  .dv{font-size:13px;font-weight:600;width:48px;text-align:right;flex:none}
+  .du{color:var(--t4)} .dd{color:var(--dd)}
+
+  .det{display:none;padding:14px 18px 18px;border-bottom:1px solid var(--hair2);background:var(--panel)}
+  .row.sel + .det{display:block}
+  .q{font-size:16px;line-height:1.5;font-weight:800;padding:10px 12px;border-radius:var(--radius);margin-bottom:12px}
+  .facts{display:flex;flex-direction:column;gap:7px;margin-bottom:13px}
+  .fact{display:flex;justify-content:space-between;font-size:14px;border-bottom:1px solid var(--hair2);padding-bottom:7px}
+  .fact:last-child{border-bottom:0}
+  .fact span{color:var(--ink)} .fact b{font-weight:600}
+  .p-sec{font-size:12px;letter-spacing:1px;color:var(--ink);font-weight:600;margin-bottom:7px}
+  .bars{display:flex;align-items:flex-end;gap:2px;height:62px}
+  .bars i{flex:1;border-radius:2px 2px 0 0;background:var(--bar);min-height:2px}
+  .bars i.now{outline:1.5px solid var(--ink);outline-offset:1px}
+  .bar-x{display:flex;justify-content:space-between;font-size:11px;color:var(--sub);margin-top:5px;margin-bottom:12px}
+  .demo-row{display:flex;gap:7px;margin-bottom:13px}
+  .demo{flex:1;background:var(--demo-bg);border:1px solid var(--hair);border-radius:var(--radius);padding:8px 10px}
+  .demo .lb2{font-size:12px;color:var(--sub)}
+  .demo .v{font-size:16px;font-weight:700;margin-top:3px}
+  .cams{display:flex;gap:6px;flex-wrap:wrap}
+  .cambtn{display:flex;align-items:center;gap:6px;background:var(--btn-dark);color:var(--btn-dark-ink);border:0;border-radius:var(--radius);padding:7px 12px;font-size:13px;cursor:pointer;font-family:inherit}
+  .cambtn:hover{background:var(--btn-dark-hover)}
+  .cambtn svg{width:12px;height:12px;fill:var(--btn-dark-ink)}
+
+  /* CCTV 모달 */
+  .modal-bg{position:fixed;inset:0;background:rgba(20,20,24,.45);z-index:2000;display:none;align-items:center;justify-content:center}
+  .modal-bg.open{display:flex}
+  .modal{width:min(520px,92vw);background:var(--card);border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--shadow-3)}
+  .m-head{display:flex;align-items:center;padding:12px 16px;border-bottom:1px solid var(--hair)}
+  .m-head b{font-size:14px}
+  .m-head span{font-size:12px;color:var(--sub);margin-left:8px}
+  .m-x{margin-left:auto;border:0;background:transparent;font-size:17px;cursor:pointer;color:var(--sub);line-height:1;padding:2px 4px}
+  .m-x:hover{color:var(--ink)}
+  .m-body{position:relative;aspect-ratio:16/10;background:linear-gradient(135deg,#191d26 0%,#232937 55%,#1a1f2b 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px}
+  .m-live{position:absolute;top:12px;left:14px;display:flex;align-items:center;gap:6px;color:#fff;font-size:11px;letter-spacing:1.5px}
+  .m-live i{width:8px;height:8px;border-radius:50%;background:#ff4d4d;animation:blink 1.4s infinite}
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+  .m-camname{position:absolute;bottom:12px;right:14px;color:rgba(255,255,255,.75);font-size:11.5px}
+  .m-body svg{width:44px;height:44px;fill:#4a5468}
+  .m-note{color:#9aa5bd;font-size:12px}
+  .m-foot{padding:10px 16px;font-size:11px;color:var(--sub);background:var(--banner)}
+
+  footer{padding:9px 24px;font-size:11px;color:var(--sub);display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;border-top:1px solid var(--hair)}
+  @media (prefers-reduced-motion: reduce){
+    .nd .pulse,.m-live i{animation:none}
+    .nd .core{transition:none}
+  }
+
+  @media(max-width:900px){
+    .wrap{grid-template-columns:1fr;height:auto}
+    .mapwrap{height:440px}
+    .list{order:0;border-right:0;border-top:1px solid var(--hair);max-height:480px}
+    .legend{margin-left:0}
+    .asof{border-left:0;padding-left:0}
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="t">
+    <svg width="34" height="34" viewBox="0 0 26 26" aria-hidden="true" style="color:var(--ink)"><circle cx="13" cy="13" r="11" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="13" cy="13" r="6" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".35"/><circle cx="17" cy="9.5" r="3" fill="#2fa876"/></svg>
+    <div><b>지금 파주</b><span>NOW PAJU</span></div>
+  </div>
+  <div class="tabs" id="tabs">
+    <button class="tab" data-m="I"><b>I</b>피해서 다닐래요</button>
+    <button class="tab" data-m="E"><b>E</b>북적여야 신나요</button>
+  </div>
+  <div class="legend">
+    <span><i style="background:var(--s1)"></i>여유</span>
+    <span><i style="background:var(--s2)"></i>보통</span>
+    <span><i style="background:var(--s3)"></i>약간 혼잡</span>
+    <span><i style="background:var(--s4)"></i>혼잡</span>
+    <span class="asof num" id="asof">불러오는 중…</span>
+  </div>
+</header>
+<div class="banner" id="banner"></div>
+
+<div class="wrap">
+  <div class="mapwrap">
+    <div id="map"></div>
+    <div class="mapbtns">
+      <button class="mbtn" id="btn-all">파주 전체</button>
+      <select class="msel" id="spot-jump"><option value="">주요 지점 이동</option></select>
+    </div>
+    <div class="maptag">지도: OpenStreetMap · CARTO</div>
+  </div>
+  <aside class="list" id="list">
+    <div class="list-head"><b>지점 리스트</b><span id="sort-note"></span></div>
+    <div id="rows"></div>
+  </aside>
+</div>
+
+<footer>
+  <span>데이터: 경기도 실시간 방문소비 현황지도 (KT 통신 기반) · 5분 주기</span>
+  <span>CCTV 연동 예정 (ITS)</span>
+</footer>
+
+<div class="modal-bg" id="modal-bg">
+  <div class="modal">
+    <div class="m-head"><b id="m-title"></b><span id="m-sub"></span><button class="m-x" id="m-x">✕</button></div>
+    <div class="m-body">
+      <div class="m-live"><i></i>LIVE</div>
+      <svg viewBox="0 0 24 24"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>
+      <div class="m-note">실시간 영상 자리 — 실서비스에서 재생됩니다</div>
+      <div class="m-camname" id="m-cam"></div>
+    </div>
+    <div class="m-foot">시안에서는 자리만 표시 — 실서비스에서 ITS 개방 CCTV로 재생됩니다 (위치·명칭 예시)</div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const PAJU_RING=[[38.00704,126.99008],[38.00602,126.99138],[38.00335,126.99325],[38.0013,126.99527],[37.99871,126.99887],[37.99597,127.00105],[37.99395,127.00488],[37.99277,127.01484],[37.98696,127.01711],[37.98634,127.01668],[37.98541,127.0152],[37.98089,127.01186],[37.97748,127.01208],[37.97728,127.01196],[37.97558,127.01074],[37.97454,127.00906],[37.97388,127.00714],[37.97533,127.00498],[37.97347,127.00275],[37.97229,127.00341],[37.9697,127.00307],[37.96753,126.99748],[37.9679,126.99248],[37.96768,126.99092],[37.96239,126.98838],[37.96131,126.98859],[37.95646,126.98851],[37.95597,126.98659],[37.95572,126.98506],[37.95118,126.9772],[37.94455,126.9763],[37.94212,126.9716],[37.93597,126.96442],[37.93086,126.9646],[37.92757,126.96442],[37.92601,126.96326],[37.92517,126.96222],[37.92387,126.9615],[37.92284,126.96167],[37.92105,126.96163],[37.92006,126.96016],[37.92094,126.95798],[37.9184,126.94954],[37.91478,126.95191],[37.91413,126.95312],[37.91217,126.95447],[37.90782,126.952],[37.90706,126.95035],[37.90493,126.94904],[37.90367,126.94895],[37.90091,126.94589],[37.89834,126.94655],[37.89684,126.94823],[37.89197,126.94679],[37.88624,126.9469],[37.88537,126.94723],[37.88035,126.94621],[37.86971,126.94451],[37.86825,126.94606],[37.86591,126.94584],[37.85964,126.94163],[37.85768,126.94],[37.85444,126.93837],[37.85263,126.9394],[37.84932,126.93549],[37.84542,126.93387],[37.84285,126.93561],[37.84039,126.93596],[37.83887,126.93414],[37.83765,126.92731],[37.84138,126.92402],[37.84132,126.91492],[37.84047,126.91237],[37.83847,126.91133],[37.83588,126.91294],[37.83033,126.91183],[37.82855,126.91101],[37.82851,126.91022],[37.82816,126.90659],[37.82655,126.90259],[37.82541,126.9021],[37.8244,126.90228],[37.81666,126.90998],[37.81168,126.90854],[37.81037,126.90906],[37.80983,126.9097],[37.80498,126.9119],[37.80239,126.90602],[37.7924,126.90468],[37.79057,126.9063],[37.79128,126.91127],[37.78976,126.91967],[37.78814,126.92084],[37.78564,126.92746],[37.78775,126.93037],[37.78881,126.93152],[37.78846,126.93414],[37.78696,126.93795],[37.78412,126.9368],[37.77861,126.93398],[37.77577,126.93515],[37.77124,126.93417],[37.76771,126.93336],[37.75703,126.92797],[37.75516,126.93113],[37.75346,126.93179],[37.75026,126.9308],[37.74821,126.92567],[37.74701,126.91968],[37.74783,126.91794],[37.74403,126.90788],[37.73898,126.9018],[37.73454,126.90237],[37.72902,126.90272],[37.72723,126.90014],[37.726,126.89335],[37.72368,126.88718],[37.72505,126.88604],[37.72479,126.88502],[37.72612,126.87978],[37.72537,126.87529],[37.72743,126.87307],[37.72999,126.86708],[37.7326,126.86415],[37.73268,126.86113],[37.73542,126.85547],[37.73488,126.85343],[37.73163,126.84169],[37.73105,126.84089],[37.72964,126.84027],[37.72946,126.84032],[37.72746,126.83676],[37.72711,126.82879],[37.72673,126.82847],[37.72661,126.8281],[37.72544,126.82114],[37.72563,126.81848],[37.72555,126.8171],[37.72443,126.81532],[37.7235,126.81439],[37.72446,126.81136],[37.72483,126.81078],[37.72554,126.81011],[37.72669,126.80918],[37.72727,126.80402],[37.73075,126.80057],[37.73348,126.80142],[37.73452,126.80112],[37.73597,126.79642],[37.73503,126.79433],[37.73458,126.79393],[37.73026,126.79571],[37.72986,126.79567],[37.72808,126.79502],[37.72409,126.79152],[37.72367,126.79082],[37.72354,126.79038],[37.72358,126.78977],[37.72287,126.78751],[37.72007,126.78425],[37.71971,126.78451],[37.71932,126.78455],[37.7191,126.78448],[37.71775,126.7801],[37.71274,126.77586],[37.70919,126.77383],[37.7063,126.77349],[37.70498,126.77415],[37.70462,126.77278],[37.70695,126.76787],[37.70717,126.76703],[37.70442,126.76377],[37.7033,126.75996],[37.70383,126.75629],[37.70495,126.75385],[37.70401,126.7515],[37.70301,126.75002],[37.70324,126.74864],[37.70372,126.74705],[37.70412,126.74633],[37.70429,126.74618],[37.7052,126.74152],[37.70438,126.7378],[37.70438,126.73697],[37.705,126.7335],[37.70506,126.72974],[37.70455,126.725],[37.7025,126.72297],[37.70012,126.71633],[37.69964,126.71303],[37.69979,126.71167],[37.69952,126.71045],[37.69814,126.70751],[37.69766,126.7067],[37.6966,126.70333],[37.69649,126.70183],[37.69665,126.70147],[37.69696,126.70085],[37.69534,126.69848],[37.68864,126.69031],[37.69599,126.68288],[37.69995,126.67487],[37.70054,126.67396],[37.71437,126.67654],[37.73169,126.68029],[37.74437,126.67717],[37.74657,126.67694],[37.76933,126.66511],[37.7807,126.66262],[37.78604,126.66353],[37.80046,126.66618],[37.81849,126.66931],[37.83478,126.67135],[37.83793,126.66211],[37.83909,126.65989],[37.84024,126.65932],[37.84287,126.66023],[37.84325,126.66498],[37.84618,126.67071],[37.84498,126.67156],[37.84418,126.67653],[37.84603,126.67957],[37.84677,126.68],[37.84705,126.68008],[37.85175,126.67988],[37.85658,126.6842],[37.86727,126.69138],[37.87285,126.68588],[37.87289,126.6815],[37.87148,126.6809],[37.87019,126.67911],[37.86996,126.67292],[37.87159,126.67349],[37.87449,126.6752],[37.87682,126.67236],[37.87743,126.67186],[37.87775,126.67183],[37.87811,126.67227],[37.87759,126.67427],[37.87726,126.6751],[37.87734,126.67595],[37.87877,126.68054],[37.87929,126.68166],[37.88007,126.68185],[37.88042,126.68055],[37.88082,126.67939],[37.88188,126.67861],[37.88255,126.67887],[37.88338,126.67952],[37.88412,126.68018],[37.8846,126.67989],[37.88497,126.67735],[37.88455,126.67639],[37.88295,126.67644],[37.8819,126.67594],[37.88148,126.67452],[37.88221,126.67252],[37.8826,126.67219],[37.88336,126.6728],[37.88454,126.67427],[37.88525,126.67463],[37.88642,126.67396],[37.88696,126.67153],[37.88803,126.67014],[37.88841,126.67111],[37.88875,126.67218],[37.89779,126.67735],[37.89862,126.67744],[37.90012,126.67741],[37.905,126.67686],[37.90768,126.67684],[37.91286,126.68278],[37.91396,126.67819],[37.91663,126.66801],[37.91906,126.666],[37.92145,126.66573],[37.92342,126.66615],[37.92596,126.66743],[37.92796,126.6679],[37.9302,126.66783],[37.9308,126.66772],[37.934,126.66726],[37.93436,126.66743],[37.93533,126.66918],[37.93577,126.66969],[37.93951,126.67211],[37.93989,126.67199],[37.94045,126.67129],[37.94063,126.67061],[37.94102,126.66965],[37.94153,126.6692],[37.9418,126.66911],[37.94598,126.66976],[37.94657,126.67027],[37.94696,126.67108],[37.94779,126.67176],[37.94887,126.67196],[37.95183,126.67118],[37.95481,126.67093],[37.95525,126.67393],[37.95404,126.67607],[37.95376,126.67622],[37.95401,126.67674],[37.95648,126.67949],[37.95811,126.6813],[37.95701,126.6863],[37.96613,126.6923],[37.97048,126.70073],[37.97408,126.70229],[37.97484,126.70371],[37.97516,126.70885],[37.97271,126.7093],[37.96926,126.71094],[37.96935,126.71485],[37.96849,126.71701],[37.96684,126.71775],[37.96569,126.71773],[37.96645,126.72519],[37.96836,126.72701],[37.96879,126.73041],[37.96637,126.73574],[37.96605,126.7369],[37.96762,126.73779],[37.96904,126.73833],[37.97337,126.74069],[37.97266,126.74163],[37.97359,126.74428],[37.97735,126.74854],[37.97929,126.74956],[37.98165,126.75393],[37.98366,126.75835],[37.98338,126.76054],[37.98385,126.76581],[37.98056,126.77019],[37.97911,126.77131],[37.97854,126.77214],[37.97835,126.7728],[37.9788,126.77421],[37.97925,126.77475],[37.98042,126.77535],[37.98194,126.77216],[37.98446,126.77587],[37.98173,126.78357],[37.98302,126.78442],[37.98814,126.79012],[37.9903,126.79262],[37.99226,126.79307],[37.99327,126.797],[37.99227,126.79982],[37.98966,126.8008],[37.98768,126.80018],[37.98126,126.80476],[37.97668,126.80664],[37.97421,126.81074],[37.97338,126.80955],[37.97316,126.80916],[37.97306,126.80879],[37.97267,126.80688],[37.969,126.80919],[37.96922,126.8122],[37.9689,126.81394],[37.96572,126.81732],[37.9622,126.81754],[37.96098,126.81687],[37.9582,126.82371],[37.96182,126.83044],[37.96405,126.83275],[37.96299,126.83751],[37.9674,126.83831],[37.97664,126.83942],[37.97899,126.84013],[37.98561,126.84645],[37.98649,126.8509],[37.98605,126.85264],[37.98416,126.85588],[37.98021,126.86123],[37.9758,126.86757],[37.97357,126.87031],[37.97109,126.87246],[37.97038,126.8736],[37.967,126.88129],[37.96624,126.88537],[37.96738,126.89181],[37.97027,126.89557],[37.97239,126.89563],[37.97421,126.89538],[37.97747,126.89328],[37.99024,126.89236],[37.99277,126.89276],[37.99495,126.89683],[37.99482,126.89772],[37.99445,126.9029],[37.99395,126.90522],[37.98903,126.90972],[37.98553,126.9211],[37.98407,126.92481],[37.98178,126.93249],[37.98832,126.95316],[37.99024,126.95595],[37.99536,126.95974],[37.99643,126.96016],[37.9989,126.96361],[38.00084,126.96638],[38.00557,126.97092],[38.00757,126.97423],[38.00688,126.97529],[38.00874,126.97913],[38.01,126.9896],[38.00845,126.98915],[38.00781,126.98914],[38.00704,126.99008]];
+const HEXC={'여유':'#2fa876','보통':'#d9a62e','약간 혼잡':'#e07b2f','혼잡':'#d94f3d','매우 혼잡':'#b3271b','집계중':'#b5afa3','관측 준비':'#b5afa3'};
+const TXTC={'여유':'var(--t1)','보통':'var(--t2)','약간 혼잡':'var(--t3)','혼잡':'var(--t4)','매우 혼잡':'var(--t4)','집계중':'var(--sub)','관측 준비':'var(--sub)'};
+const PCLS={'여유':'p1','보통':'p2','약간 혼잡':'p3','혼잡':'p4','매우 혼잡':'p4','집계중':'p0','관측 준비':'p0'};
+const RAD={'여유':7,'보통':9,'약간 혼잡':11,'혼잡':13,'매우 혼잡':14,'집계중':6,'관측 준비':6};
+const RANK={'매우 혼잡':5,'혼잡':4,'약간 혼잡':3,'보통':2,'여유':1,'집계중':0,'관측 준비':-1};
+const MSG={
+ E:{'매우 혼잡':'와! 오늘 최고 인파!','혼잡':'와! 여기로 가자!','약간 혼잡':'분위기 달아오르는 중','보통':'슬슬 모이는 중','여유':'아직 조용… 심심할지도','집계중':'실시간 집계 중이에요','관측 준비':'관측 준비 중인 지점이에요'},
+ I:{'매우 혼잡':'오늘은 정말 피하세요','혼잡':'어… 여기는 피하자','약간 혼잡':'지금은 좀 붐벼요','보통':'무난하게 다닐 만해요','여유':'지금이 기회, 한적해요','집계중':'실시간 집계 중이에요','관측 준비':'관측 준비 중인 지점이에요'}
+};
+const SPOTS=[
+ {id:'stv',n:'운정역(스타필드빌리지 운정)',short:'스타필드빌리지 운정',c:'쇼핑',s:'혼잡',pop:4820,diff:'+55%',g:88,age:'20~30대 41%',sex:'여 54%',
+  lat:37.727062,lng:126.764757,small:1,peak:'16시',cams:[{n:'경의로 운정역앞',lat:37.7282,lng:126.7668},{n:'와석순환로 입구',lat:37.7255,lng:126.7620}],
+  t:[4,3,2,2,2,3,5,9,16,26,38,52,66,78,88,96,100,97,90,78,60,40,22,10]},
+ {id:'lotte',n:'롯데프리미엄아울렛 파주',short:'롯데아울렛 파주',c:'쇼핑',s:'약간 혼잡',pop:3350,diff:'+16%',g:66,age:'40~50대 39%',sex:'여 57%',
+  lat:37.718584,lng:126.693232,west:1,peak:'15시',cams:[{n:'자유로 문발IC',lat:37.7130,lng:126.6890},{n:'출판단지 사거리',lat:37.7222,lng:126.6960}],
+  t:[3,2,2,2,2,3,5,8,15,28,45,60,72,80,84,86,82,74,62,46,30,16,8,4]},
+ {id:'heyri',n:'헤이리예술마을',short:'헤이리예술마을',c:'문화관광',s:'약간 혼잡',pop:2140,diff:'+30%',g:61,age:'30~40대 38%',sex:'여 58%',
+  lat:37.788361,lng:126.699549,peak:'14시',cams:[{n:'자유로 성동IC',lat:37.7830,lng:126.6930},{n:'헤이리 1번게이트',lat:37.7900,lng:126.7030}],
+  t:[2,2,1,1,1,2,4,8,18,34,52,68,78,84,86,84,78,66,50,34,20,10,5,3]},
+ {id:'yadang',n:'야당역',short:'야당역',apiName:'소리천로(야당역)',c:'교통·숙박',s:'약간 혼잡',pop:1980,diff:'+25%',g:58,age:'20~30대 44%',sex:'남 51%',
+  lat:37.712123,lng:126.7612,small:1,peak:'20시',cams:[{n:'소리천로 입구',lat:37.7108,lng:126.7590}],
+  t:[10,6,4,3,3,4,6,10,16,22,28,34,42,46,48,50,54,62,76,90,100,92,66,34]},
+ {id:'ssg',n:'파주 신세계 프리미엄아울렛',short:'신세계아울렛 파주',c:'쇼핑',s:'보통',pop:2610,diff:'+3%',g:48,age:'40~50대 37%',sex:'여 56%',
+  lat:37.769624,lng:126.695364,west:1,peak:'15시',cams:[{n:'필승로 법흥리',lat:37.7730,lng:126.7000},{n:'자유로 낙하IC',lat:37.7650,lng:126.6890}],
+  t:[2,2,2,2,2,3,4,7,14,26,42,56,66,74,78,80,76,68,56,42,26,14,7,3]},
+ {id:'gtx',n:'운정중앙역 GTX-A',short:'운정중앙역',c:'교통·숙박',s:'보통',pop:1240,diff:'+5%',g:44,age:'30~40대 42%',sex:'남 52%',
+  lat:37.716214,lng:126.729229,small:1,west:1,peak:'18시',cams:[{n:'운정중앙로',lat:37.7145,lng:126.7275}],
+  t:[6,4,3,3,4,10,26,48,62,44,32,30,34,36,38,40,46,58,72,64,48,32,18,9]},
+ {id:'lake',n:'운정호수공원',short:'운정호수공원',c:'문화관광',s:'보통',pop:1130,diff:'+15%',g:41,age:'가족 단위',sex:'여 53%',
+  lat:37.720986,lng:126.759239,small:1,peak:'19시',cams:[{n:'호수공원 북문',lat:37.7230,lng:126.7605}],
+  t:[2,1,1,1,1,2,6,12,20,30,38,42,44,42,40,42,50,62,78,88,80,54,28,10]},
+ {id:'imjin',n:'임진각 평화누리공원',short:'임진각 평화누리공원',c:'문화관광',s:'보통',pop:890,diff:'+17%',g:38,age:'60대 이상 34%',sex:'여 51%',
+  lat:37.893444,lng:126.744704,peak:'13시',cams:[{n:'통일대교 남단',lat:37.8880,lng:126.7405},{n:'임진각 관광지 입구',lat:37.8905,lng:126.7480}],
+  t:[1,1,1,1,1,2,5,12,26,44,62,76,84,86,80,68,52,36,22,12,6,3,2,1]},
+ {id:'yulgok',n:'율곡수목원',short:'율곡수목원',c:'자연관광',s:'여유',pop:420,diff:'+8%',g:20,age:'50~60대 36%',sex:'여 52%',
+  lat:37.8482,lng:126.9310,peak:'14시',cams:[{n:'율곡로 화석정 입구',lat:37.8530,lng:126.9180}],
+  t:[1,1,1,1,1,1,3,8,18,32,46,58,66,70,68,58,44,30,16,8,4,2,1,1]},
+ {id:'yulgok2',n:'율곡습지공원',short:'율곡습지공원',c:'자연관광',s:'여유',pop:180,diff:'-12%',g:10,age:'60대 이상 41%',sex:'여 51%',
+  lat:37.8610,lng:126.9090,west:1,peak:'15시',cams:[{n:'율곡습지공원 진입로',lat:37.8580,lng:126.9040}],
+  t:[1,1,1,1,1,1,2,6,14,26,38,48,54,56,52,44,34,22,12,6,3,2,1,1]},
+ {id:'cityhall',n:'파주시청',short:'파주시청',c:'공공기관',s:'여유',pop:260,diff:'-8%',g:14,age:'40~50대 38%',sex:'남 53%',
+  lat:37.7598,lng:126.7799,peak:'11시',cams:[{n:'시청 앞 사거리',lat:37.7590,lng:126.7785}],
+  t:[1,1,1,1,1,2,4,10,20,30,34,32,28,26,24,22,20,18,14,10,6,3,2,1]},
+ {id:'byeokchoji',n:'벽초지수목원',short:'벽초지수목원',c:'자연관광',s:'보통',pop:780,diff:'+21%',g:35,age:'30~40대 40%',sex:'여 58%',
+  lat:37.7545,lng:126.8618,peak:'15시',cams:[{n:'부흥로 벽초지 입구',lat:37.7570,lng:126.8590}],
+  t:[1,1,1,1,1,2,4,9,20,36,52,64,72,76,74,66,54,40,26,14,7,3,2,1]},
+ {id:'gamak',n:'감악산 출렁다리',short:'감악산',c:'자연관광',s:'보통',pop:940,diff:'+18%',g:37,age:'50~60대 44%',sex:'남 55%',
+  lat:37.9450,lng:126.9585,peak:'11시',cams:[{n:'설마천로 출렁다리 입구',lat:37.9480,lng:126.9550}],
+  t:[1,1,1,1,1,2,6,16,34,56,72,80,76,66,54,44,34,24,14,8,4,2,1,1]},
+ {id:'agtech',n:'파주시 농업기술센터',short:'농업기술센터',c:'공공기관',s:'여유',pop:150,diff:'-10%',g:9,age:'50~60대 42%',sex:'남 56%',
+  lat:37.8110,lng:126.7930,peak:'10시',cams:[{n:'통일로 진입로',lat:37.8090,lng:126.7900}],
+  t:[1,1,1,1,1,2,5,12,22,30,32,30,26,24,22,20,16,12,8,4,2,1,1,1]},
+ {id:'garden',n:'운정중앙공원(파주가든)',short:'운정중앙공원',c:'문화관광',s:'여유',pop:310,diff:'-26%',g:16,age:'가족 단위',sex:'여 55%',
+  lat:37.718483,lng:126.72339,small:1,up:1,peak:'19시',cams:[{n:'가온로',lat:37.7170,lng:126.7215}],
+  t:[2,1,1,1,1,2,5,10,16,22,26,28,30,28,26,28,34,44,56,62,54,36,18,8]}
+];
+const API_SET=new Set(['임진각 평화누리공원','롯데프리미엄아울렛 파주','소리천로(야당역)','운정역(스타필드빌리지 운정)','운정중앙공원(파주가든)','운정중앙역 GTX-A','운정호수공원','파주 신세계 프리미엄아울렛','헤이리예술마을']);
+SPOTS.forEach(s=>{s.api=API_SET.has(s.apiName||s.n);s.s=s.api?'집계중':'관측 준비';s.pop=null;s.diff=null;s.age=null;s.sex=null;s.t=null;s.peak=null;s.nowIdx=null;s.spotId=null;s.loaded=false;s.loading=false;});
+let mode='I', sel=null;
+const CAMSVG='<svg viewBox="0 0 24 24"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>';
+
+// ── 지도
+const map=L.map('map',{zoomControl:true,zoomSnap:.25,attributionControl:false});
+L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{maxZoom:18,subdomains:'abcd'}).addTo(map);
+const WORLD=[[85,-180],[85,180],[-85,180],[-85,-180]];
+const maskLayer=L.polygon([WORLD,PAJU_RING],{stroke:false,fillColor:'#f7f5ef',fillOpacity:.62,interactive:false}).addTo(map);
+const boundaryLayer=L.polyline(PAJU_RING.concat([PAJU_RING[0]]),{color:'#23272f',weight:2,dashArray:'6 5',opacity:.55,interactive:false}).addTo(map);
+
+const GYEONGUI=[[37.7121,126.7612],[37.7271,126.7648],[37.7597,126.7740],[37.8000,126.7860],[37.8523,126.7850],[37.8850,126.7560],[37.8934,126.7447]];
+const GTXLINE=[[37.716214,126.729229],[37.7040,126.7420],[37.6930,126.7520]];
+const JAYU=[[37.7186,126.6932],[37.7696,126.6954],[37.7884,126.6995],[37.8500,126.7300],[37.8934,126.7447]];
+L.polyline(GYEONGUI,{color:'#2b303a',weight:4,opacity:.75}).addTo(map);
+L.polyline(GTXLINE,{color:'#8d6f4e',weight:3.5,opacity:.8}).addTo(map);
+L.polyline(JAYU,{color:'#a49d90',weight:3,dashArray:'8 7',opacity:.85}).addTo(map);
+const IMJINBELT=[[37.8934,126.7447],[37.8850,126.7900],[37.8700,126.8500],[37.8610,126.9090],[37.8482,126.9310],[37.9000,126.9420],[37.9450,126.9585]];
+L.polyline(IMJINBELT,{color:'#a49d90',weight:3,dashArray:'8 7',opacity:.85}).addTo(map);
+L.polyline([[37.7597,126.7740],[37.7598,126.7799]],{color:'#c9c2b3',weight:2,opacity:.9}).addTo(map);
+L.polyline([[37.8110,126.7858],[37.8110,126.7930]],{color:'#c9c2b3',weight:2,opacity:.9}).addTo(map);
+const lineLabel=(lat,lng,txt)=>L.marker([lat,lng],{icon:L.divIcon({className:'',html:`<span class="llb">${txt}</span>`,iconSize:[0,0]}),interactive:false}).addTo(map);
+lineLabel(37.836,126.792,'경의중앙선');
+lineLabel(37.700,126.744,'GTX-A · 서울 20분');
+const beltLabel=(lat,lng,main,sub)=>L.marker([lat,lng],{icon:L.divIcon({className:'',iconSize:[0,0],html:`<div class="lpill" style="transform:translate(-50%,-50%)"><b>${main}</b>${sub?`<span>${sub}</span>`:''}</div>`}),interactive:false}).addTo(map);
+beltLabel(37.7441,126.632,'자유로 문화벨트','아울렛·헤이리·임진각을 잇는 도로 축');
+beltLabel(37.935,126.878,'임진강변 벨트','임진각·율곡습지·율곡수목원·감악산');
+
+const CLUSTER=['stv','yadang','gtx','lake','garden'];
+const clusterBounds=L.latLngBounds(SPOTS.filter(s=>CLUSTER.includes(s.id)).map(s=>[s.lat,s.lng])).pad(.35);
+const pajuBounds=L.latLngBounds(PAJU_RING).pad(.03);
+
+let nodeMarkers={}, camMarkers=[], badge=null;
+
+function nodeIcon(s){
+  const r=RAD[s.s];
+  const isSel=sel===s.id;
+  const pulse=(mode==='E'&&s.s==='혼잡')||(mode==='I'&&s.s==='혼잡');
+  const chip=(mode==='I'&&s.s==='여유')?`<span class="chip" style="color:var(--t1)">지금 기회</span>`
+            :(mode==='E'&&s.s==='혼잡')?`<span class="chip" style="color:var(--t4)">오늘의 핫플</span>`:'';
+  return L.divIcon({className:'',iconSize:[0,0],html:
+    `<div class="nd ${s.small?'small':''} ${s.west?'west':''} ${s.up?'up':''} ${mode==='E'?'pulse-gold':''}" style="--r:${r}px">
+      ${pulse?`<span class="pulse"></span>`:''}
+      ${isSel?`<span class="selring" style="width:${r*2+11}px;height:${r*2+11}px"></span>`:''}
+      <span class="core" style="width:${r*2}px;height:${r*2}px;background:${HEXC[s.s]}"></span>
+      <span class="lb">${s.short}${chip}</span>
+    </div>`});
+}
+function renderNodes(){
+  SPOTS.forEach(s=>{
+    if(nodeMarkers[s.id]) map.removeLayer(nodeMarkers[s.id]);
+    const m=L.marker([s.lat,s.lng],{icon:nodeIcon(s),zIndexOffset:1000}).addTo(map);
+    m.on('click',()=>select(s.id,{fly:false}));
+    nodeMarkers[s.id]=m;
+  });
+}
+function renderCams(){
+  camMarkers.forEach(m=>map.removeLayer(m)); camMarkers=[];
+  const DIRS=[['북측',0.0060,0],['동측',0,0.0078],['남측',-0.0060,0],['서측',0,-0.0078]];
+  SPOTS.forEach(s=>{
+    const pts=s.cams.map(c=>({n:c.n,lat:c.lat,lng:c.lng}));
+    DIRS.forEach(d=>pts.push({n:`${s.short} ${d[0]} CCTV`,lat:s.lat+d[1],lng:s.lng+d[2]}));
+    pts.forEach(cam=>{
+      const m=L.marker([cam.lat,cam.lng],{icon:L.divIcon({className:'',iconSize:[0,0],html:`<div class="cam" style="transform:translate(-10px,-10px)">${CAMSVG}</div>`})}).addTo(map);
+      m.on('click',()=>openCam(cam.n,s.n));
+      camMarkers.push(m);
+    });
+  });
+}
+badge=L.marker([37.7270,126.7950],{icon:L.divIcon({className:'',iconSize:[0,0],html:`<div class="clusterbadge" style="transform:translate(-50%,-50%)">운정 5곳<span>확대</span></div>`})}).addTo(map);
+badge.on('click',()=>map.flyToBounds(clusterBounds,{duration:.7}));
+
+function zoomClass(){
+  const el=document.getElementById('map');
+  const lo=map.getZoom()<11.4;
+  el.classList.toggle('z-lo',lo);
+  el.classList.toggle('z-hi',!lo);
+}
+map.on('zoomend',zoomClass);
+document.getElementById('btn-all').onclick=()=>{map.flyToBounds(pajuBounds,{duration:.7});document.getElementById('spot-jump').value='';};
+const jumpSel=document.getElementById('spot-jump');
+SPOTS.forEach(s=>{const o=document.createElement('option');o.value=s.id;o.textContent=s.short;jumpSel.appendChild(o);});
+jumpSel.onchange=()=>{ if(jumpSel.value) select(jumpSel.value,{fly:true}); };
+
+// ── 리스트
+function sorted(){ return [...SPOTS].sort((a,b)=>{ const ax=RANK[a.s]??0, bx=RANK[b.s]??0; const an=ax<=0, bn=bx<=0; if(an!==bn) return an?1:-1; return mode==='E' ? bx-ax : ax-bx; }); }
+function renderList(){
+  document.getElementById('sort-note').textContent = mode==='I' ? '지금 가기 좋은 순' : '붐빔 순';
+  document.getElementById('rows').innerHTML = sorted().map((s,i)=>{
+    const rk=RANK[s.s]??0;
+    const tint = rk<=0 ? '' : (mode==='I' ? (rk>=4?'tint-hot':(i===0?'tint-cool':'')) : (i===0?'tint-hot':''));
+    const camBtns=s.cams.map(c=>`<button class="cambtn" data-cam="${c.n}" data-spot="${s.n}">${CAMSVG}${c.n}</button>`).join('');
+    const camSec=`<div class="p-sec">주변 CCTV <span style="letter-spacing:0">(위치·명칭 예시)</span></div><div class="cams">${camBtns}</div>`;
+    let det;
+    if(!s.api){
+      det=`<div class="q" style="color:var(--sub);background:var(--panel)">「${MSG[mode][s.s]}」</div>
+      <div style="font-size:12.5px;color:var(--sub);line-height:1.6;margin-bottom:13px">경기도 관측망에 아직 없는 지점이라 혼잡도가 제공되지 않습니다. 위치와 주변 CCTV만 표시합니다.</div>${camSec}`;
+    } else if(!s.loaded){
+      det=`<div class="q" style="color:${TXTC[s.s]};background:color-mix(in srgb, ${HEXC[s.s]} 13%, var(--card))">「${MSG[mode][s.s]}」</div>
+      <div style="font-size:12.5px;color:var(--sub);margin-bottom:13px">상세 데이터를 불러오는 중입니다…</div>${camSec}`;
+    } else {
+      const bars=s.t.map((v,j)=>`<i style="height:${Math.max(3,v)}%;${j===s.nowIdx?`background:${HEXC[s.s]}`:''}" class="${j===s.nowIdx?'now':''}"></i>`).join('');
+      const rec = mode==='E' ? (rk>=4?'지금 바로!':(rk===3?'지금 좋아요':'저녁쯤 다시'))
+                             : (rk>=4?'피크 지난 뒤':(rk===3?'한 시간 뒤':'지금'));
+      det=`<div class="q" style="color:${TXTC[s.s]};background:color-mix(in srgb, ${HEXC[s.s]} 13%, var(--card))">「${MSG[mode][s.s]}」</div>
+      <div class="facts">
+        <div class="fact"><span>추정 인구</span><b class="num">${s.pop!=null?s.pop.toLocaleString()+'명':'—'}</b></div>
+        <div class="fact"><span>평시 대비</span><b class="num">${s.diff??'—'}</b></div>
+        <div class="fact"><span>주 방문층</span><b>${s.age??'—'}${s.sex?' · '+s.sex:''}</b></div>
+      </div>
+      <div class="p-sec">24시간 흐름 <span class="num">(00~23시)</span></div>
+      <div class="bars">${bars}</div>
+      <div class="bar-x num"><span>0시</span><span>6시</span><span>12시</span><span>18시</span><span>23시</span></div>
+      <div class="demo-row">
+        <div class="demo"><div class="lb2">평시 피크</div><div class="v num">${s.peak??'—'}</div></div>
+        <div class="demo"><div class="lb2">${mode==='E'?'가기 좋은 때':'조용한 방문'}</div><div class="v num">${rec}</div></div>
+      </div>${camSec}`;
+    }
+    const diffCell = s.diff ? `<span class="dv ${s.diff.startsWith('-')?'dd':'du'} num">${s.diff}</span>` : `<span class="dv num" style="color:var(--sub);font-weight:400">—</span>`;
+    return `
+    <div class="row ${sel===s.id?'sel':''} ${tint}" data-id="${s.id}">
+      <span class="rk num">${String(i+1).padStart(2,'0')}</span>
+      <div class="info"><b>${s.n}</b><span>${s.c}</span></div>
+      <span class="pill ${PCLS[s.s]}">${s.s}</span>
+      ${diffCell}
+    </div>
+    <div class="det">${det}</div>`;
+  }).join('');
+  document.querySelectorAll('.row').forEach(r=>r.addEventListener('click',()=>select(r.dataset.id,{fly:true})));
+  document.querySelectorAll('.cambtn').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();openCam(b.dataset.cam,b.dataset.spot);}));
+}
+
+function renderBanner(){
+  const el=document.getElementById('banner');
+  const live=SPOTS.filter(s=>(RANK[s.s]??0)>0);
+  if(!live.length){ el.textContent='실시간 데이터를 불러오는 중입니다…'; return; }
+  const busy=[...live].sort((a,b)=>RANK[b.s]-RANK[a.s]), calm=[...live].sort((a,b)=>RANK[a.s]-RANK[b.s]);
+  const b2=busy[1]||busy[0], c2=calm[1]||calm[0];
+  if(RANK[busy[0].s]===RANK[calm[0].s]){
+    el.innerHTML = mode==='E'
+      ? `지금 파주 전 지점이 <b style="color:${TXTC[busy[0].s]}">${busy[0].s}</b> 수준 — 줄 서는 곳이 없어요, 어디든 바로 입장`
+      : `지금 파주 전 지점이 <b style="color:${TXTC[calm[0].s]}">${calm[0].s}</b> 수준 — 어디든 한적하게 다닐 수 있어요`;
+    return;
+  }
+  el.innerHTML = mode==='E'
+    ? `지금 뜨거운 곳 — <b style="color:${TXTC[busy[0].s]}">${busy[0].short}</b>, <b style="color:${TXTC[b2.s]}">${b2.short}</b> · 지도의 큰 원을 따라가세요`
+    : `지금 한적한 곳 — <b style="color:${TXTC[calm[0].s]}">${calm[0].short}</b>, <b style="color:#55514a">${c2.short}</b> · <b style="color:${TXTC[busy[0].s]}">${busy[0].short}</b>${(RANK[busy[0].s]>=3)?'은 피하세요':' 정도가 제일 붐빕니다'}`;
+}
+
+function select(id,{fly}){
+  const js=document.getElementById('spot-jump');
+  if(sel===id){ sel=null; renderNodes(); renderList(); if(js) js.value=''; return; }
+  sel=id; renderNodes(); renderList();
+  if(js) js.value=id;
+  const sp=SPOTS.find(x=>x.id===id);
+  if(sp&&sp.api&&sp.spotId&&!sp.loaded&&!sp.loading) fetchDetail(sp);
+  const row=document.querySelector(`.row[data-id="${id}"]`);
+  if(row) row.scrollIntoView({block:'nearest',behavior:'smooth'});
+  if(fly){
+    const s=SPOTS.find(x=>x.id===id);
+    const z=s.small?13:12;
+    map.flyTo([s.lat,s.lng],Math.max(map.getZoom(),z),{duration:.6});
+  }
+}
+
+// ── CCTV 모달
+function openCam(camName,spotName){
+  document.getElementById('m-title').textContent=camName;
+  document.getElementById('m-sub').textContent=spotName;
+  document.getElementById('m-cam').textContent=camName;
+  document.getElementById('modal-bg').classList.add('open');
+}
+document.getElementById('m-x').onclick=()=>document.getElementById('modal-bg').classList.remove('open');
+document.getElementById('modal-bg').addEventListener('click',e=>{if(e.target.id==='modal-bg')e.currentTarget.classList.remove('open');});
+
+// ── 모드 탭
+document.getElementById('tabs').addEventListener('click',e=>{
+  const b=e.target.closest('.tab'); if(!b) return;
+  mode=b.dataset.m;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.dataset.m===mode));
+  renderBanner(); renderNodes(); renderList();
+});
+
+// ── 실데이터 (Worker 프록시 /api/*)
+function fmtDiff(v){ if(v==null||isNaN(v)) return null; const r=Math.round(v); return (r>=0?'+':'')+r+'%'; }
+async function fetchDetail(s, rerender=true){
+  if(!s.spotId||s.loading) return;
+  s.loading=true;
+  try{
+    const r=await fetch('/api/spot/'+s.spotId); if(!r.ok) throw 0;
+    const j=await r.json();
+    const tr=j.trend||[];
+    if(tr.length){
+      const byH=new Array(24).fill(0);
+      const max=Math.max(1,...tr.map(x=>Math.max(x.sum,x.avgSum)));
+      tr.forEach(x=>{byH[x.h]=Math.round(x.sum/max*100);});
+      s.t=byH;
+      const last=tr[tr.length-1];
+      s.nowIdx=last.h; s.pop=last.sum; s.diff=fmtDiff(last.vsAvg);
+      let ph=null,pv=-1; tr.forEach(x=>{if(x.avgSum>pv){pv=x.avgSum;ph=x.h;}});
+      s.peak=ph!=null?ph+'시':null;
+    }
+    if(j.age&&j.age.highestAge) s.age=j.age.highestAge+' '+j.age.highestRatio+'%';
+    if(j.sex&&j.sex.highestGender) s.sex=(j.sex.highestGender==='여성'?'여 ':'남 ')+Math.max(j.sex.maleRatio,j.sex.femaleRatio).toFixed(0)+'%';
+    s.loaded=true;
+  }catch(e){}
+  finally{ s.loading=false; if(rerender) renderList(); }
+}
+async function loadAllDetails(){
+  const targets=SPOTS.filter(s=>s.api&&s.spotId&&!s.loaded&&!s.loading);
+  await Promise.all(targets.map(s=>fetchDetail(s,false)));
+  renderList();
+}
+async function loadSummary(){
+  try{
+    const r=await fetch('/api/summary'); if(!r.ok) throw 0;
+    const j=await r.json();
+    (j.spots||[]).forEach(u=>{
+      const s=SPOTS.find(x=>(x.apiName||x.n)===u.name);
+      if(s){ if(u.label) s.s=u.label; s.spotId=u.id; if(u.lat!=null){s.lat=u.lat;s.lng=u.lng;} }
+    });
+    const d=new Date(j.asof);
+    document.getElementById('asof').textContent=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+' 기준 · 5분 갱신';
+    renderBanner(); renderNodes(); renderList();
+    loadAllDetails();
+  }catch(e){
+    document.getElementById('asof').textContent='연결 오류 · 5분 뒤 재시도';
+  }
+}
+setInterval(loadSummary, 300000);
+
+// ── 초기화
+document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.dataset.m===mode));
+map.fitBounds(pajuBounds);
+zoomClass();
+renderBanner(); renderNodes(); renderCams(); renderList();
+loadSummary();
+</script>
+</body>
+</html>
