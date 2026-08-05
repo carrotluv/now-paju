@@ -5,7 +5,7 @@
 
 ## 구조
 
-- `functions/api/[[path]].js` — Cloudflare Pages Function. 경기도 API 프록시(파주 필터, 엣지 캐시 2~30분)
+- `public/_worker.js` — Pages 고급 모드 워커. `/api/*` 는 경기도 API 프록시(파주 필터, 엣지 캐시 2~30분), 그 외는 정적 자산 서빙
   - `GET /api/summary` — 파주 관측 지점 목록(ID·혼잡 라벨·좌표)
   - `GET /api/spot/{id}` — 지점 상세(24시간 추이·성별·연령)
 - `public/index.html` — 앱 전체(지도·리스트·E/I 모드). 외부 의존성은 Leaflet·CARTO 타일·Pretendard(CDN)뿐.
@@ -14,6 +14,9 @@
 
 Cloudflare Pages — GitHub 저장소 연결 후 push마다 자동 배포. 주소: https://now-paju.pages.dev
 (빌드 명령 없음, 출력 디렉터리 `public` — `wrangler.jsonc`의 `pages_build_output_dir` 참조)
+
+`_worker.js`가 출력 디렉터리 안에 있으므로, Git 연결이 막힐 때는 대시보드에서 `public` 폴더를
+직접 업로드(Direct Upload)해도 API 프록시까지 그대로 동작한다.
 
 ## 참고
 
