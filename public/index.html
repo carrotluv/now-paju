@@ -44,6 +44,13 @@
   .mapbtns{position:absolute;top:12px;right:12px;z-index:1000;display:flex;gap:6px}
   .mbtn{background:var(--float-bg);border:1px solid var(--hair);border-radius:var(--radius);padding:7px 12px;font-size:13px;font-weight:600;color:var(--ink);cursor:pointer;box-shadow:var(--shadow-1);font-family:inherit}
   .mbtn:hover{background:#f6f3ea}
+  .mbtn.tgl{display:flex;align-items:center;gap:6px}
+  .mbtn.tgl::before{content:"";width:8px;height:8px;border-radius:50%;background:#cfc9bb;flex:none}
+  .mbtn.tgl.on{background:var(--btn-dark);color:var(--btn-dark-ink);border-color:var(--btn-dark)}
+  .mbtn.tgl.on:hover{background:var(--btn-dark-hover)}
+  .mbtn.tgl.on::before{background:var(--s1)}
+  .mbtn[disabled]{opacity:.5;cursor:not-allowed}
+  .mbtn[disabled]:hover{background:var(--float-bg)}
   .msel{appearance:none;-webkit-appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6'><path d='M1 1l4 4 4-4' stroke='%2323272f' stroke-width='1.6' fill='none'/></svg>") no-repeat right 10px center;background-color:var(--float-bg);border:1px solid var(--hair);border-radius:var(--radius);padding:7px 28px 7px 12px;font-size:13px;font-weight:600;color:var(--ink);cursor:pointer;box-shadow:var(--shadow-1);font-family:inherit}
   .maptag{position:absolute;left:12px;bottom:12px;z-index:1000;background:var(--float-bg2);border:1px solid var(--hair);border-radius:var(--radius);padding:5px 10px;font-size:11px;color:var(--sub)}
 
@@ -76,6 +83,7 @@
   .cam:hover{background:#3a404d}
   .cam svg{width:11px;height:11px;fill:#fff}
   .z-lo .cam{display:none}
+  .hide-cam .cam{display:none}
 
   /* 우측 리스트 */
   .list{order:-1;border-right:1px solid var(--hair);background:var(--card);overflow-y:auto;display:flex;flex-direction:column}
@@ -180,6 +188,8 @@
     <div class="mapbtns">
       <button class="mbtn" id="btn-all">파주 전체</button>
       <select class="msel" id="spot-jump"><option value="">주요 지점 이동</option></select>
+      <button class="mbtn tgl on" id="tg-cam" title="지점 주변 CCTV 위치 표시 (확대하면 나타남)">CCTV</button>
+      <button class="mbtn tgl" id="tg-traffic" disabled title="ITS 인증키 연동 후 사용할 수 있습니다">도로 소통</button>
     </div>
     <div class="maptag">지도: OpenStreetMap · CARTO</div>
   </div>
@@ -338,6 +348,15 @@ function renderCams(){
 }
 badge=L.marker([37.7270,126.7950],{icon:L.divIcon({className:'',iconSize:[0,0],html:`<div class="clusterbadge" style="transform:translate(-50%,-50%)">운정 5곳<span>확대</span></div>`})}).addTo(map);
 badge.on('click',()=>map.flyToBounds(clusterBounds,{duration:.7}));
+
+// ── 지도 레이어 토글 (CCTV / 도로 소통)
+let showCams=true;
+const tgCam=document.getElementById('tg-cam');
+tgCam.onclick=()=>{
+  showCams=!showCams;
+  tgCam.classList.toggle('on',showCams);
+  document.getElementById('map').classList.toggle('hide-cam',!showCams);
+};
 
 function zoomClass(){
   const el=document.getElementById('map');
