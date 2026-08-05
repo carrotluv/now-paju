@@ -12,11 +12,12 @@
 
 ## 배포
 
-Cloudflare Pages — GitHub 저장소 연결 후 push마다 자동 배포. 주소: https://now-paju.pages.dev
-(빌드 명령 없음, 출력 디렉터리 `public` — `wrangler.jsonc`의 `pages_build_output_dir` 참조)
+Cloudflare Workers — GitHub 저장소 연결 후 push마다 자동 배포(`npx wrangler deploy`).
+주소: https://now-paju.pesticides.workers.dev
 
-`_worker.js`가 출력 디렉터리 안에 있으므로, Git 연결이 막힐 때는 대시보드에서 `public` 폴더를
-직접 업로드(Direct Upload)해도 API 프록시까지 그대로 동작한다.
+`pages.dev` 도메인이 사무실 네트워크에서 차단되어(2026-08-05 실측: 요청 0바이트·provisional headers)
+사내에서 접속 가능한 `workers.dev`로 배포한다. `public/_worker.js` 한 파일이 Workers 진입점 겸
+Pages 고급 모드 워커로 동작하므로, 나중에 Pages로 옮겨도 코드 수정은 필요 없다.
 
 ## 참고
 
