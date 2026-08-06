@@ -113,7 +113,8 @@ async function vworldTile(url, env, ctx) {
   const up = await fetch(`https://api.vworld.kr/req/wmts/1.0.0/${env.VWORLD_KEY}/Base/${m[1]}/${m[2]}/${m[3]}.png`,
     { headers: { referer: 'https://now-paju.pajulab.workers.dev/' } });
   if (!up.ok || !(up.headers.get('content-type') || '').includes('image')) {
-    return new Response('tile unavailable', { status: 502 });
+    const why = (await up.text().catch(() => '')).replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').slice(0, 200);
+    return new Response('tile unavailable [' + up.status + '] ' + why, { status: 502 });   // 원인 진단용
   }
   const res = new Response(up.body, {
     headers: { 'content-type': 'image/png', 'cache-control': 'public, max-age=604800' }   // 7일 캐시
