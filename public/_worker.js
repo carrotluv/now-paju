@@ -88,26 +88,50 @@ const ITS_PORT = 9443;
 const PAJU_BBOX = { minX: 126.65, maxX: 127.03, minY: 37.68, maxY: 38.02 };
 
 async function itsRawGet(path) {
-  const socket = connect({ hostname: ITS_HOST, port: ITS_PORT }, { secureTransport: 'on', allowHalfOpen: false });
-  const writer = socket.writable.getWriter();
-  await writer.write(new TextEncoder().encode(
-    `GET ${path} HTTP/1.0\r\nHost: ${ITS_HOST}\r\nAccept: application/json\r\nUser-Agent: now-paju/1.0\r\nConnection: close\r\n\r\n`
-  ));
-  const reader = socket.readable.getReader();
+  const socket = connect({ hostname: ITS_HOST, port: ITS_PORT }, { secureTransport: 'on', allowHalfOpen: true });
+  let stage = 'open';
   const chunks = []; let total = 0;
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    chunks.push(value); total += value.length;
-    if (total > 4000000) break;
+  try {
+    if (socket.opened) await socket.opened;
+    stage = 'write';
+    const writer = socket.writable.getWriter();
+    await writer.write(new TextEncoder().encode(
+      `GET ${path} HTTP/1.1\r\nHost: ${ITS_HOST}:${ITS_PORT}\r\nAccept: application/json\r\n` +
+      `User-Agent: Mozilla/5.0 (compatible; now-paju/1.0)\r\nAccept-Encoding: identity\r\nConnection: close\r\n\r\n`
+    ));
+    writer.releaseLock();
+    stage = 'read';
+    const reader = socket.readable.getReader();
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      chunks.push(value); total += value.length;
+      if (total > 4000000) break;
+    }
+    reader.releaseLock();
+  } catch (e) {
+    if (!total) throw new Error('socket(' + stage + ') ' + String(e && e.message || e).slice(0, 120));
   }
-  try { await socket.close(); } catch (e) {}
+  try { socket.close(); } catch (e) {}
+
   const buf = new Uint8Array(total); let off = 0;
   for (const c of chunks) { buf.set(c, off); off += c.length; }
   const text = new TextDecoder('utf-8').decode(buf);
   const sep = text.indexOf('\r\n\r\n');
   const head = sep < 0 ? text : text.slice(0, sep);
-  const body = sep < 0 ? '' : text.slice(sep + 4);
+  let body = sep < 0 ? '' : text.slice(sep + 4);
+  if (/transfer-encoding:\s*chunked/i.test(head)) {           // 청크 인코딩 해제
+    let out = '', rest = body;
+    while (rest) {
+      const nl = rest.indexOf('\r\n');
+      if (nl < 0) break;
+      const size = parseInt(rest.slice(0, nl).trim(), 16);
+      if (!size || isNaN(size)) break;
+      out += rest.slice(nl + 2, nl + 2 + size);
+      rest = rest.slice(nl + 2 + size + 2);
+    }
+    if (out) body = out;
+  }
   const m = head.match(/HTTP\/1\.[01] (\d{3})/);
   return { status: m ? +m[1] : 0, body };
 }
