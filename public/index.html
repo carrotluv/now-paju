@@ -119,7 +119,7 @@
   .rk{font-size:12px;color:var(--sub);width:20px;flex:none}
   .info{flex:1;min-width:0}
   .info b{font-size:14px;font-weight:600;display:block;line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .info span{font-size:12px;color:var(--sub)}
+  .info span{font-size:12px;color:var(--ink)}
   .pill{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;white-space:nowrap;flex:none;color:var(--ink)}
   .pill::before{content:"";width:8px;height:8px;border-radius:50%;flex:none}
   .p1::before{background:var(--s1)} .p2::before{background:var(--s2)}
@@ -516,7 +516,21 @@ jumpSel.onchange=()=>{
 };
 
 // ── 리스트
-function sorted(){ return [...SPOTS].sort((a,b)=>{ const ax=RANK[a.s]??0, bx=RANK[b.s]??0; const an=ax<=0, bn=bx<=0; if(an!==bn) return an?1:-1; return mode==='E' ? bx-ax : ax-bx; }); }
+// 혼잡 점수 = 등급(주) + 평시 대비 증감(부) — 같은 등급이면 더 붐비는 쪽이 높은 점수
+function crowdScore(s){
+  const r=RANK[s.s]??0;
+  const d=s.diff!=null?parseFloat(s.diff):NaN;
+  return r*10000 + (isNaN(d)?0:d);
+}
+function sorted(){
+  return [...SPOTS].sort((a,b)=>{
+    const an=(RANK[a.s]??0)<=0, bn=(RANK[b.s]??0)<=0;      // 관측 준비·집계중은 항상 맨 아래
+    if(an!==bn) return an?1:-1;
+    if(an&&bn) return a.n.localeCompare(b.n,'ko');
+    const sa=crowdScore(a), sb=crowdScore(b);
+    return mode==='E' ? sb-sa : sa-sb;                      // E=붐빔 순, I=한산 순
+  });
+}
 function renderList(){
   document.getElementById('sort-note').textContent = mode==='I' ? '지금 가기 좋은 순' : '붐빔 순';
   document.getElementById('rows').innerHTML = sorted().map((s,i)=>{
