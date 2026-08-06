@@ -138,6 +138,9 @@
   .cams{display:flex;gap:6px;flex-wrap:wrap}
   .cambtn{display:flex;align-items:center;gap:6px;background:var(--btn-dark);color:var(--btn-dark-ink);border:0;border-radius:var(--radius);padding:7px 12px;font-size:13px;cursor:pointer;font-family:inherit}
   .cambtn:hover{background:var(--btn-dark-hover)}
+  .navs{display:flex;gap:6px;margin-top:13px}
+  .navbtn{flex:1;text-align:center;font-size:12.5px;font-weight:600;padding:8px 6px;border:1px solid var(--hair);border-radius:var(--radius);background:var(--card);color:var(--ink);text-decoration:none;white-space:nowrap}
+  .navbtn:hover{background:var(--hover)}
   .cambtn svg{width:12px;height:12px;fill:var(--btn-dark-ink)}
 
   /* CCTV 모달 */
@@ -199,7 +202,7 @@
     <div class="mapbtns">
       <select class="msel" id="spot-jump"><option value="__all">파주 전체</option></select>
       <button class="mbtn tgl on" id="tg-cam" title="지점 주변 CCTV 위치 표시 (확대하면 나타남)">CCTV</button>
-      <button class="mbtn tgl" id="tg-traffic" disabled title="ITS 인증키 연동 후 사용할 수 있습니다">도로 소통</button>
+      <button class="mbtn tgl" id="tg-traffic" disabled title="실시간 도로 상황 켜기/끄기">도로 상황</button>
     </div>
     <div class="maptag">지도: OpenStreetMap · CARTO</div>
     <div class="trafficbox" id="trafficbox"></div>
@@ -366,6 +369,21 @@ function inPaju(lat,lng){                                   // 파주 경계 폴
 function nearestCams(s,k){
   return CAMS.map((c,i)=>({i,c,d:Math.pow(c.lat-s.lat,2)+Math.pow((c.lng-s.lng)*0.79,2)})).sort((a,b)=>a.d-b.d).slice(0,k);
 }
+function thinByRoute(cams){                                 // 같은 노선(고속도로 등) 연속 CCTV는 진입·중간·출구 3개만
+  const g={};
+  cams.forEach(c=>{
+    const m=(c.n||'').match(/^\[([^\]]+)\]/);
+    const key=m?m[1].replace(/\s/g,''):('_'+(c.n||''));     // 노선명 없는 시내 CCTV는 개별 유지
+    (g[key]=g[key]||[]).push(c);
+  });
+  const out=[];
+  Object.values(g).forEach(a=>{
+    if(a.length<=3){ out.push(...a); return; }
+    a.sort((x,y)=>(x.lng-y.lng)||(x.lat-y.lat));
+    out.push(a[0], a[Math.floor(a.length/2)], a[a.length-1]);
+  });
+  return out;
+}
 badge=L.marker([37.7270,126.7950],{icon:L.divIcon({className:'',iconSize:[0,0],html:`<div class="clusterbadge" style="transform:translate(-50%,-50%)">운정 5곳<span>확대</span></div>`})}).addTo(map);
 badge.on('click',()=>map.flyToBounds(clusterBounds,{duration:.7}));
 
@@ -384,17 +402,35 @@ tgCam.onclick=()=>{
 };
 
 const LVC={'원활':'#2fa876','서행':'#e07b2f','정체':'#d94f3d'};
+
+// 실시간 색을 입힐 주요 도로축 (도식 선형 — 노드링크 없이 근사)
+const TRAFFIC_LINES=[
+ {road:'통일로', pts:[[37.6900,126.7930],[37.7600,126.7810],[37.8050,126.7830],[37.8560,126.7880],[37.8830,126.7560],[37.8934,126.7447]]},
+ {road:'서울문산고속도로', pts:[[37.6960,126.7480],[37.7420,126.7500],[37.7900,126.7620],[37.8500,126.7760],[37.8790,126.7830]]},
+ {road:'율곡로', pts:[[37.8560,126.7880],[37.8600,126.8400],[37.8610,126.9090],[37.8482,126.9310]]},
+ {road:'경의로', pts:[[37.7040,126.7620],[37.7271,126.7648],[37.7597,126.7740],[37.8000,126.7860]]},
+ {road:'파주로', pts:[[37.7150,126.7250],[37.7450,126.7420],[37.7598,126.7799]]},
+ {road:'교하로', pts:[[37.7185,126.7234],[37.7300,126.7420],[37.7420,126.7620]]}
+];
+const trafficLayers=TRAFFIC_LINES.map(t=>({road:t.road,
+  line:L.polyline(t.pts,{color:'#a49d90',weight:5,opacity:0,lineCap:'round',interactive:false}).addTo(map)}));
+
 function renderTraffic(){
   const box=document.getElementById('trafficbox');
-  const rows=ROADS.filter(r=>r.road&&r.road!=='-'&&r.road!=='기타').slice(0,6);
-  box.innerHTML=`<div class="tb-title">도로 소통<span class="num">${itsAsof?itsAsof+' 기준':''}</span></div>`
+  const rows=ROADS.filter(r=>r.road&&r.road!=='-'&&r.road!=='기타').slice(0,8);
+  box.innerHTML=`<div class="tb-title">도로 상황<span class="num">${itsAsof?itsAsof+' 기준':''}</span></div>`
     + rows.map(r=>`<div class="tr-row num"><i style="background:${LVC[r.level]||'#b5afa3'}"></i>${r.road}<span class="sp">${r.speed}<small>km/h</small></span></div>`).join('');
   box.classList.toggle('on',showTraffic);
-  const jy=ROADS.find(r=>r.road==='자유로');
-  jayuLine.setStyle({color:(showTraffic&&jy)?LVC[jy.level]:'#a49d90', weight:(showTraffic&&jy)?4:3, opacity:(showTraffic&&jy)?.95:.85});
+  const lv=n=>ROADS.find(r=>r.road===n);
+  trafficLayers.forEach(t=>{
+    const d=lv(t.road);
+    t.line.setStyle({color:(showTraffic&&d)?LVC[d.level]:'#a49d90', opacity:(showTraffic&&d)?.9:0});
+  });
+  const jy=lv('자유로');
+  jayuLine.setStyle({color:(showTraffic&&jy)?LVC[jy.level]:'#a49d90', weight:(showTraffic&&jy)?5:3, opacity:(showTraffic&&jy)?.9:.85});
 }
 const tgTr=document.getElementById('tg-traffic');
-function trafficReady(){ if(tgTr.disabled){ tgTr.disabled=false; tgTr.title='실시간 도로 소통 켜기/끄기'; } }
+function trafficReady(){ if(tgTr.disabled){ tgTr.disabled=false; tgTr.title='실시간 도로 상황 켜기/끄기'; } }
 tgTr.onclick=()=>{ if(tgTr.disabled) return; showTraffic=!showTraffic; tgTr.classList.toggle('on',showTraffic); renderTraffic(); };
 if(!FEATURE_ITS){ tgCam.style.display='none'; tgTr.style.display='none'; }
 
@@ -424,6 +460,12 @@ function renderList(){
   document.getElementById('rows').innerHTML = sorted().map((s,i)=>{
     const rk=RANK[s.s]??0;
     const tint = rk<=0 ? '' : (mode==='I' ? (rk>=4?'tint-hot':(i===0?'tint-cool':'')) : (i===0?'tint-hot':''));
+    const q=encodeURIComponent(s.n);
+    const navSec=`<div class="p-sec">길찾기</div><div class="navs">`
+      +`<a class="navbtn" target="_blank" rel="noopener" href="https://map.kakao.com/link/to/${q},${s.lat},${s.lng}">카카오맵</a>`
+      +`<a class="navbtn" target="_blank" rel="noopener" href="https://map.naver.com/p/directions/-/${s.lng},${s.lat},${q}/-/car">네이버지도</a>`
+      +`<a class="navbtn" target="_blank" rel="noopener" href="tmap://route?goalname=${q}&goalx=${s.lng}&goaly=${s.lat}">티맵</a>`
+      +`</div>`;
     let camSec;
     if(!FEATURE_ITS){
       camSec='';
@@ -436,10 +478,10 @@ function renderList(){
     let det;
     if(!s.api){
       det=`<div class="q" style="color:var(--sub);background:var(--panel)">「${MSG[mode][s.s]}」</div>
-      <div style="font-size:12.5px;color:var(--sub);line-height:1.6;margin-bottom:13px">경기도 관측망에 아직 없는 지점이라 혼잡도가 제공되지 않습니다. 위치와 주변 CCTV만 표시합니다.</div>${camSec}`;
+      <div style="font-size:12.5px;color:var(--sub);line-height:1.6;margin-bottom:13px">경기도 관측망에 아직 없는 지점이라 혼잡도가 제공되지 않습니다. 위치와 주변 CCTV만 표시합니다.</div>${camSec}${navSec}`;
     } else if(!s.loaded){
       det=`<div class="q" style="color:${TXTC[s.s]};background:color-mix(in srgb, ${HEXC[s.s]} 13%, var(--card))">「${MSG[mode][s.s]}」</div>
-      <div style="font-size:12.5px;color:var(--sub);margin-bottom:13px">상세 데이터를 불러오는 중입니다…</div>${camSec}`;
+      <div style="font-size:12.5px;color:var(--sub);margin-bottom:13px">상세 데이터를 불러오는 중입니다…</div>${camSec}${navSec}`;
     } else {
       const bars=s.t.map((v,j)=>`<i style="height:${Math.max(3,v)}%;${j===s.nowIdx?`background:${HEXC[s.s]}`:''}" class="${j===s.nowIdx?'now':''}"></i>`).join('');
       const rec = mode==='E' ? (rk>=4?'지금 바로!':(rk===3?'지금 좋아요':'저녁쯤 다시'))
@@ -456,7 +498,7 @@ function renderList(){
       <div class="demo-row">
         <div class="demo"><div class="lb2">평시 피크</div><div class="v num">${s.peak??'—'}</div></div>
         <div class="demo"><div class="lb2">${mode==='E'?'가기 좋은 때':'조용한 방문'}</div><div class="v num">${rec}</div></div>
-      </div>${camSec}`;
+      </div>${camSec}${navSec}`;
     }
     const diffCell = s.diff ? `<span class="dv ${s.diff.startsWith('-')?'dd':'du'} num">${s.diff}</span>` : `<span class="dv num" style="color:var(--sub);font-weight:400">—</span>`;
     return `
@@ -600,7 +642,7 @@ async function loadIts(){
       CAMS=j.cams.filter(c2=>inPaju(c2.lat,c2.lng));
       const nearSet=new Set();                               // 지도 핀 = 각 지점에서 2.5km 안 최근접 4개만 (지점 중심 표시)
       SPOTS.forEach(s=>nearestCams(s,4).filter(x=>x.d<=0.000506).forEach(x=>nearSet.add(x.i)));
-      CAM_PINS=[...nearSet].map(i=>CAMS[i]);
+      CAM_PINS=thinByRoute([...nearSet].map(i=>CAMS[i]));     // 같은 노선 연속분은 3개로 솎음
       renderCams(); renderList();
     } }
     if(t.ok){ const j=await t.json(); if(j.roads&&j.roads.length){ ROADS=j.roads;
