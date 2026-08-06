@@ -101,9 +101,31 @@ async function ghItsData(env, ctx) {
   return JSON.parse(body);
 }
 
+// 브이월드 배경지도 타일 프록시 — 인증키(VWORLD_KEY Secret)는 서버에만 두고 브라우저엔 노출하지 않는다.
+async function vworldTile(url, env, ctx) {
+  const m = url.pathname.match(/^\/tiles\/(\d+)\/(\d+)\/(\d+)\.png$/);
+  if (!m) return new Response('bad tile', { status: 400 });
+  if (!env.VWORLD_KEY) return new Response('no key', { status: 503 });
+  const cache = caches.default;
+  const ck = new Request(url.toString());
+  const hit = await cache.match(ck);
+  if (hit) return hit;
+  const up = await fetch(`https://api.vworld.kr/req/wmts/1.0.0/${env.VWORLD_KEY}/Base/${m[1]}/${m[2]}/${m[3]}.png`,
+    { headers: { referer: 'https://now-paju.pajulab.workers.dev/' } });
+  if (!up.ok || !(up.headers.get('content-type') || '').includes('image')) {
+    return new Response('tile unavailable', { status: 502 });
+  }
+  const res = new Response(up.body, {
+    headers: { 'content-type': 'image/png', 'cache-control': 'public, max-age=604800' }   // 7일 캐시
+  });
+  ctx.waitUntil(cache.put(ck, res.clone()));
+  return res;
+}
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
+    if (url.pathname.startsWith('/tiles/')) return vworldTile(url, env, ctx);
     if (!url.pathname.startsWith('/api/')) return env.ASSETS.fetch(request);
     try {
       if (url.pathname === '/api/cctv' || url.pathname === '/api/traffic') {
