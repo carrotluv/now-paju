@@ -197,7 +197,7 @@
   <div class="mapwrap">
     <div id="map"></div>
     <div class="mapbtns">
-      <select class="msel" id="spot-jump"><option value="">주요 지점 이동</option><option value="__all">파주 전체 보기</option></select>
+      <select class="msel" id="spot-jump"><option value="__all">파주 전체</option></select>
       <button class="mbtn tgl on" id="tg-cam" title="지점 주변 CCTV 위치 표시 (확대하면 나타남)">CCTV</button>
       <button class="mbtn tgl" id="tg-traffic" disabled title="ITS 인증키 연동 후 사용할 수 있습니다">도로 소통</button>
     </div>
@@ -322,7 +322,7 @@ const clusterBounds=L.latLngBounds(SPOTS.filter(s=>CLUSTER.includes(s.id)).map(s
 const pajuBounds=L.latLngBounds(PAJU_RING).pad(.03);
 
 let nodeMarkers={}, camMarkers=[], badge=null;
-let CAMS=[], ROADS=[], showTraffic=false, itsAsof=null;
+let CAMS=[], CAM_PINS=[], ROADS=[], showTraffic=false, itsAsof=null;
 
 function nodeIcon(s){
   const r=RAD[s.s];
@@ -348,7 +348,7 @@ function renderNodes(){
 }
 function renderCams(){
   camMarkers.forEach(m=>map.removeLayer(m)); camMarkers=[];
-  CAMS.forEach(cam=>{
+  CAM_PINS.forEach(cam=>{
     const m=L.marker([cam.lat,cam.lng],{icon:L.divIcon({className:'',iconSize:[0,0],html:`<div class="cam" style="transform:translate(-10px,-10px)" title="${(cam.n||'').replace(/"/g,'&quot;')}">${CAMSVG}</div>`})}).addTo(map);
     m.on('click',()=>openCam(cam));
     camMarkers.push(m);
@@ -401,13 +401,17 @@ function zoomClass(){
   const lo=map.getZoom()<11.4;
   el.classList.toggle('z-lo',lo);
   el.classList.toggle('z-hi',!lo);
-  el.classList.toggle('cam-hidden', map.getZoom()<12.2);   // CCTV는 충분히 확대했을 때만
+  el.classList.toggle('cam-hidden', map.getZoom()<11.9);   // CCTV는 지점 확대 수준에서만
 }
 map.on('zoomend',zoomClass);
 const jumpSel=document.getElementById('spot-jump');
 SPOTS.forEach(s=>{const o=document.createElement('option');o.value=s.id;o.textContent=s.short;jumpSel.appendChild(o);});
 jumpSel.onchange=()=>{
-  if(jumpSel.value==='__all'){ map.flyToBounds(pajuBounds,{duration:.7}); jumpSel.value=''; return; }
+  if(jumpSel.value==='__all'){
+    if(sel){ sel=null; renderNodes(); renderList(); }
+    map.flyToBounds(pajuBounds,{duration:.7});
+    return;
+  }
   if(jumpSel.value) select(jumpSel.value,{fly:true});
 };
 
@@ -483,7 +487,7 @@ function renderBanner(){
 
 function select(id,{fly}){
   const js=document.getElementById('spot-jump');
-  if(sel===id){ sel=null; renderNodes(); renderList(); if(js) js.value=''; return; }
+  if(sel===id){ sel=null; renderNodes(); renderList(); if(js) js.value='__all'; return; }
   sel=id; renderNodes(); renderList();
   if(js) js.value=id;
   const sp=SPOTS.find(x=>x.id===id);
@@ -587,7 +591,13 @@ async function loadSummary(){
 async function loadIts(){
   try{
     const [c,t]=await Promise.all([fetch('/api/cctv'),fetch('/api/traffic')]);
-    if(c.ok){ const j=await c.json(); if(j.cams&&j.cams.length){ CAMS=j.cams.filter(c2=>inPaju(c2.lat,c2.lng)); renderCams(); renderList(); } }
+    if(c.ok){ const j=await c.json(); if(j.cams&&j.cams.length){
+      CAMS=j.cams.filter(c2=>inPaju(c2.lat,c2.lng));
+      const nearSet=new Set();                               // 지도 핀 = 각 지점에서 3km 안 최근접 5개만 (지점 중심 표시)
+      SPOTS.forEach(s=>nearestCams(s,5).filter(x=>x.d<=0.00073).forEach(x=>nearSet.add(x.i)));
+      CAM_PINS=[...nearSet].map(i=>CAMS[i]);
+      renderCams(); renderList();
+    } }
     if(t.ok){ const j=await t.json(); if(j.roads&&j.roads.length){ ROADS=j.roads;
       const d=new Date(j.asof); itsAsof=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
       trafficReady(); renderTraffic(); } }
