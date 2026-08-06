@@ -130,10 +130,35 @@ async function vworldTile(url, env, ctx) {
   return res;
 }
 
+// 방문자 수 — Cloudflare KV(STATS)에 오늘/전체 카운트를 둔다. 바인딩이 없으면 조용히 비활성.
+function kstToday() {
+  const d = new Date(Date.now() + 9 * 3600 * 1000);          // 한국시간 기준 날짜
+  return d.toISOString().slice(0, 10);
+}
+async function visitStats(env, bump) {
+  if (!env.STATS) return null;
+  const dayKey = 'd:' + kstToday();
+  const [t, d] = await Promise.all([env.STATS.get('total'), env.STATS.get(dayKey)]);
+  let total = parseInt(t || '0', 10) || 0;
+  let today = parseInt(d || '0', 10) || 0;
+  if (bump) {
+    total += 1; today += 1;
+    await Promise.all([
+      env.STATS.put('total', String(total)),
+      env.STATS.put(dayKey, String(today), { expirationTtl: 60 * 60 * 24 * 40 })   // 40일 보관
+    ]);
+  }
+  return { today, total, date: kstToday() };
+}
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
     if (url.pathname.startsWith('/tiles/')) return vworldTile(url, env, ctx);
+    if (url.pathname === '/api/visit' || url.pathname === '/api/stats') {
+      const s = await visitStats(env, url.pathname === '/api/visit');
+      return json(s || { off: true });
+    }
     if (!url.pathname.startsWith('/api/')) return env.ASSETS.fetch(request);
     try {
       if (url.pathname === '/api/cctv' || url.pathname === '/api/traffic') {

@@ -269,7 +269,7 @@
 
 <footer>
   <span>데이터: 경기도 실시간 방문소비 현황지도 (KT 통신 기반) · 5분 주기</span>
-  <span>CCTV 연동 예정 (ITS)</span>
+  <span id="visits" class="num"></span>
 </footer>
 
 <div class="modal-bg" id="modal-bg">
@@ -526,23 +526,52 @@ function drawLinks(speeds){
     ROADGEO._fill=em;
   }
   const kf=p=>p[0].toFixed(5)+','+p[1].toFixed(5);
+  const roadLen=p=>{ let s=0; for(let i=0;i<p.length-1;i++) s+=Math.hypot((p[i+1][0]-p[i][0])*111320,(p[i+1][1]-p[i][1])*88000); return s; };
   const inherit={};
-  ROADGEO.forEach((r,i)=>{
-    if(val(i)!=null) return;
-    const nb=[];
-    if(r.rb){                                              // 회전교차로: 원형이라 모든 점에서 진입로를 찾는다
-      r.p.forEach(p=>(ROADGEO._fill[kf(p)]||[]).forEach(j=>{ if(j!==i){const v=val(j); if(v!=null) nb.push(v);} }));
+  const cur=i=>{ const v=val(i); return v!=null?v:(inherit[i]??null); };
+  for(let round=0;round<3;round++){                         // 나들목 램프는 여러 조각이라 여러 번 물려줘야 다 이어진다
+    const add={};
+    ROADGEO.forEach((r,i)=>{
+      if(cur(i)!=null) return;
+      const nb=[];
+      if(r.rb){                                            // 회전교차로: 원형이라 모든 점에서 진입로를 찾는다
+        r.p.forEach(p=>(ROADGEO._fill[kf(p)]||[]).forEach(j=>{ if(j!==i){const v=cur(j); if(v!=null) nb.push(v);} }));
+        if(nb.length) add[i]=Math.round(nb.reduce((a,b)=>a+b,0)/nb.length);
+        return;
+      }
+      if(!r.lk&&roadLen(r.p)>300) return;                  // 램프는 길이 제한 없이, 그 외는 300m 이하만
+      [r.p[0],r.p[r.p.length-1]].forEach(p=>(ROADGEO._fill[kf(p)]||[]).forEach(j=>{ if(j!==i){const v=cur(j); if(v!=null) nb.push(v);} }));
+      if(nb.length>=(r.lk?1:2)) add[i]=Math.round(nb.reduce((a,b)=>a+b,0)/nb.length);
+    });
+    const keys=Object.keys(add);
+    if(!keys.length) break;
+    keys.forEach(i=>inherit[i]=add[i]);
+  }
+  // 램프 마무리 — 끝점이 본선에 정확히 맞물리지 않는 나들목 조각은 50m 안의 색을 가져온다
+  const rest=[];
+  ROADGEO.forEach((r,i)=>{ if(r.lk&&cur(i)==null) rest.push(i); });
+  if(rest.length){
+    const GC=0.0006, gk=(a,b)=>Math.round(a/GC)+','+Math.round(b/GC), gm={};
+    ROADGEO.forEach((r,i)=>{ const v=cur(i); if(v==null) return;
+      r.p.forEach(p=>{ (gm[gk(p[0],p[1])]=gm[gk(p[0],p[1])]||[]).push(v); }); });
+    rest.forEach(i=>{
+      const nb=[];
+      [ROADGEO[i].p[0],ROADGEO[i].p[ROADGEO[i].p.length-1]].forEach(p=>{
+        const cy=Math.round(p[0]/GC), cx=Math.round(p[1]/GC);
+        for(let dy=-1;dy<=1;dy++) for(let dx=-1;dx<=1;dx++) (gm[(cy+dy)+','+(cx+dx)]||[]).forEach(v=>nb.push(v));
+      });
       if(nb.length) inherit[i]=Math.round(nb.reduce((a,b)=>a+b,0)/nb.length);
-      return;
-    }
-    if(r.p.length>6) return;                               // 교차로 연결 조각
-    [r.p[0],r.p[r.p.length-1]].forEach(p=>(ROADGEO._fill[kf(p)]||[]).forEach(j=>{ if(j!==i){const v=val(j); if(v!=null) nb.push(v);} }));
-    if(nb.length>=2) inherit[i]=Math.round(nb.reduce((a,b)=>a+b,0)/nb.length);
-  });
+    });
+  }
 
+  const vb=map.getBounds().pad(0.25);                      // 화면 밖 도로는 그리지 않는다(성능)
+  const vN=vb.getNorth(), vS=vb.getSouth(), vE=vb.getEast(), vW=vb.getWest();
   ROADGEO.forEach((r,i)=>{
     if(r.p.length<2) return;
     if((r.h||5)>st.maxClass) return;                       // 현재 줌에서 안 보일 등급
+    let vis=false;
+    for(const p of r.p){ if(p[0]>=vS&&p[0]<=vN&&p[1]>=vW&&p[1]<=vE){ vis=true; break; } }
+    if(!vis) return;
     const arr=measured[i];
     const own=arr?Math.round(arr.reduce((a,b)=>a+b,0)/arr.length):null;
     const v=(own!=null)?own:(roadAvg[r.n]??inherit[i]);
@@ -577,6 +606,8 @@ function zoomClass(){
   el.classList.toggle('cam-hidden', map.getZoom()<11.9);   // CCTV는 지점 확대 수준에서만
 }
 map.on('zoomend',()=>{ zoomClass(); if(showTraffic) drawLinks(LINK_SPD); });
+let moveTimer=null;                                        // 지도를 움직이면 보이는 영역만 다시 그린다
+map.on('moveend',()=>{ if(!showTraffic) return; clearTimeout(moveTimer); moveTimer=setTimeout(()=>drawLinks(LINK_SPD),250); });
 const jumpSel=document.getElementById('spot-jump');
 SPOTS.forEach(s=>{const o=document.createElement('option');o.value=s.id;o.textContent=s.short;jumpSel.appendChild(o);});
 jumpSel.onchange=()=>{
@@ -808,6 +839,19 @@ async function loadSummary(){
     document.getElementById('asof').textContent='연결 오류 · 5분 뒤 재시도';
   }
 }
+async function loadVisits(){                                 // 방문자 수 — 같은 브라우저 세션은 1회만 집계
+  try{
+    let first=false;
+    try{ first=!sessionStorage.getItem('np_v'); if(first) sessionStorage.setItem('np_v','1'); }catch(e){ first=true; }
+    const r=await fetch(first?'/api/visit':'/api/stats',{method:first?'POST':'GET'});
+    if(!r.ok) return;
+    const j=await r.json();
+    if(j.off||j.today==null) return;
+    document.getElementById('visits').textContent=
+      `방문 오늘 ${j.today.toLocaleString()} · 전체 ${j.total.toLocaleString()}`;
+  }catch(e){}
+}
+
 async function loadWx(){
   try{
     const r=await fetch('/api/weather'); if(!r.ok) return;
@@ -857,6 +901,7 @@ zoomClass();
 renderBanner(); renderNodes(); renderCams(); renderList();
 loadSummary();
 loadIts();
+loadVisits();
 </script>
 </body>
 </html>
