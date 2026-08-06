@@ -292,7 +292,7 @@ const API_SET=new Set(['임진각 평화누리공원','롯데프리미엄아울�
 SPOTS.forEach(s=>{s.api=API_SET.has(s.apiName||s.n);s.s=s.api?'집계중':'관측 준비';s.pop=null;s.diff=null;s.age=null;s.sex=null;s.t=null;s.peak=null;s.nowIdx=null;s.spotId=null;s.loaded=false;s.loading=false;});
 let mode='I', sel=null;
 const CAMSVG='<svg viewBox="0 0 24 24"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>';
-const FEATURE_ITS=false;   // CCTV·도로 소통 보류 스위치 (2026-08-06) — true로 바꾸고 PC 스케줄러 재등록하면 즉시 복귀
+const FEATURE_ITS=true;    // CCTV·도로 소통 스위치 (2026-08-06) — false로 바꾸고 스케줄러 삭제하면 보류
 
 // ── 지도
 const map=L.map('map',{zoomControl:true,zoomSnap:.25,attributionControl:false});
