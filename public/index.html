@@ -292,6 +292,7 @@ const API_SET=new Set(['임진각 평화누리공원','롯데프리미엄아울�
 SPOTS.forEach(s=>{s.api=API_SET.has(s.apiName||s.n);s.s=s.api?'집계중':'관측 준비';s.pop=null;s.diff=null;s.age=null;s.sex=null;s.t=null;s.peak=null;s.nowIdx=null;s.spotId=null;s.loaded=false;s.loading=false;});
 let mode='I', sel=null;
 const CAMSVG='<svg viewBox="0 0 24 24"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>';
+const FEATURE_ITS=false;   // CCTV·도로 소통 보류 스위치 (2026-08-06) — true로 바꾸고 PC 스케줄러 재등록하면 즉시 복귀
 
 // ── 지도
 const map=L.map('map',{zoomControl:true,zoomSnap:.25,attributionControl:false});
@@ -395,6 +396,7 @@ function renderTraffic(){
 const tgTr=document.getElementById('tg-traffic');
 function trafficReady(){ if(tgTr.disabled){ tgTr.disabled=false; tgTr.title='실시간 도로 소통 켜기/끄기'; } }
 tgTr.onclick=()=>{ if(tgTr.disabled) return; showTraffic=!showTraffic; tgTr.classList.toggle('on',showTraffic); renderTraffic(); };
+if(!FEATURE_ITS){ tgCam.style.display='none'; tgTr.style.display='none'; }
 
 function zoomClass(){
   const el=document.getElementById('map');
@@ -423,7 +425,9 @@ function renderList(){
     const rk=RANK[s.s]??0;
     const tint = rk<=0 ? '' : (mode==='I' ? (rk>=4?'tint-hot':(i===0?'tint-cool':'')) : (i===0?'tint-hot':''));
     let camSec;
-    if(CAMS.length){
+    if(!FEATURE_ITS){
+      camSec='';
+    } else if(CAMS.length){
       const near=nearestCams(s,3);
       camSec=`<div class="p-sec">주변 도로 CCTV</div><div class="cams">${near.map(x=>`<button class="cambtn" data-ci="${x.i}" data-spot="${s.n}">${CAMSVG}${(x.c.n||'').replace(/</g,'&lt;')}</button>`).join('')}</div>`;
     } else {
@@ -589,6 +593,7 @@ async function loadSummary(){
   }
 }
 async function loadIts(){
+  if(!FEATURE_ITS) return;
   try{
     const [c,t]=await Promise.all([fetch('/api/cctv'),fetch('/api/traffic')]);
     if(c.ok){ const j=await c.json(); if(j.cams&&j.cams.length){
