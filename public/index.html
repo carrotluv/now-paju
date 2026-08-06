@@ -95,6 +95,9 @@
   .tr-row i{width:8px;height:8px;border-radius:50%;flex:none}
   .tr-row .sp{margin-left:auto;font-weight:600}
   .tr-row small{font-weight:400;color:var(--sub);margin-left:2px}
+  .spdchip{transform:translate(-50%,-50%);width:max-content;background:var(--float-bg);border:2px solid;border-radius:999px;padding:3px 10px;font-size:12px;font-weight:600;white-space:nowrap;box-shadow:var(--shadow-1);font-variant-numeric:tabular-nums}
+  .spdchip b{font-weight:800;margin-right:4px}
+  .spdchip small{font-weight:400;opacity:.75;margin-left:1px}
 
   /* 우측 리스트 */
   .list{order:-1;border-right:1px solid var(--hair);background:var(--card);overflow-y:auto;display:flex;flex-direction:column}
@@ -141,6 +144,10 @@
   .navs{display:flex;gap:6px;margin-top:13px}
   .navbtn{flex:1;text-align:center;font-size:12.5px;font-weight:600;padding:8px 6px;border:1px solid var(--hair);border-radius:var(--radius);background:var(--card);color:var(--ink);text-decoration:none;white-space:nowrap}
   .navbtn:hover{background:var(--hover)}
+  .navbtn.kakao{color:#8a6d00;border-color:#f2e2a8;background:#fdf8e6}     /* 카카오 노랑 */
+  .navbtn.naver{color:#1f7a44;border-color:#bfe3cd;background:#eef8f2}     /* 네이버 초록 */
+  .navbtn.tmap{color:#5b4a9e;border-color:#d5cdee;background:#f3f0fb}      /* 티맵 보라 */
+  .navbtn.kakao:hover{background:#fbf1cf} .navbtn.naver:hover{background:#e2f2e9} .navbtn.tmap:hover{background:#eae4f7}
   .cambtn svg{width:12px;height:12px;fill:var(--btn-dark-ink)}
 
   /* CCTV 모달 */
@@ -407,19 +414,18 @@ tgCam.onclick=()=>{
 
 const LVC={'원활':'#2fa876','서행':'#e07b2f','정체':'#d94f3d'};
 
-// 실시간 색을 입힐 주요 도로축 (도식 선형 — 노드링크 없이 근사)
-const TRAFFIC_LINES=[
- {road:'통일로', pts:[[37.6885,126.8030],[37.7180,126.7940],[37.7540,126.7860],[37.7900,126.7880],
-                     [37.8300,126.7920],[37.8560,126.7880],[37.8790,126.7620],[37.8898,126.7472]]},
- {road:'서울문산고속도로', pts:[[37.6960,126.7560],[37.7300,126.7480],[37.7620,126.7560],[37.8000,126.7680],
-                     [37.8380,126.7760],[37.8700,126.7800]]},
- {road:'율곡로', pts:[[37.8560,126.7880],[37.8620,126.8250],[37.8630,126.8700],[37.8610,126.9090],[37.8482,126.9310]]},
- {road:'경의로', pts:[[37.7040,126.7600],[37.7245,126.7645],[37.7480,126.7720],[37.7645,126.7752],[37.7900,126.7830]]},
- {road:'파주로', pts:[[37.7200,126.7300],[37.7420,126.7480],[37.7560,126.7680],[37.7645,126.7752]]},
- {road:'교하로', pts:[[37.7185,126.7234],[37.7280,126.7380],[37.7380,126.7520],[37.7450,126.7660]]}
+// 도로 위 대표 지점에 속도 배지를 놓는다 (선형을 지어내지 않기 위해 선 대신 점 표시)
+const TRAFFIC_PTS=[
+ {road:'통일로', at:[37.7905,126.7885]},
+ {road:'자유로', at:[37.8180,126.6962]},
+ {road:'서울문산고속도로', at:[37.8010,126.7685]},
+ {road:'율곡로', at:[37.8628,126.8700]},
+ {road:'경의로', at:[37.7470,126.7715]},
+ {road:'파주로', at:[37.7420,126.7470]},
+ {road:'교하로', at:[37.7300,126.7390]}
 ];
-const trafficLayers=TRAFFIC_LINES.map(t=>({road:t.road,
-  line:L.polyline(t.pts,{color:'#a49d90',weight:5,opacity:0,lineCap:'round',interactive:false}).addTo(map)}));
+const trafficLayers=TRAFFIC_PTS.map(t=>({road:t.road,
+  marker:L.marker(t.at,{icon:L.divIcon({className:'',iconSize:[0,0],html:''}),interactive:false,opacity:0}).addTo(map)}));
 
 function renderTraffic(){
   const box=document.getElementById('trafficbox');
@@ -430,10 +436,12 @@ function renderTraffic(){
   const lv=n=>ROADS.find(r=>r.road===n);
   trafficLayers.forEach(t=>{
     const d=lv(t.road);
-    t.line.setStyle({color:(showTraffic&&d)?LVC[d.level]:'#a49d90', opacity:(showTraffic&&d)?.9:0});
+    const html=(showTraffic&&d)
+      ? `<div class="spdchip" style="border-color:${LVC[d.level]};color:${LVC[d.level]}"><b>${t.road}</b> ${d.speed}<small>km/h</small></div>`
+      : '';
+    t.marker.setIcon(L.divIcon({className:'',iconSize:[0,0],html}));
+    t.marker.setOpacity(showTraffic&&d?1:0);
   });
-  const jy=lv('자유로');
-  jayuLine.setStyle({color:(showTraffic&&jy)?LVC[jy.level]:'#a49d90', weight:(showTraffic&&jy)?5:3, opacity:(showTraffic&&jy)?.9:.85});
 }
 const tgTr=document.getElementById('tg-traffic');
 function trafficReady(){ if(tgTr.disabled){ tgTr.disabled=false; tgTr.title='실시간 도로 상황 켜기/끄기'; } }
@@ -468,9 +476,9 @@ function renderList(){
     const tint = rk<=0 ? '' : (mode==='I' ? (rk>=4?'tint-hot':(i===0?'tint-cool':'')) : (i===0?'tint-hot':''));
     const q=encodeURIComponent(s.n);
     const navSec=`<div class="p-sec">길찾기</div><div class="navs">`
-      +`<a class="navbtn" target="_blank" rel="noopener" href="https://map.kakao.com/link/to/${q},${s.lat},${s.lng}">카카오맵</a>`
-      +`<a class="navbtn" target="_blank" rel="noopener" href="https://map.naver.com/p/directions/-/${s.lng},${s.lat},${q}/-/car">네이버지도</a>`
-      +`<a class="navbtn" target="_blank" rel="noopener" href="tmap://route?goalname=${q}&goalx=${s.lng}&goaly=${s.lat}">티맵</a>`
+      +`<a class="navbtn kakao" target="_blank" rel="noopener" href="https://map.kakao.com/link/to/${q},${s.lat},${s.lng}">카카오맵</a>`
+      +`<a class="navbtn naver" target="_blank" rel="noopener" href="https://map.naver.com/p/directions/-/${s.lng},${s.lat},${q}/-/car">네이버지도</a>`
+      +`<a class="navbtn tmap" target="_blank" rel="noopener" href="tmap://route?goalname=${q}&goalx=${s.lng}&goaly=${s.lat}">티맵</a>`
       +`</div>`;
     let camSec;
     if(!FEATURE_ITS){
