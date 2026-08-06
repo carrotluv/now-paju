@@ -593,8 +593,8 @@ async function loadIts(){
     const [c,t]=await Promise.all([fetch('/api/cctv'),fetch('/api/traffic')]);
     if(c.ok){ const j=await c.json(); if(j.cams&&j.cams.length){
       CAMS=j.cams.filter(c2=>inPaju(c2.lat,c2.lng));
-      const nearSet=new Set();                               // 지도 핀 = 각 지점에서 3km 안 최근접 5개만 (지점 중심 표시)
-      SPOTS.forEach(s=>nearestCams(s,5).filter(x=>x.d<=0.00073).forEach(x=>nearSet.add(x.i)));
+      const nearSet=new Set();                               // 지도 핀 = 각 지점에서 2.5km 안 최근접 4개만 (지점 중심 표시)
+      SPOTS.forEach(s=>nearestCams(s,4).filter(x=>x.d<=0.000506).forEach(x=>nearSet.add(x.i)));
       CAM_PINS=[...nearSet].map(i=>CAMS[i]);
       renderCams(); renderList();
     } }
