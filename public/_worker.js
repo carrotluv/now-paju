@@ -1,3 +1,5 @@
+import { connect } from 'cloudflare:sockets';
+
 // 지금 파주 (NOW PAJU) — Pages 고급 모드 워커
 // /api/* 는 경기도 실시간 방문소비 API 프록시, 그 외는 정적 자산 서빙.
 // 상세는 interestRegionId 기반 — 목록에서 ID를 동적으로 해석하므로 지점 개편에 안전.
@@ -79,19 +81,46 @@ function json(data, status = 200, ttl = 0) {
 }
 
 // ── ITS(국가교통정보센터) — CCTV·소통정보. 인증키는 Cloudflare Secret(ITS_KEY)에만 두고 응답에 절대 싣지 않는다.
-const ITS = 'https://openapi.its.go.kr:9443';
+//  ⚠️ ITS는 9443 포트를 쓰는데 Workers의 fetch()는 표준 포트(80·443)만 나간다(비표준 포트는 무시돼 522).
+//     그래서 TCP 소켓으로 직접 붙어 HTTP/1.0 요청을 보낸다.
+const ITS_HOST = 'openapi.its.go.kr';
+const ITS_PORT = 9443;
 const PAJU_BBOX = { minX: 126.65, maxX: 127.03, minY: 37.68, maxY: 38.02 };
+
+async function itsRawGet(path) {
+  const socket = connect({ hostname: ITS_HOST, port: ITS_PORT }, { secureTransport: 'on', allowHalfOpen: false });
+  const writer = socket.writable.getWriter();
+  await writer.write(new TextEncoder().encode(
+    `GET ${path} HTTP/1.0\r\nHost: ${ITS_HOST}\r\nAccept: application/json\r\nUser-Agent: now-paju/1.0\r\nConnection: close\r\n\r\n`
+  ));
+  const reader = socket.readable.getReader();
+  const chunks = []; let total = 0;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    chunks.push(value); total += value.length;
+    if (total > 4000000) break;
+  }
+  try { await socket.close(); } catch (e) {}
+  const buf = new Uint8Array(total); let off = 0;
+  for (const c of chunks) { buf.set(c, off); off += c.length; }
+  const text = new TextDecoder('utf-8').decode(buf);
+  const sep = text.indexOf('\r\n\r\n');
+  const head = sep < 0 ? text : text.slice(0, sep);
+  const body = sep < 0 ? '' : text.slice(sep + 4);
+  const m = head.match(/HTTP\/1\.[01] (\d{3})/);
+  return { status: m ? +m[1] : 0, body };
+}
 
 async function itsFetch(endpoint, key, extra) {
   const q = new URLSearchParams(Object.assign({
     apiKey: key, type: 'all', getType: 'json',
     minX: PAJU_BBOX.minX, maxX: PAJU_BBOX.maxX, minY: PAJU_BBOX.minY, maxY: PAJU_BBOX.maxY
   }, extra));
-  const r = await fetch(`${ITS}/${endpoint}?${q}`, { headers: { accept: 'application/json' } });
-  const body = await r.text();
-  if (!r.ok) throw new Error('its ' + r.status + ' :: ' + body.replace(/\s+/g, ' ').slice(0, 140));
-  try { return JSON.parse(body); }
-  catch (e) { throw new Error('its parse :: ' + body.replace(/\s+/g, ' ').slice(0, 140)); }
+  const r = await itsRawGet(`/${endpoint}?${q}`);
+  if (r.status !== 200) throw new Error('its ' + r.status + ' :: ' + r.body.replace(/\s+/g, ' ').slice(0, 140));
+  try { return JSON.parse(r.body); }
+  catch (e) { throw new Error('its parse :: ' + r.body.replace(/\s+/g, ' ').slice(0, 160)); }
 }
 
 const itsRows = (j) => (j && j.response && Array.isArray(j.response.data)) ? j.response.data : (Array.isArray(j && j.data) ? j.data : []);
