@@ -85,7 +85,7 @@
   .cam{width:20px;height:20px;background:#23272f;border-radius:6px;border:1.5px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;cursor:pointer}
   .cam:hover{background:#3a404d}
   .cam svg{width:11px;height:11px;fill:#fff}
-  .z-lo .cam{display:none}
+  .cam-hidden .cam{display:none}
   .hide-cam .cam{display:none}
   .trafficbox{position:absolute;left:12px;bottom:12px;z-index:1000;background:var(--float-bg2);border:1px solid var(--hair);border-radius:var(--radius);padding:10px 13px;min-width:195px;display:none;box-shadow:var(--shadow-1)}
   .trafficbox.on{display:block}
@@ -355,6 +355,14 @@ function renderCams(){
     camMarkers.push(m);
   });
 }
+function inPaju(lat,lng){                                   // 파주 경계 폴리곤 내부 판정 (레이 캐스팅)
+  let inside=false;
+  for(let i=0,j=PAJU_RING.length-1;i<PAJU_RING.length;j=i++){
+    const yi=PAJU_RING[i][0], xi=PAJU_RING[i][1], yj=PAJU_RING[j][0], xj=PAJU_RING[j][1];
+    if(((yi>lat)!==(yj>lat)) && (lng < (xj-xi)*(lat-yi)/(yj-yi)+xi)) inside=!inside;
+  }
+  return inside;
+}
 function nearestCams(s,k){
   return CAMS.map((c,i)=>({i,c,d:Math.pow(c.lat-s.lat,2)+Math.pow((c.lng-s.lng)*0.79,2)})).sort((a,b)=>a.d-b.d).slice(0,k);
 }
@@ -394,6 +402,7 @@ function zoomClass(){
   const lo=map.getZoom()<11.4;
   el.classList.toggle('z-lo',lo);
   el.classList.toggle('z-hi',!lo);
+  el.classList.toggle('cam-hidden', map.getZoom()<12.2);   // CCTV는 충분히 확대했을 때만
 }
 map.on('zoomend',zoomClass);
 document.getElementById('btn-all').onclick=()=>{map.flyToBounds(pajuBounds,{duration:.7});document.getElementById('spot-jump').value='';};
@@ -577,7 +586,7 @@ async function loadSummary(){
 async function loadIts(){
   try{
     const [c,t]=await Promise.all([fetch('/api/cctv'),fetch('/api/traffic')]);
-    if(c.ok){ const j=await c.json(); if(j.cams&&j.cams.length){ CAMS=j.cams; renderCams(); renderList(); } }
+    if(c.ok){ const j=await c.json(); if(j.cams&&j.cams.length){ CAMS=j.cams.filter(c2=>inPaju(c2.lat,c2.lng)); renderCams(); renderList(); } }
     if(t.ok){ const j=await t.json(); if(j.roads&&j.roads.length){ ROADS=j.roads;
       const d=new Date(j.asof); itsAsof=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
       trafficReady(); renderTraffic(); } }
