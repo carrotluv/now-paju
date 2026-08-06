@@ -458,13 +458,13 @@ tgCam.onclick=()=>{
 const LVC={'원활':'#2fa876','서행':'#e07b2f','정체':'#d94f3d'};
 
 // 도로 선형은 배경지도와 같은 출처(OSM)를 쓰고, ITS 실측 속도는 미리 만든 링크 매핑으로 얹는다
-let ROADGEO=[], LINKMAP={}, linkLayer=L.layerGroup();
+let ROADGEO=[], LINKMAP={}, ROADSIB={}, linkLayer=L.layerGroup();
 const spdColor=v=>v>=60?LVC['원활']:(v>=35?LVC['서행']:LVC['정체']);
 async function loadLinks(){
   if(ROADGEO.length) return;
   try{
     const j=await (await fetch('/paju_roads.json')).json();
-    ROADGEO=j.roads||[]; LINKMAP=j.map||{};
+    ROADGEO=j.roads||[]; LINKMAP=j.map||{}; ROADSIB=j.sib||{};
   }catch(e){ ROADGEO=[]; }
 }
 // 파일에 이미 '지점 반경 3km 이내' 링크만 담겨 있다.
@@ -481,6 +481,9 @@ function drawLinks(speeds){
     if(v==null) continue;
     (measured[ri]=measured[ri]||[]).push(v);
   }
+  Object.keys(measured).slice().forEach(ri=>{              // 왕복 분리도로는 반대편 차로도 같이 칠한다
+    (ROADSIB[ri]||[]).forEach(s=>{ if(!measured[s]) measured[s]=measured[ri].slice(); });
+  });
   ROADGEO.forEach((r,i)=>{
     if(r.p.length<2) return;
     const arr=measured[i];
