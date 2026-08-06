@@ -105,17 +105,24 @@ async function ghItsData(env, ctx) {
 async function vworldTile(url, env, ctx) {
   const m = url.pathname.match(/^\/tiles\/(\d+)\/(\d+)\/(\d+)\.png$/);
   if (!m) return new Response('bad tile', { status: 400 });
-  if (!env.VWORLD_KEY) return new Response('no key', { status: 503 });
   const cache = caches.default;
   const ck = new Request(url.toString());
   const hit = await cache.match(ck);
   if (hit) return hit;
-  const up = await fetch(`https://api.vworld.kr/req/wmts/1.0.0/${env.VWORLD_KEY}/Base/${m[1]}/${m[2]}/${m[3]}.png`,
-    { headers: { referer: 'https://now-paju.pajulab.workers.dev/' } });
-  if (!up.ok || !(up.headers.get('content-type') || '').includes('image')) {
-    const why = (await up.text().catch(() => '')).replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').slice(0, 200);
-    return new Response('tile unavailable [' + up.status + '] ' + why, { status: 502 });   // 원인 진단용
+  const [z, y, x] = [m[1], m[2], m[3]];
+  const sources = [                                        // 타일 서버 순차 시도
+    `https://xdworld.vworld.kr/2d/Base/service/${z}/${x}/${y}.png`,
+    env.VWORLD_KEY ? `https://api.vworld.kr/req/wmts/1.0.0/${env.VWORLD_KEY}/Base/${z}/${y}/${x}.png` : null
+  ].filter(Boolean);
+  let up = null, lastWhy = '';
+  for (const src of sources) {
+    try {
+      const r = await fetch(src, { headers: { referer: 'https://now-paju.pajulab.workers.dev/' } });
+      if (r.ok && (r.headers.get('content-type') || '').includes('image')) { up = r; break; }
+      lastWhy = r.status + ' ' + (await r.text().catch(() => '')).replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').slice(0, 120);
+    } catch (e) { lastWhy = String(e && e.message || e).slice(0, 120); }
   }
+  if (!up) return new Response('tile unavailable :: ' + lastWhy, { status: 502 });
   const res = new Response(up.body, {
     headers: { 'content-type': 'image/png', 'cache-control': 'public, max-age=604800' }   // 7일 캐시
   });
