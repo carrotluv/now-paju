@@ -469,9 +469,19 @@ async function loadLinks(){
 }
 // 파일에 이미 '지점 반경 3km 이내' 링크만 담겨 있다.
 // 실측 속도가 없는 구간은 같은 도로의 평균으로 이어 그려 끊김을 없앤다(연하게 = 추정).
+// 줌에 따라 보여줄 도로 등급과 선 굵기 (축소 시 간선만 남겨 뭉침 방지)
+function trafficStyleForZoom(){
+  const z=map.getZoom();
+  if(z<11.5) return {maxClass:1, weight:2.5};      // 고속·국도만
+  if(z<12.5) return {maxClass:2, weight:3};        // + 주요 간선
+  if(z<13.5) return {maxClass:3, weight:3.5};      // + 보조 간선
+  if(z<14.5) return {maxClass:4, weight:4};        // + 지방도
+  return {maxClass:5, weight:5};                   // 전체
+}
 function drawLinks(speeds){
   linkLayer.clearLayers();
   if(!showTraffic||!ROADGEO.length) return;
+  const st=trafficStyleForZoom();
   const roadAvg=Object.assign({},ROAD_AVG);
   ROADS.forEach(r=>{ if(roadAvg[r.road]==null) roadAvg[r.road]=r.speed; });
 
@@ -486,11 +496,12 @@ function drawLinks(speeds){
   });
   ROADGEO.forEach((r,i)=>{
     if(r.p.length<2) return;
+    if((r.h||5)>st.maxClass) return;                       // 현재 줌에서 안 보일 등급
     const arr=measured[i];
     const own=arr?Math.round(arr.reduce((a,b)=>a+b,0)/arr.length):null;
     const v=(own!=null)?own:roadAvg[r.n];
     if(v==null) return;
-    L.polyline(r.p,{color:spdColor(v),weight:own!=null?4:3.5,
+    L.polyline(r.p,{color:spdColor(v),weight:own!=null?st.weight:st.weight-0.5,
       opacity:own!=null?.85:.5,lineCap:'round',interactive:false}).addTo(linkLayer);
   });
   if(!map.hasLayer(linkLayer)) linkLayer.addTo(map);
@@ -519,7 +530,7 @@ function zoomClass(){
   el.classList.toggle('z-hi',!lo);
   el.classList.toggle('cam-hidden', map.getZoom()<11.9);   // CCTV는 지점 확대 수준에서만
 }
-map.on('zoomend',zoomClass);
+map.on('zoomend',()=>{ zoomClass(); if(showTraffic) drawLinks(LINK_SPD); });
 const jumpSel=document.getElementById('spot-jump');
 SPOTS.forEach(s=>{const o=document.createElement('option');o.value=s.id;o.textContent=s.short;jumpSel.appendChild(o);});
 jumpSel.onchange=()=>{
