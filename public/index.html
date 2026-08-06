@@ -337,7 +337,7 @@ const clusterBounds=L.latLngBounds(SPOTS.filter(s=>CLUSTER.includes(s.id)).map(s
 const pajuBounds=L.latLngBounds(PAJU_RING).pad(.03);
 
 let nodeMarkers={}, camMarkers=[], badge=null;
-let CAMS=[], CAM_PINS=[], ROADS=[], LINK_SPD={}, showTraffic=false, itsAsof=null;
+let CAMS=[], CAM_PINS=[], ROADS=[], LINK_SPD={}, ROAD_AVG={}, showTraffic=false, itsAsof=null;
 
 function nodeIcon(s){
   const r=RAD[s.s];
@@ -421,22 +421,20 @@ async function loadLinks(){
   if(LINKS.length) return;
   try{ LINKS=(await (await fetch('/paju_links.json')).json()).links||[]; }catch(e){ LINKS=[]; }
 }
-const R3KM=Math.pow(3/111.32,2);                            // 지점 반경 3km (위경도 제곱거리)
-function nearSpot(p){
-  for(const s of SPOTS){
-    const dy=p[0]-s.lat, dx=(p[1]-s.lng)*0.79;
-    if(dy*dy+dx*dx<=R3KM) return true;
-  }
-  return false;
-}
+// 파일에 이미 '지점 반경 3km 이내' 링크만 담겨 있다.
+// 실측 속도가 없는 구간은 같은 도로의 평균으로 이어 그려 끊김을 없앤다(연하게 = 추정).
 function drawLinks(speeds){
   linkLayer.clearLayers();
   if(!showTraffic||!LINKS.length) return;
+  const roadAvg=Object.assign({},ROAD_AVG);
+  ROADS.forEach(r=>{ if(roadAvg[r.road]==null) roadAvg[r.road]=r.speed; });
   LINKS.forEach(l=>{
-    const v=speeds[l.i];
-    if(v==null||l.p.length<2) return;
-    if(!l.p.some(nearSpot)) return;                          // 주요 지점 반경 3km 안만 표시
-    L.polyline(l.p,{color:spdColor(v),weight:4,opacity:.85,lineCap:'round',interactive:false}).addTo(linkLayer);
+    if(l.p.length<2) return;
+    const own=speeds[l.i];
+    const v=(own!=null)?own:roadAvg[l.n];
+    if(v==null) return;
+    L.polyline(l.p,{color:spdColor(v),weight:own!=null?4:3.5,
+      opacity:own!=null?.85:.5,lineCap:'round',interactive:false}).addTo(linkLayer);
   });
   if(!map.hasLayer(linkLayer)) linkLayer.addTo(map);
 }
@@ -666,7 +664,7 @@ async function loadIts(){
       CAM_PINS=thinByRoute([...nearSet].map(i=>CAMS[i]));     // 같은 노선 연속분은 3개로 솎음
       renderCams(); renderList();
     } }
-    if(t.ok){ const j=await t.json(); if(j.roads&&j.roads.length){ ROADS=j.roads; LINK_SPD=j.links||{};
+    if(t.ok){ const j=await t.json(); if(j.roads&&j.roads.length){ ROADS=j.roads; LINK_SPD=j.links||{}; ROAD_AVG=j.roadAvg||{};
       const d=new Date(j.asof); itsAsof=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
       trafficReady(); renderTraffic(); } }
   }catch(e){}
