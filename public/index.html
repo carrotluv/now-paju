@@ -421,12 +421,21 @@ async function loadLinks(){
   if(LINKS.length) return;
   try{ LINKS=(await (await fetch('/paju_links.json')).json()).links||[]; }catch(e){ LINKS=[]; }
 }
+const R3KM=Math.pow(3/111.32,2);                            // 지점 반경 3km (위경도 제곱거리)
+function nearSpot(p){
+  for(const s of SPOTS){
+    const dy=p[0]-s.lat, dx=(p[1]-s.lng)*0.79;
+    if(dy*dy+dx*dx<=R3KM) return true;
+  }
+  return false;
+}
 function drawLinks(speeds){
   linkLayer.clearLayers();
   if(!showTraffic||!LINKS.length) return;
   LINKS.forEach(l=>{
     const v=speeds[l.i];
     if(v==null||l.p.length<2) return;
+    if(!l.p.some(nearSpot)) return;                          // 주요 지점 반경 3km 안만 표시
     L.polyline(l.p,{color:spdColor(v),weight:4,opacity:.85,lineCap:'round',interactive:false}).addTo(linkLayer);
   });
   if(!map.hasLayer(linkLayer)) linkLayer.addTo(map);
