@@ -197,8 +197,7 @@
   <div class="mapwrap">
     <div id="map"></div>
     <div class="mapbtns">
-      <button class="mbtn" id="btn-all">파주 전체</button>
-      <select class="msel" id="spot-jump"><option value="">주요 지점 이동</option></select>
+      <select class="msel" id="spot-jump"><option value="">주요 지점 이동</option><option value="__all">파주 전체 보기</option></select>
       <button class="mbtn tgl on" id="tg-cam" title="지점 주변 CCTV 위치 표시 (확대하면 나타남)">CCTV</button>
       <button class="mbtn tgl" id="tg-traffic" disabled title="ITS 인증키 연동 후 사용할 수 있습니다">도로 소통</button>
     </div>
@@ -405,10 +404,12 @@ function zoomClass(){
   el.classList.toggle('cam-hidden', map.getZoom()<12.2);   // CCTV는 충분히 확대했을 때만
 }
 map.on('zoomend',zoomClass);
-document.getElementById('btn-all').onclick=()=>{map.flyToBounds(pajuBounds,{duration:.7});document.getElementById('spot-jump').value='';};
 const jumpSel=document.getElementById('spot-jump');
 SPOTS.forEach(s=>{const o=document.createElement('option');o.value=s.id;o.textContent=s.short;jumpSel.appendChild(o);});
-jumpSel.onchange=()=>{ if(jumpSel.value) select(jumpSel.value,{fly:true}); };
+jumpSel.onchange=()=>{
+  if(jumpSel.value==='__all'){ map.flyToBounds(pajuBounds,{duration:.7}); jumpSel.value=''; return; }
+  if(jumpSel.value) select(jumpSel.value,{fly:true});
+};
 
 // ── 리스트
 function sorted(){ return [...SPOTS].sort((a,b)=>{ const ax=RANK[a.s]??0, bx=RANK[b.s]??0; const an=ax<=0, bn=bx<=0; if(an!==bn) return an?1:-1; return mode==='E' ? bx-ax : ax-bx; }); }
