@@ -1,5 +1,3 @@
-import { connect } from 'cloudflare:sockets';
-
 // 지금 파주 (NOW PAJU) — Pages 고급 모드 워커
 // /api/* 는 경기도 실시간 방문소비 API 프록시, 그 외는 정적 자산 서빙.
 // 상세는 interestRegionId 기반 — 목록에서 ID를 동적으로 해석하므로 지점 개편에 안전.
@@ -80,75 +78,28 @@ function json(data, status = 200, ttl = 0) {
   });
 }
 
-// ── ITS(국가교통정보센터) — CCTV·소통정보. 인증키는 Cloudflare Secret(ITS_KEY)에만 두고 응답에 절대 싣지 않는다.
-//  ⚠️ ITS는 9443 포트를 쓰는데 Workers의 fetch()는 표준 포트(80·443)만 나간다(비표준 포트는 무시돼 522).
-//     그래서 TCP 소켓으로 직접 붙어 HTTP/1.0 요청을 보낸다.
-const ITS_HOST = 'openapi.its.go.kr';
-const ITS_PORT = 9443;
-const PAJU_BBOX = { minX: 126.65, maxX: 127.03, minY: 37.68, maxY: 38.02 };
+// ── ITS(국가교통정보센터) 데이터 — Cloudflare에서 ITS(9443)로 직접 못 나가므로(클라우드 IP 차단),
+//    사무실 PC의 its_sync.py 가 5분마다 data 브랜치에 올린 its.json 을 GitHub API로 읽는다.
+//    GH_TOKEN(읽기 전용 PAT)은 Cloudflare Secret — 응답에 절대 싣지 않는다.
+const GH_ITS = 'https://api.github.com/repos/carrotluv/now-paju/contents/its.json?ref=data';
 
-async function itsRawGet(path) {
-  const socket = connect({ hostname: ITS_HOST, port: ITS_PORT }, { secureTransport: 'on', allowHalfOpen: true });
-  let stage = 'open';
-  const chunks = []; let total = 0;
-  try {
-    if (socket.opened) await socket.opened;
-    stage = 'write';
-    const writer = socket.writable.getWriter();
-    await writer.write(new TextEncoder().encode(
-      `GET ${path} HTTP/1.1\r\nHost: ${ITS_HOST}:${ITS_PORT}\r\nAccept: application/json\r\n` +
-      `User-Agent: Mozilla/5.0 (compatible; now-paju/1.0)\r\nAccept-Encoding: identity\r\nConnection: close\r\n\r\n`
-    ));
-    writer.releaseLock();
-    stage = 'read';
-    const reader = socket.readable.getReader();
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      chunks.push(value); total += value.length;
-      if (total > 4000000) break;
+async function ghItsData(env, ctx) {
+  const cache = caches.default;
+  const ck = new Request('https://cache.now-paju.internal/gh-its');
+  const hit = await cache.match(ck);
+  if (hit) return hit.json();
+  const r = await fetch(GH_ITS, {
+    headers: {
+      accept: 'application/vnd.github.raw+json',
+      authorization: 'Bearer ' + env.GH_TOKEN,
+      'user-agent': 'now-paju-worker'
     }
-    reader.releaseLock();
-  } catch (e) {
-    if (!total) throw new Error('socket(' + stage + ') ' + String(e && e.message || e).slice(0, 120));
-  }
-  try { socket.close(); } catch (e) {}
-
-  const buf = new Uint8Array(total); let off = 0;
-  for (const c of chunks) { buf.set(c, off); off += c.length; }
-  const text = new TextDecoder('utf-8').decode(buf);
-  const sep = text.indexOf('\r\n\r\n');
-  const head = sep < 0 ? text : text.slice(0, sep);
-  let body = sep < 0 ? '' : text.slice(sep + 4);
-  if (/transfer-encoding:\s*chunked/i.test(head)) {           // 청크 인코딩 해제
-    let out = '', rest = body;
-    while (rest) {
-      const nl = rest.indexOf('\r\n');
-      if (nl < 0) break;
-      const size = parseInt(rest.slice(0, nl).trim(), 16);
-      if (!size || isNaN(size)) break;
-      out += rest.slice(nl + 2, nl + 2 + size);
-      rest = rest.slice(nl + 2 + size + 2);
-    }
-    if (out) body = out;
-  }
-  const m = head.match(/HTTP\/1\.[01] (\d{3})/);
-  return { status: m ? +m[1] : 0, body };
+  });
+  if (!r.ok) throw new Error('gh ' + r.status);
+  const body = await r.text();
+  ctx.waitUntil(cache.put(ck, new Response(body, { headers: { 'content-type': 'application/json', 'cache-control': 'public, max-age=180' } })));
+  return JSON.parse(body);
 }
-
-async function itsFetch(endpoint, key, extra) {
-  const q = new URLSearchParams(Object.assign({
-    apiKey: key, type: 'all', getType: 'json',
-    minX: PAJU_BBOX.minX, maxX: PAJU_BBOX.maxX, minY: PAJU_BBOX.minY, maxY: PAJU_BBOX.maxY
-  }, extra));
-  const r = await itsRawGet(`/${endpoint}?${q}`);
-  if (r.status !== 200) throw new Error('its ' + r.status + ' :: ' + r.body.replace(/\s+/g, ' ').slice(0, 140));
-  try { return JSON.parse(r.body); }
-  catch (e) { throw new Error('its parse :: ' + r.body.replace(/\s+/g, ' ').slice(0, 160)); }
-}
-
-const itsRows = (j) => (j && j.response && Array.isArray(j.response.data)) ? j.response.data : (Array.isArray(j && j.data) ? j.data : []);
-const num = (v) => { const n = parseFloat(v); return isNaN(n) ? null : n; };
 
 export default {
   async fetch(request, env, ctx) {
@@ -156,37 +107,10 @@ export default {
     if (!url.pathname.startsWith('/api/')) return env.ASSETS.fetch(request);
     try {
       if (url.pathname === '/api/cctv' || url.pathname === '/api/traffic') {
-        const key = env.ITS_KEY;
-        if (!key) return json({ error: 'no-key', message: 'ITS 인증키가 아직 등록되지 않았습니다' }, 503);
-        const debug = url.searchParams.get('debug') === '1';
-
-        if (url.pathname === '/api/cctv') {
-          const raw = await itsFetch('cctvInfo', key, { cctvType: '1' });
-          if (debug) return json({ sample: itsRows(raw).slice(0, 2), count: itsRows(raw).length });
-          const cams = itsRows(raw).map(x => ({
-            name: x.cctvname || x.cctvName || '',
-            lat: num(x.coordy != null ? x.coordy : x.coordY),
-            lng: num(x.coordx != null ? x.coordx : x.coordX),
-            url: x.cctvurl || x.cctvUrl || '',
-            format: x.cctvformat || x.cctvFormat || ''
-          })).filter(c => c.lat && c.lng && c.url);
-          return json({ count: cams.length, cams }, 200, 1800);
-        }
-
-        const raw = await itsFetch('trafficInfo', key, { drcType: 'all' });
-        if (debug) return json({ sample: itsRows(raw).slice(0, 2), count: itsRows(raw).length });
-        const byRoad = {};
-        itsRows(raw).forEach(x => {
-          const road = x.roadName || x.roadname || '기타';
-          const sp = num(x.speed);
-          if (sp == null) return;
-          (byRoad[road] = byRoad[road] || []).push(sp);
-        });
-        const roads = Object.entries(byRoad).map(([road, arr]) => {
-          const avg = Math.round(arr.reduce((a, b) => a + b, 0) / arr.length);
-          return { road, speed: avg, links: arr.length, level: avg >= 60 ? '원활' : avg >= 35 ? '서행' : '정체' };
-        }).sort((a, b) => b.links - a.links);
-        return json({ asof: new Date().toISOString(), roads }, 200, 240);
+        if (!env.GH_TOKEN) return json({ error: 'no-key', message: '데이터 채널(GH_TOKEN)이 아직 연결되지 않았습니다' }, 503);
+        const d = await ghItsData(env, ctx);
+        if (url.pathname === '/api/cctv') return json({ asof: d.asof, count: (d.cams || []).length, cams: d.cams || [] }, 200, 180);
+        return json({ asof: d.asof, roads: d.roads || [] }, 200, 180);
       }
 
       if (url.pathname === '/api/summary') {

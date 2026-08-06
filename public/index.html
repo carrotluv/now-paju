@@ -87,6 +87,14 @@
   .cam svg{width:11px;height:11px;fill:#fff}
   .z-lo .cam{display:none}
   .hide-cam .cam{display:none}
+  .trafficbox{position:absolute;left:12px;bottom:12px;z-index:1000;background:var(--float-bg2);border:1px solid var(--hair);border-radius:var(--radius);padding:10px 13px;min-width:195px;display:none;box-shadow:var(--shadow-1)}
+  .trafficbox.on{display:block}
+  .tb-title{font-size:12.5px;font-weight:700;color:var(--ink);margin-bottom:6px;display:flex;gap:10px;align-items:baseline}
+  .tb-title span{font-weight:400;color:var(--sub);font-size:10.5px;margin-left:auto}
+  .tr-row{display:flex;align-items:center;gap:7px;font-size:12.5px;padding:2.5px 0;color:var(--ink)}
+  .tr-row i{width:8px;height:8px;border-radius:50%;flex:none}
+  .tr-row .sp{margin-left:auto;font-weight:600}
+  .tr-row small{font-weight:400;color:var(--sub);margin-left:2px}
 
   /* 우측 리스트 */
   .list{order:-1;border-right:1px solid var(--hair);background:var(--card);overflow-y:auto;display:flex;flex-direction:column}
@@ -195,6 +203,7 @@
       <button class="mbtn tgl" id="tg-traffic" disabled title="ITS 인증키 연동 후 사용할 수 있습니다">도로 소통</button>
     </div>
     <div class="maptag">지도: OpenStreetMap · CARTO</div>
+    <div class="trafficbox" id="trafficbox"></div>
   </div>
   <aside class="list" id="list">
     <div class="list-head"><b>지점 리스트</b><span id="sort-note"></span></div>
@@ -210,17 +219,18 @@
 <div class="modal-bg" id="modal-bg">
   <div class="modal">
     <div class="m-head"><b id="m-title"></b><span id="m-sub"></span><button class="m-x" id="m-x">✕</button></div>
-    <div class="m-body">
+    <div class="m-body" id="m-body">
       <div class="m-live"><i></i>LIVE</div>
       <svg viewBox="0 0 24 24"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>
-      <div class="m-note">실시간 영상 자리 — 실서비스에서 재생됩니다</div>
+      <div class="m-note">영상을 불러오는 중입니다</div>
       <div class="m-camname" id="m-cam"></div>
     </div>
-    <div class="m-foot">시안에서는 자리만 표시 — 실서비스에서 ITS 개방 CCTV로 재생됩니다 (위치·명칭 예시)</div>
+    <div class="m-foot">국가교통정보센터(ITS) 실시간 도로 CCTV — 영상이 안 나오면 잠시 후 다시 열어보세요</div>
   </div>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.5.13/hls.min.js"></script>
 <script>
 const PAJU_RING=[[38.00704,126.99008],[38.00602,126.99138],[38.00335,126.99325],[38.0013,126.99527],[37.99871,126.99887],[37.99597,127.00105],[37.99395,127.00488],[37.99277,127.01484],[37.98696,127.01711],[37.98634,127.01668],[37.98541,127.0152],[37.98089,127.01186],[37.97748,127.01208],[37.97728,127.01196],[37.97558,127.01074],[37.97454,127.00906],[37.97388,127.00714],[37.97533,127.00498],[37.97347,127.00275],[37.97229,127.00341],[37.9697,127.00307],[37.96753,126.99748],[37.9679,126.99248],[37.96768,126.99092],[37.96239,126.98838],[37.96131,126.98859],[37.95646,126.98851],[37.95597,126.98659],[37.95572,126.98506],[37.95118,126.9772],[37.94455,126.9763],[37.94212,126.9716],[37.93597,126.96442],[37.93086,126.9646],[37.92757,126.96442],[37.92601,126.96326],[37.92517,126.96222],[37.92387,126.9615],[37.92284,126.96167],[37.92105,126.96163],[37.92006,126.96016],[37.92094,126.95798],[37.9184,126.94954],[37.91478,126.95191],[37.91413,126.95312],[37.91217,126.95447],[37.90782,126.952],[37.90706,126.95035],[37.90493,126.94904],[37.90367,126.94895],[37.90091,126.94589],[37.89834,126.94655],[37.89684,126.94823],[37.89197,126.94679],[37.88624,126.9469],[37.88537,126.94723],[37.88035,126.94621],[37.86971,126.94451],[37.86825,126.94606],[37.86591,126.94584],[37.85964,126.94163],[37.85768,126.94],[37.85444,126.93837],[37.85263,126.9394],[37.84932,126.93549],[37.84542,126.93387],[37.84285,126.93561],[37.84039,126.93596],[37.83887,126.93414],[37.83765,126.92731],[37.84138,126.92402],[37.84132,126.91492],[37.84047,126.91237],[37.83847,126.91133],[37.83588,126.91294],[37.83033,126.91183],[37.82855,126.91101],[37.82851,126.91022],[37.82816,126.90659],[37.82655,126.90259],[37.82541,126.9021],[37.8244,126.90228],[37.81666,126.90998],[37.81168,126.90854],[37.81037,126.90906],[37.80983,126.9097],[37.80498,126.9119],[37.80239,126.90602],[37.7924,126.90468],[37.79057,126.9063],[37.79128,126.91127],[37.78976,126.91967],[37.78814,126.92084],[37.78564,126.92746],[37.78775,126.93037],[37.78881,126.93152],[37.78846,126.93414],[37.78696,126.93795],[37.78412,126.9368],[37.77861,126.93398],[37.77577,126.93515],[37.77124,126.93417],[37.76771,126.93336],[37.75703,126.92797],[37.75516,126.93113],[37.75346,126.93179],[37.75026,126.9308],[37.74821,126.92567],[37.74701,126.91968],[37.74783,126.91794],[37.74403,126.90788],[37.73898,126.9018],[37.73454,126.90237],[37.72902,126.90272],[37.72723,126.90014],[37.726,126.89335],[37.72368,126.88718],[37.72505,126.88604],[37.72479,126.88502],[37.72612,126.87978],[37.72537,126.87529],[37.72743,126.87307],[37.72999,126.86708],[37.7326,126.86415],[37.73268,126.86113],[37.73542,126.85547],[37.73488,126.85343],[37.73163,126.84169],[37.73105,126.84089],[37.72964,126.84027],[37.72946,126.84032],[37.72746,126.83676],[37.72711,126.82879],[37.72673,126.82847],[37.72661,126.8281],[37.72544,126.82114],[37.72563,126.81848],[37.72555,126.8171],[37.72443,126.81532],[37.7235,126.81439],[37.72446,126.81136],[37.72483,126.81078],[37.72554,126.81011],[37.72669,126.80918],[37.72727,126.80402],[37.73075,126.80057],[37.73348,126.80142],[37.73452,126.80112],[37.73597,126.79642],[37.73503,126.79433],[37.73458,126.79393],[37.73026,126.79571],[37.72986,126.79567],[37.72808,126.79502],[37.72409,126.79152],[37.72367,126.79082],[37.72354,126.79038],[37.72358,126.78977],[37.72287,126.78751],[37.72007,126.78425],[37.71971,126.78451],[37.71932,126.78455],[37.7191,126.78448],[37.71775,126.7801],[37.71274,126.77586],[37.70919,126.77383],[37.7063,126.77349],[37.70498,126.77415],[37.70462,126.77278],[37.70695,126.76787],[37.70717,126.76703],[37.70442,126.76377],[37.7033,126.75996],[37.70383,126.75629],[37.70495,126.75385],[37.70401,126.7515],[37.70301,126.75002],[37.70324,126.74864],[37.70372,126.74705],[37.70412,126.74633],[37.70429,126.74618],[37.7052,126.74152],[37.70438,126.7378],[37.70438,126.73697],[37.705,126.7335],[37.70506,126.72974],[37.70455,126.725],[37.7025,126.72297],[37.70012,126.71633],[37.69964,126.71303],[37.69979,126.71167],[37.69952,126.71045],[37.69814,126.70751],[37.69766,126.7067],[37.6966,126.70333],[37.69649,126.70183],[37.69665,126.70147],[37.69696,126.70085],[37.69534,126.69848],[37.68864,126.69031],[37.69599,126.68288],[37.69995,126.67487],[37.70054,126.67396],[37.71437,126.67654],[37.73169,126.68029],[37.74437,126.67717],[37.74657,126.67694],[37.76933,126.66511],[37.7807,126.66262],[37.78604,126.66353],[37.80046,126.66618],[37.81849,126.66931],[37.83478,126.67135],[37.83793,126.66211],[37.83909,126.65989],[37.84024,126.65932],[37.84287,126.66023],[37.84325,126.66498],[37.84618,126.67071],[37.84498,126.67156],[37.84418,126.67653],[37.84603,126.67957],[37.84677,126.68],[37.84705,126.68008],[37.85175,126.67988],[37.85658,126.6842],[37.86727,126.69138],[37.87285,126.68588],[37.87289,126.6815],[37.87148,126.6809],[37.87019,126.67911],[37.86996,126.67292],[37.87159,126.67349],[37.87449,126.6752],[37.87682,126.67236],[37.87743,126.67186],[37.87775,126.67183],[37.87811,126.67227],[37.87759,126.67427],[37.87726,126.6751],[37.87734,126.67595],[37.87877,126.68054],[37.87929,126.68166],[37.88007,126.68185],[37.88042,126.68055],[37.88082,126.67939],[37.88188,126.67861],[37.88255,126.67887],[37.88338,126.67952],[37.88412,126.68018],[37.8846,126.67989],[37.88497,126.67735],[37.88455,126.67639],[37.88295,126.67644],[37.8819,126.67594],[37.88148,126.67452],[37.88221,126.67252],[37.8826,126.67219],[37.88336,126.6728],[37.88454,126.67427],[37.88525,126.67463],[37.88642,126.67396],[37.88696,126.67153],[37.88803,126.67014],[37.88841,126.67111],[37.88875,126.67218],[37.89779,126.67735],[37.89862,126.67744],[37.90012,126.67741],[37.905,126.67686],[37.90768,126.67684],[37.91286,126.68278],[37.91396,126.67819],[37.91663,126.66801],[37.91906,126.666],[37.92145,126.66573],[37.92342,126.66615],[37.92596,126.66743],[37.92796,126.6679],[37.9302,126.66783],[37.9308,126.66772],[37.934,126.66726],[37.93436,126.66743],[37.93533,126.66918],[37.93577,126.66969],[37.93951,126.67211],[37.93989,126.67199],[37.94045,126.67129],[37.94063,126.67061],[37.94102,126.66965],[37.94153,126.6692],[37.9418,126.66911],[37.94598,126.66976],[37.94657,126.67027],[37.94696,126.67108],[37.94779,126.67176],[37.94887,126.67196],[37.95183,126.67118],[37.95481,126.67093],[37.95525,126.67393],[37.95404,126.67607],[37.95376,126.67622],[37.95401,126.67674],[37.95648,126.67949],[37.95811,126.6813],[37.95701,126.6863],[37.96613,126.6923],[37.97048,126.70073],[37.97408,126.70229],[37.97484,126.70371],[37.97516,126.70885],[37.97271,126.7093],[37.96926,126.71094],[37.96935,126.71485],[37.96849,126.71701],[37.96684,126.71775],[37.96569,126.71773],[37.96645,126.72519],[37.96836,126.72701],[37.96879,126.73041],[37.96637,126.73574],[37.96605,126.7369],[37.96762,126.73779],[37.96904,126.73833],[37.97337,126.74069],[37.97266,126.74163],[37.97359,126.74428],[37.97735,126.74854],[37.97929,126.74956],[37.98165,126.75393],[37.98366,126.75835],[37.98338,126.76054],[37.98385,126.76581],[37.98056,126.77019],[37.97911,126.77131],[37.97854,126.77214],[37.97835,126.7728],[37.9788,126.77421],[37.97925,126.77475],[37.98042,126.77535],[37.98194,126.77216],[37.98446,126.77587],[37.98173,126.78357],[37.98302,126.78442],[37.98814,126.79012],[37.9903,126.79262],[37.99226,126.79307],[37.99327,126.797],[37.99227,126.79982],[37.98966,126.8008],[37.98768,126.80018],[37.98126,126.80476],[37.97668,126.80664],[37.97421,126.81074],[37.97338,126.80955],[37.97316,126.80916],[37.97306,126.80879],[37.97267,126.80688],[37.969,126.80919],[37.96922,126.8122],[37.9689,126.81394],[37.96572,126.81732],[37.9622,126.81754],[37.96098,126.81687],[37.9582,126.82371],[37.96182,126.83044],[37.96405,126.83275],[37.96299,126.83751],[37.9674,126.83831],[37.97664,126.83942],[37.97899,126.84013],[37.98561,126.84645],[37.98649,126.8509],[37.98605,126.85264],[37.98416,126.85588],[37.98021,126.86123],[37.9758,126.86757],[37.97357,126.87031],[37.97109,126.87246],[37.97038,126.8736],[37.967,126.88129],[37.96624,126.88537],[37.96738,126.89181],[37.97027,126.89557],[37.97239,126.89563],[37.97421,126.89538],[37.97747,126.89328],[37.99024,126.89236],[37.99277,126.89276],[37.99495,126.89683],[37.99482,126.89772],[37.99445,126.9029],[37.99395,126.90522],[37.98903,126.90972],[37.98553,126.9211],[37.98407,126.92481],[37.98178,126.93249],[37.98832,126.95316],[37.99024,126.95595],[37.99536,126.95974],[37.99643,126.96016],[37.9989,126.96361],[38.00084,126.96638],[38.00557,126.97092],[38.00757,126.97423],[38.00688,126.97529],[38.00874,126.97913],[38.01,126.9896],[38.00845,126.98915],[38.00781,126.98914],[38.00704,126.99008]];
 const HEXC={'여유':'#2fa876','보통':'#d9a62e','약간 혼잡':'#e07b2f','혼잡':'#d94f3d','매우 혼잡':'#b3271b','집계중':'#b5afa3','관측 준비':'#b5afa3'};
@@ -296,7 +306,7 @@ const GTXLINE=[[37.716214,126.729229],[37.7040,126.7420],[37.6930,126.7520]];
 const JAYU=[[37.7186,126.6932],[37.7696,126.6954],[37.7884,126.6995],[37.8500,126.7300],[37.8934,126.7447]];
 L.polyline(GYEONGUI,{color:'#2b303a',weight:4,opacity:.75}).addTo(map);
 L.polyline(GTXLINE,{color:'#8d6f4e',weight:3.5,opacity:.8}).addTo(map);
-L.polyline(JAYU,{color:'#a49d90',weight:3,dashArray:'8 7',opacity:.85}).addTo(map);
+const jayuLine=L.polyline(JAYU,{color:'#a49d90',weight:3,dashArray:'8 7',opacity:.85}).addTo(map);
 const IMJINBELT=[[37.8934,126.7447],[37.8850,126.7900],[37.8700,126.8500],[37.8610,126.9090],[37.8482,126.9310],[37.9000,126.9420],[37.9450,126.9585]];
 L.polyline(IMJINBELT,{color:'#a49d90',weight:3,dashArray:'8 7',opacity:.85}).addTo(map);
 L.polyline([[37.7597,126.7740],[37.7598,126.7799]],{color:'#c9c2b3',weight:2,opacity:.9}).addTo(map);
@@ -313,6 +323,7 @@ const clusterBounds=L.latLngBounds(SPOTS.filter(s=>CLUSTER.includes(s.id)).map(s
 const pajuBounds=L.latLngBounds(PAJU_RING).pad(.03);
 
 let nodeMarkers={}, camMarkers=[], badge=null;
+let CAMS=[], ROADS=[], showTraffic=false, itsAsof=null;
 
 function nodeIcon(s){
   const r=RAD[s.s];
@@ -338,16 +349,14 @@ function renderNodes(){
 }
 function renderCams(){
   camMarkers.forEach(m=>map.removeLayer(m)); camMarkers=[];
-  const DIRS=[['북측',0.0060,0],['동측',0,0.0078],['남측',-0.0060,0],['서측',0,-0.0078]];
-  SPOTS.forEach(s=>{
-    const pts=s.cams.map(c=>({n:c.n,lat:c.lat,lng:c.lng}));
-    DIRS.forEach(d=>pts.push({n:`${s.short} ${d[0]} CCTV`,lat:s.lat+d[1],lng:s.lng+d[2]}));
-    pts.forEach(cam=>{
-      const m=L.marker([cam.lat,cam.lng],{icon:L.divIcon({className:'',iconSize:[0,0],html:`<div class="cam" style="transform:translate(-10px,-10px)">${CAMSVG}</div>`})}).addTo(map);
-      m.on('click',()=>openCam(cam.n,s.n));
-      camMarkers.push(m);
-    });
+  CAMS.forEach(cam=>{
+    const m=L.marker([cam.lat,cam.lng],{icon:L.divIcon({className:'',iconSize:[0,0],html:`<div class="cam" style="transform:translate(-10px,-10px)" title="${(cam.n||'').replace(/"/g,'&quot;')}">${CAMSVG}</div>`})}).addTo(map);
+    m.on('click',()=>openCam(cam));
+    camMarkers.push(m);
   });
+}
+function nearestCams(s,k){
+  return CAMS.map((c,i)=>({i,c,d:Math.pow(c.lat-s.lat,2)+Math.pow((c.lng-s.lng)*0.79,2)})).sort((a,b)=>a.d-b.d).slice(0,k);
 }
 badge=L.marker([37.7270,126.7950],{icon:L.divIcon({className:'',iconSize:[0,0],html:`<div class="clusterbadge" style="transform:translate(-50%,-50%)">운정 5곳<span>확대</span></div>`})}).addTo(map);
 badge.on('click',()=>map.flyToBounds(clusterBounds,{duration:.7}));
@@ -365,6 +374,20 @@ tgCam.onclick=()=>{
   tgCam.classList.toggle('on',showCams);
   document.getElementById('map').classList.toggle('hide-cam',!showCams);
 };
+
+const LVC={'원활':'#2fa876','서행':'#e07b2f','정체':'#d94f3d'};
+function renderTraffic(){
+  const box=document.getElementById('trafficbox');
+  const rows=ROADS.filter(r=>r.road&&r.road!=='-'&&r.road!=='기타').slice(0,6);
+  box.innerHTML=`<div class="tb-title">도로 소통<span class="num">${itsAsof?itsAsof+' 기준':''}</span></div>`
+    + rows.map(r=>`<div class="tr-row num"><i style="background:${LVC[r.level]||'#b5afa3'}"></i>${r.road}<span class="sp">${r.speed}<small>km/h</small></span></div>`).join('');
+  box.classList.toggle('on',showTraffic);
+  const jy=ROADS.find(r=>r.road==='자유로');
+  jayuLine.setStyle({color:(showTraffic&&jy)?LVC[jy.level]:'#a49d90', weight:(showTraffic&&jy)?4:3, opacity:(showTraffic&&jy)?.95:.85});
+}
+const tgTr=document.getElementById('tg-traffic');
+function trafficReady(){ if(tgTr.disabled){ tgTr.disabled=false; tgTr.title='실시간 도로 소통 켜기/끄기'; } }
+tgTr.onclick=()=>{ if(tgTr.disabled) return; showTraffic=!showTraffic; tgTr.classList.toggle('on',showTraffic); renderTraffic(); };
 
 function zoomClass(){
   const el=document.getElementById('map');
@@ -385,8 +408,13 @@ function renderList(){
   document.getElementById('rows').innerHTML = sorted().map((s,i)=>{
     const rk=RANK[s.s]??0;
     const tint = rk<=0 ? '' : (mode==='I' ? (rk>=4?'tint-hot':(i===0?'tint-cool':'')) : (i===0?'tint-hot':''));
-    const camBtns=s.cams.map(c=>`<button class="cambtn" data-cam="${c.n}" data-spot="${s.n}">${CAMSVG}${c.n}</button>`).join('');
-    const camSec=`<div class="p-sec">주변 CCTV <span style="letter-spacing:0">(위치·명칭 예시)</span></div><div class="cams">${camBtns}</div>`;
+    let camSec;
+    if(CAMS.length){
+      const near=nearestCams(s,3);
+      camSec=`<div class="p-sec">주변 도로 CCTV</div><div class="cams">${near.map(x=>`<button class="cambtn" data-ci="${x.i}" data-spot="${s.n}">${CAMSVG}${(x.c.n||'').replace(/</g,'&lt;')}</button>`).join('')}</div>`;
+    } else {
+      camSec=`<div class="p-sec">주변 도로 CCTV</div><div style="font-size:12.5px;color:var(--sub)">연동 대기 중</div>`;
+    }
     let det;
     if(!s.api){
       det=`<div class="q" style="color:var(--sub);background:var(--panel)">「${MSG[mode][s.s]}」</div>
@@ -423,7 +451,7 @@ function renderList(){
     <div class="det">${det}</div>`;
   }).join('');
   document.querySelectorAll('.row').forEach(r=>r.addEventListener('click',()=>select(r.dataset.id,{fly:true})));
-  document.querySelectorAll('.cambtn').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();openCam(b.dataset.cam,b.dataset.spot);}));
+  document.querySelectorAll('.cambtn').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();openCam(CAMS[+b.dataset.ci],b.dataset.spot);}));
 }
 
 function renderBanner(){
@@ -459,15 +487,38 @@ function select(id,{fly}){
   }
 }
 
-// ── CCTV 모달
-function openCam(camName,spotName){
-  document.getElementById('m-title').textContent=camName;
-  document.getElementById('m-sub').textContent=spotName;
-  document.getElementById('m-cam').textContent=camName;
+// ── CCTV 모달 (HLS 실시간 재생)
+const M_BODY=document.getElementById('m-body');
+const M_PLACEHOLDER=M_BODY.innerHTML;
+let camHls=null;
+function stopStream(){
+  if(camHls){ try{camHls.destroy();}catch(e){} camHls=null; }
+  const v=document.getElementById('cv');
+  if(v){ try{v.pause(); v.removeAttribute('src'); v.load();}catch(e){} }
+}
+function closeModal(){
+  document.getElementById('modal-bg').classList.remove('open');
+  stopStream();
+  M_BODY.innerHTML=M_PLACEHOLDER;
+}
+function openCam(cam,sub){
+  const name=(cam&&cam.n)||'';
+  document.getElementById('m-title').textContent=name;
+  document.getElementById('m-sub').textContent=sub||'실시간 도로 CCTV';
+  stopStream();
+  if(cam&&cam.url){
+    M_BODY.innerHTML=`<video id="cv" autoplay muted playsinline controls style="width:100%;height:100%;object-fit:contain;background:#000"></video><div class="m-live"><i></i>LIVE</div>`;
+    const v=document.getElementById('cv');
+    if(window.Hls&&Hls.isSupported()){ camHls=new Hls({maxBufferLength:15}); camHls.loadSource(cam.url); camHls.attachMedia(v); }
+    else{ v.src=cam.url; }
+  } else {
+    M_BODY.innerHTML=M_PLACEHOLDER;
+    const mc=document.getElementById('m-cam'); if(mc) mc.textContent=name;
+  }
   document.getElementById('modal-bg').classList.add('open');
 }
-document.getElementById('m-x').onclick=()=>document.getElementById('modal-bg').classList.remove('open');
-document.getElementById('modal-bg').addEventListener('click',e=>{if(e.target.id==='modal-bg')e.currentTarget.classList.remove('open');});
+document.getElementById('m-x').onclick=closeModal;
+document.getElementById('modal-bg').addEventListener('click',e=>{if(e.target.id==='modal-bg')closeModal();});
 
 // ── 모드 탭
 document.getElementById('tabs').addEventListener('click',e=>{
@@ -523,7 +574,17 @@ async function loadSummary(){
     document.getElementById('asof').textContent='연결 오류 · 5분 뒤 재시도';
   }
 }
+async function loadIts(){
+  try{
+    const [c,t]=await Promise.all([fetch('/api/cctv'),fetch('/api/traffic')]);
+    if(c.ok){ const j=await c.json(); if(j.cams&&j.cams.length){ CAMS=j.cams; renderCams(); renderList(); } }
+    if(t.ok){ const j=await t.json(); if(j.roads&&j.roads.length){ ROADS=j.roads;
+      const d=new Date(j.asof); itsAsof=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+      trafficReady(); renderTraffic(); } }
+  }catch(e){}
+}
 setInterval(loadSummary, 300000);
+setInterval(loadIts, 300000);
 
 // ── 초기화
 document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.dataset.m===mode));
@@ -531,6 +592,7 @@ map.fitBounds(pajuBounds);
 zoomClass();
 renderBanner(); renderNodes(); renderCams(); renderList();
 loadSummary();
+loadIts();
 </script>
 </body>
 </html>
