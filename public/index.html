@@ -496,17 +496,26 @@ function drawLinks(speeds){
   });
   // 교차로 조각 메우기: 색이 없는 짧은 구간이라도 양 끝이 색칠 도로에 붙어 있으면 이웃 속도를 물려받는다
   const val=i=>{ const a=measured[i]; return a?Math.round(a.reduce((x,y)=>x+y,0)/a.length):(roadAvg[ROADGEO[i].n]??null); };
-  if(!ROADGEO._fill){
+  if(!ROADGEO._fill){                                      // 끝점 색인 (회전교차로는 모든 점을 넣어 진입로와 만나게)
     const k=p=>p[0].toFixed(5)+','+p[1].toFixed(5), em={};
-    ROADGEO.forEach((r,i)=>{ [r.p[0],r.p[r.p.length-1]].forEach(p=>{ (em[k(p)]=em[k(p)]||[]).push(i); }); });
+    ROADGEO.forEach((r,i)=>{
+      const pts=r.rb?r.p:[r.p[0],r.p[r.p.length-1]];
+      pts.forEach(p=>{ (em[k(p)]=em[k(p)]||[]).push(i); });
+    });
     ROADGEO._fill=em;
   }
+  const kf=p=>p[0].toFixed(5)+','+p[1].toFixed(5);
   const inherit={};
   ROADGEO.forEach((r,i)=>{
-    if(val(i)!=null||r.p.length>6) return;
-    const k=p=>p[0].toFixed(5)+','+p[1].toFixed(5);
+    if(val(i)!=null) return;
     const nb=[];
-    [r.p[0],r.p[r.p.length-1]].forEach(p=>(ROADGEO._fill[k(p)]||[]).forEach(j=>{ if(j!==i){const v=val(j); if(v!=null) nb.push(v);} }));
+    if(r.rb){                                              // 회전교차로: 원형이라 모든 점에서 진입로를 찾는다
+      r.p.forEach(p=>(ROADGEO._fill[kf(p)]||[]).forEach(j=>{ if(j!==i){const v=val(j); if(v!=null) nb.push(v);} }));
+      if(nb.length) inherit[i]=Math.round(nb.reduce((a,b)=>a+b,0)/nb.length);
+      return;
+    }
+    if(r.p.length>6) return;                               // 교차로 연결 조각
+    [r.p[0],r.p[r.p.length-1]].forEach(p=>(ROADGEO._fill[kf(p)]||[]).forEach(j=>{ if(j!==i){const v=val(j); if(v!=null) nb.push(v);} }));
     if(nb.length>=2) inherit[i]=Math.round(nb.reduce((a,b)=>a+b,0)/nb.length);
   });
 
