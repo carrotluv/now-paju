@@ -110,7 +110,7 @@ export default {
         if (!env.GH_TOKEN) return json({ error: 'no-key', message: '데이터 채널(GH_TOKEN)이 아직 연결되지 않았습니다' }, 503);
         const d = await ghItsData(env, ctx);
         if (url.pathname === '/api/cctv') return json({ asof: d.asof, count: (d.cams || []).length, cams: d.cams || [] }, 200, 180);
-        return json({ asof: d.asof, roads: d.roads || [] }, 200, 180);
+        return json({ asof: d.asof, roads: d.roads || [], links: d.links || {} }, 200, 180);
       }
 
       if (url.pathname === '/api/summary') {

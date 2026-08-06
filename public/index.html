@@ -337,7 +337,7 @@ const clusterBounds=L.latLngBounds(SPOTS.filter(s=>CLUSTER.includes(s.id)).map(s
 const pajuBounds=L.latLngBounds(PAJU_RING).pad(.03);
 
 let nodeMarkers={}, camMarkers=[], badge=null;
-let CAMS=[], CAM_PINS=[], ROADS=[], showTraffic=false, itsAsof=null;
+let CAMS=[], CAM_PINS=[], ROADS=[], LINK_SPD={}, showTraffic=false, itsAsof=null;
 
 function nodeIcon(s){
   const r=RAD[s.s];
@@ -414,18 +414,23 @@ tgCam.onclick=()=>{
 
 const LVC={'원활':'#2fa876','서행':'#e07b2f','정체':'#d94f3d'};
 
-// 도로 위 대표 지점에 속도 배지를 놓는다 (선형을 지어내지 않기 위해 선 대신 점 표시)
-const TRAFFIC_PTS=[
- {road:'통일로', at:[37.7905,126.7885]},
- {road:'자유로', at:[37.8180,126.6962]},
- {road:'서울문산고속도로', at:[37.8010,126.7685]},
- {road:'율곡로', at:[37.8628,126.8700]},
- {road:'경의로', at:[37.7470,126.7715]},
- {road:'파주로', at:[37.7420,126.7470]},
- {road:'교하로', at:[37.7300,126.7390]}
-];
-const trafficLayers=TRAFFIC_PTS.map(t=>({road:t.road,
-  marker:L.marker(t.at,{icon:L.divIcon({className:'',iconSize:[0,0],html:''}),interactive:false,opacity:0}).addTo(map)}));
+// 실제 도로 선형(표준노드링크 파주 구간)에 링크별 속도를 칠한다
+let LINKS=[], linkLayer=L.layerGroup();
+const spdColor=v=>v>=60?LVC['원활']:(v>=35?LVC['서행']:LVC['정체']);
+async function loadLinks(){
+  if(LINKS.length) return;
+  try{ LINKS=(await (await fetch('/paju_links.json')).json()).links||[]; }catch(e){ LINKS=[]; }
+}
+function drawLinks(speeds){
+  linkLayer.clearLayers();
+  if(!showTraffic||!LINKS.length) return;
+  LINKS.forEach(l=>{
+    const v=speeds[l.i];
+    if(v==null||l.p.length<2) return;
+    L.polyline(l.p,{color:spdColor(v),weight:4,opacity:.85,lineCap:'round',interactive:false}).addTo(linkLayer);
+  });
+  if(!map.hasLayer(linkLayer)) linkLayer.addTo(map);
+}
 
 function renderTraffic(){
   const box=document.getElementById('trafficbox');
@@ -433,15 +438,8 @@ function renderTraffic(){
   box.innerHTML=`<div class="tb-title">도로 상황<span class="num">${itsAsof?itsAsof+' 기준':''}</span></div>`
     + rows.map(r=>`<div class="tr-row num"><i style="background:${LVC[r.level]||'#b5afa3'}"></i>${r.road}<span class="sp">${r.speed}<small>km/h</small></span></div>`).join('');
   box.classList.toggle('on',showTraffic);
-  const lv=n=>ROADS.find(r=>r.road===n);
-  trafficLayers.forEach(t=>{
-    const d=lv(t.road);
-    const html=(showTraffic&&d)
-      ? `<div class="spdchip" style="border-color:${LVC[d.level]};color:${LVC[d.level]}"><b>${t.road}</b> ${d.speed}<small>km/h</small></div>`
-      : '';
-    t.marker.setIcon(L.divIcon({className:'',iconSize:[0,0],html}));
-    t.marker.setOpacity(showTraffic&&d?1:0);
-  });
+  if(showTraffic){ loadLinks().then(()=>drawLinks(LINK_SPD)); }
+  else { linkLayer.clearLayers(); }
 }
 const tgTr=document.getElementById('tg-traffic');
 function trafficReady(){ if(tgTr.disabled){ tgTr.disabled=false; tgTr.title='실시간 도로 상황 켜기/끄기'; } }
@@ -659,7 +657,7 @@ async function loadIts(){
       CAM_PINS=thinByRoute([...nearSet].map(i=>CAMS[i]));     // 같은 노선 연속분은 3개로 솎음
       renderCams(); renderList();
     } }
-    if(t.ok){ const j=await t.json(); if(j.roads&&j.roads.length){ ROADS=j.roads;
+    if(t.ok){ const j=await t.json(); if(j.roads&&j.roads.length){ ROADS=j.roads; LINK_SPD=j.links||{};
       const d=new Date(j.asof); itsAsof=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
       trafficReady(); renderTraffic(); } }
   }catch(e){}
