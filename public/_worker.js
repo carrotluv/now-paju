@@ -162,6 +162,27 @@ export default {
         return json({ asof: new Date().toISOString(), spots }, 200, 120);
       }
 
+      if (url.pathname === '/api/weather') {                 // 파주 9지점 날씨·대기질 (경기도 제공)
+        const [listRaw] = await Promise.all([upstreamJson(LIST_PATH, 180, ctx)]);
+        const items = listRaw.content || listRaw;
+        const paju = items.filter(x => (x.sggName || '').includes('파주'));
+        const one = async (p) => {
+          const out = { id: p.interestRegionId, name: p.interestRegionName };
+          try {
+            const w = await upstreamJson(`/api/weather/${p.interestRegionId}/info`, 900, ctx);
+            out.w = { sky: w.weather, t: w.temperature, feel: w.perceiveTemperature,
+                      hum: w.humidity, wind: w.windSpeed, lo: w.lowestTemperature, hi: w.highestTemperature };
+          } catch (e) { /* 이 지점은 날씨 미제공 */ }
+          try {
+            const a = await upstreamJson(`/api/air-quality/${p.interestRegionId}`, 900, ctx);
+            out.air = { pm10: a.pm10Value, pm10g: a.pm10Grade, pm25: a.pm25Value, pm25g: a.pm25Grade };
+          } catch (e) { /* 대기질 미제공 */ }
+          return out;
+        };
+        const spots = await Promise.all(paju.map(one));
+        return json({ asof: new Date().toISOString(), spots }, 200, 600);
+      }
+
       const mSpot = url.pathname.match(/^\/api\/spot\/(\d+)$/);
       if (mSpot) {
         const id = mSpot[1];

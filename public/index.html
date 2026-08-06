@@ -136,6 +136,12 @@
   .fact{display:flex;justify-content:space-between;font-size:14px;border-bottom:1px solid var(--hair2);padding-bottom:7px}
   .fact:last-child{border-bottom:0}
   .fact span{color:var(--ink)} .fact b{font-weight:600}
+  .wx{display:flex;align-items:center;gap:8px;font-size:13.5px;color:var(--ink);background:var(--demo-bg);
+    border:1px solid var(--hair);border-radius:var(--radius);padding:8px 11px;margin-bottom:13px;flex-wrap:wrap}
+  .wx b{font-size:16px;font-weight:700}
+  .wx i{font-style:normal;font-size:15px}
+  .wx small{color:var(--sub);font-size:12px}
+  .wx .near{color:var(--sub);font-size:11.5px;margin-left:auto}
   .p-sec{font-size:12px;letter-spacing:1px;color:var(--ink);font-weight:600;margin-bottom:7px}
   .bars{display:flex;align-items:flex-end;gap:2px;height:62px}
   .bars i{flex:1;border-radius:2px 2px 0 0;background:var(--bar);min-height:2px}
@@ -381,6 +387,8 @@ const pajuBounds=L.latLngBounds(PAJU_RING).pad(.03);
 
 let nodeMarkers={}, camMarkers=[], badge=null;
 let CAMS=[], CAM_PINS=[], ROADS=[], LINK_SPD={}, ROAD_AVG={}, showTraffic=false, itsAsof=null;
+let WX={};                                                   // 지점ID → {w:날씨, air:대기질, from:대체출처}
+const SKY_ICON=s=>/비|소나기/.test(s||'')?'🌧️':(/눈/.test(s||'')?'🌨️':(/흐림/.test(s||'')?'☁️':(/구름/.test(s||'')?'⛅':'☀️')));
 
 function nodeIcon(s){
   const r=RAD[s.s];
@@ -614,7 +622,16 @@ function renderList(){
       const bars=s.t.map((v,j)=>`<i style="height:${Math.max(3,v)}%;${j===s.nowIdx?`background:${HEXC[s.s]}`:''}" class="${j===s.nowIdx?'now':''}"></i>`).join('');
       const rec = mode==='E' ? (rk>=4?'지금 바로!':(rk===3?'지금 좋아요':'저녁쯤 다시'))
                              : (rk>=4?'피크 지난 뒤':(rk===3?'한 시간 뒤':'지금'));
+      const wx=WX[s.id];
+      const wxRow=(wx&&wx.w)?`<div class="wx">
+        <i>${SKY_ICON(wx.w.sky)}</i><b class="num">${wx.w.t}°</b>
+        <span>${wx.w.sky||''}</span>
+        <small class="num">최저 ${wx.w.lo}° / 최고 ${wx.w.hi}° · 습도 ${wx.w.hum}%</small>
+        ${wx.air?`<small class="num">미세 ${wx.air.pm10g} ${wx.air.pm10}</small>`:''}
+        ${wx.from?`<span class="near">${wx.from} 기준</span>`:''}
+      </div>`:'';
       det=`<div class="q" style="color:${TXTC[s.s]};background:color-mix(in srgb, ${HEXC[s.s]} 13%, var(--card))">「${MSG[mode][s.s]}」</div>
+      ${wxRow}
       <div class="facts">
         <div class="fact"><span>추정 인구</span><b class="num">${s.pop!=null?s.pop.toLocaleString()+'명':'—'}</b></div>
         <div class="fact"><span>평시 대비</span><b class="num">${s.diff??'—'}</b></div>
@@ -771,11 +788,34 @@ async function loadSummary(){
     const d=new Date(j.asof);
     document.getElementById('asof').textContent=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+' 기준 · 5분 갱신';
     renderBanner(); renderNodes(); renderList();
-    loadAllDetails();
+    loadAllDetails(); loadWx();
   }catch(e){
     document.getElementById('asof').textContent='연결 오류 · 5분 뒤 재시도';
   }
 }
+async function loadWx(){
+  try{
+    const r=await fetch('/api/weather'); if(!r.ok) return;
+    const j=await r.json();
+    const list=(j.spots||[]);
+    const bySpot={};                                         // 경기도 지점ID → 데이터
+    list.forEach(x=>{ bySpot[x.id]={w:x.w||null, air:x.air||null, name:x.name}; });
+    // 날씨가 없는 지점은 가장 가까운 '날씨 있는' 지점 값으로 채우고 출처를 남긴다
+    const have=SPOTS.filter(s=>s.spotId&&bySpot[s.spotId]&&bySpot[s.spotId].w);
+    SPOTS.forEach(s=>{
+      if(!s.spotId||!bySpot[s.spotId]) return;
+      const d=bySpot[s.spotId];
+      if(!d.w&&have.length){
+        let best=null,bd=1e9;
+        have.forEach(h=>{ const dy=h.lat-s.lat,dx=(h.lng-s.lng)*0.79,q=dy*dy+dx*dx; if(q<bd){bd=q;best=h;} });
+        if(best){ d.w=bySpot[best.spotId].w; d.from=best.short; }
+      }
+      WX[s.id]=d;
+    });
+    renderList();
+  }catch(e){}
+}
+
 async function loadIts(){
   if(!FEATURE_ITS) return;
   try{
