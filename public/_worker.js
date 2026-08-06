@@ -78,11 +78,64 @@ function json(data, status = 200, ttl = 0) {
   });
 }
 
+// ── ITS(국가교통정보센터) — CCTV·소통정보. 인증키는 Cloudflare Secret(ITS_KEY)에만 두고 응답에 절대 싣지 않는다.
+const ITS = 'https://openapi.its.go.kr:9443';
+const PAJU_BBOX = { minX: 126.65, maxX: 127.03, minY: 37.68, maxY: 38.02 };
+
+async function itsFetch(endpoint, key, extra) {
+  const q = new URLSearchParams(Object.assign({
+    apiKey: key, type: 'all', getType: 'json',
+    minX: PAJU_BBOX.minX, maxX: PAJU_BBOX.maxX, minY: PAJU_BBOX.minY, maxY: PAJU_BBOX.maxY
+  }, extra));
+  const r = await fetch(`${ITS}/${endpoint}?${q}`, { headers: { accept: 'application/json' } });
+  const body = await r.text();
+  if (!r.ok) throw new Error('its ' + r.status + ' :: ' + body.replace(/\s+/g, ' ').slice(0, 140));
+  try { return JSON.parse(body); }
+  catch (e) { throw new Error('its parse :: ' + body.replace(/\s+/g, ' ').slice(0, 140)); }
+}
+
+const itsRows = (j) => (j && j.response && Array.isArray(j.response.data)) ? j.response.data : (Array.isArray(j && j.data) ? j.data : []);
+const num = (v) => { const n = parseFloat(v); return isNaN(n) ? null : n; };
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
     if (!url.pathname.startsWith('/api/')) return env.ASSETS.fetch(request);
     try {
+      if (url.pathname === '/api/cctv' || url.pathname === '/api/traffic') {
+        const key = env.ITS_KEY;
+        if (!key) return json({ error: 'no-key', message: 'ITS 인증키가 아직 등록되지 않았습니다' }, 503);
+        const debug = url.searchParams.get('debug') === '1';
+
+        if (url.pathname === '/api/cctv') {
+          const raw = await itsFetch('cctvInfo', key, { cctvType: '1' });
+          if (debug) return json({ sample: itsRows(raw).slice(0, 2), count: itsRows(raw).length });
+          const cams = itsRows(raw).map(x => ({
+            name: x.cctvname || x.cctvName || '',
+            lat: num(x.coordy != null ? x.coordy : x.coordY),
+            lng: num(x.coordx != null ? x.coordx : x.coordX),
+            url: x.cctvurl || x.cctvUrl || '',
+            format: x.cctvformat || x.cctvFormat || ''
+          })).filter(c => c.lat && c.lng && c.url);
+          return json({ count: cams.length, cams }, 200, 1800);
+        }
+
+        const raw = await itsFetch('trafficInfo', key, { drcType: 'all' });
+        if (debug) return json({ sample: itsRows(raw).slice(0, 2), count: itsRows(raw).length });
+        const byRoad = {};
+        itsRows(raw).forEach(x => {
+          const road = x.roadName || x.roadname || '기타';
+          const sp = num(x.speed);
+          if (sp == null) return;
+          (byRoad[road] = byRoad[road] || []).push(sp);
+        });
+        const roads = Object.entries(byRoad).map(([road, arr]) => {
+          const avg = Math.round(arr.reduce((a, b) => a + b, 0) / arr.length);
+          return { road, speed: avg, links: arr.length, level: avg >= 60 ? '원활' : avg >= 35 ? '서행' : '정체' };
+        }).sort((a, b) => b.links - a.links);
+        return json({ asof: new Date().toISOString(), roads }, 200, 240);
+      }
+
       if (url.pathname === '/api/summary') {
         const [listRaw, markers] = await Promise.all([
           upstreamJson(LIST_PATH, 180, ctx),

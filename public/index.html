@@ -22,18 +22,21 @@
   body{background:var(--bg);color:var(--ink);font-family:'Pretendard Variable','Pretendard','Malgun Gothic',-apple-system,BlinkMacSystemFont,system-ui,sans-serif;word-break:keep-all}
   .num{font-variant-numeric:tabular-nums}
 
-  header{display:flex;align-items:center;gap:20px;padding:16px 24px;border-bottom:1px solid var(--hair);flex-wrap:wrap;background:var(--bg);position:relative;z-index:1200}
-  header .t{display:flex;align-items:center;gap:10px}
+  header{display:flex;align-items:flex-end;gap:20px;padding:16px 24px;border-bottom:1px solid var(--hair);flex-wrap:wrap;background:var(--bg);position:relative;z-index:1200}
+  header .t{display:flex;align-items:center;gap:11px;cursor:pointer;user-select:none}
+  header .t:hover b{text-decoration:underline;text-underline-offset:4px;text-decoration-thickness:2px}
   header .t svg{flex:none}
-  header .t b{font-size:25px;display:block;letter-spacing:.5px;font-weight:800;line-height:1.15;white-space:nowrap}
-  header .t span{font-size:12px;letter-spacing:5.4px;color:var(--sub);margin-top:2px;display:block}
-  .tabs{display:flex;gap:8px}
-  .tab{display:flex;align-items:center;padding:6px 12px;font-size:11px;color:var(--sub);cursor:pointer;border:1.5px solid var(--hair);border-radius:var(--radius);background:var(--float-bg);box-shadow:var(--shadow-1);font-family:inherit}
-  .tab b{font-size:12px;margin-right:4px}
-  .tab.on{color:var(--btn-dark-ink);background:var(--btn-dark);border-color:var(--btn-dark);font-weight:700}
-  .legend{margin-left:auto;display:flex;gap:13px;font-size:12px;color:var(--sub);align-items:center;flex-wrap:wrap}
-  .legend i{width:10px;height:10px;border-radius:50%;display:inline-block;margin-right:5px;vertical-align:-1px}
-  .asof{font-size:12px;color:var(--sub);border-left:1px solid var(--hair);padding-left:13px}
+  header .t b{font-size:28px;display:block;letter-spacing:.5px;font-weight:800;line-height:1.15;white-space:nowrap}
+  header .t span{font-size:12.5px;letter-spacing:6.2px;color:var(--sub);margin-top:2px;display:block}
+  .tabs{display:flex;padding:3px;border:1.5px solid var(--hair);border-radius:8px;background:var(--float-bg)}
+  .tab{display:flex;align-items:center;padding:6px 13px;font-size:13px;color:var(--sub);cursor:pointer;border:0;border-radius:var(--radius);background:transparent;font-family:inherit}
+  .tab b{font-size:14px;margin-right:5px}
+  .tab:hover{color:var(--ink)}
+  .tab.on{color:var(--btn-dark-ink);background:var(--btn-dark);font-weight:700}
+  .tab.on:hover{color:var(--btn-dark-ink)}
+  .legend{margin-left:auto;display:flex;gap:15px;font-size:14px;color:var(--ink);align-items:flex-end;flex-wrap:wrap}
+  .legend i{width:12px;height:12px;border-radius:50%;display:inline-block;margin-right:6px;vertical-align:-1px}
+  .asof{font-size:13px;color:var(--ink);border-left:1px solid var(--hair);padding-left:15px}
 
   .banner{padding:9px 24px;font-size:14px;border-bottom:1px solid var(--hair);background:var(--banner)}
   .banner b{font-weight:700}
@@ -164,8 +167,8 @@
 </head>
 <body>
 <header>
-  <div class="t">
-    <svg width="38" height="38" viewBox="0 0 26 26" aria-hidden="true" style="color:var(--ink)"><circle cx="13" cy="13" r="11" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="13" cy="13" r="6" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".35"/><circle cx="17" cy="9.5" r="3" fill="#2fa876"/></svg>
+  <div class="t" id="brand" role="button" tabindex="0" title="새로고침">
+    <svg width="42" height="42" viewBox="0 0 26 26" aria-hidden="true" style="color:var(--ink)"><circle cx="13" cy="13" r="11" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="13" cy="13" r="6" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".35"/><circle cx="17" cy="9.5" r="3" fill="#2fa876"/></svg>
     <div><b>지금 파주</b><span>NOW PAJU</span></div>
   </div>
   <div class="tabs" id="tabs">
@@ -348,6 +351,11 @@ function renderCams(){
 }
 badge=L.marker([37.7270,126.7950],{icon:L.divIcon({className:'',iconSize:[0,0],html:`<div class="clusterbadge" style="transform:translate(-50%,-50%)">운정 5곳<span>확대</span></div>`})}).addTo(map);
 badge.on('click',()=>map.flyToBounds(clusterBounds,{duration:.7}));
+
+// ── 로고 클릭 = 새로고침
+const brand=document.getElementById('brand');
+brand.onclick=()=>location.reload();
+brand.onkeydown=e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); location.reload(); } };
 
 // ── 지도 레이어 토글 (CCTV / 도로 소통)
 let showCams=true;
