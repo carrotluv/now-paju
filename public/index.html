@@ -55,6 +55,13 @@
   .mbtn[disabled]{opacity:.5;cursor:not-allowed}
   .mbtn[disabled]:hover{background:var(--float-bg)}
   .msel{appearance:none;-webkit-appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6'><path d='M1 1l4 4 4-4' stroke='%2323272f' stroke-width='1.6' fill='none'/></svg>") no-repeat right 10px center;background-color:var(--float-bg);border:1px solid var(--hair);border-radius:var(--radius);padding:7px 28px 7px 12px;font-size:13px;font-weight:600;color:var(--ink);cursor:pointer;box-shadow:var(--shadow-1);font-family:inherit}
+  .statchip{position:absolute;left:12px;bottom:12px;z-index:1000;display:none;align-items:center;gap:11px;
+    background:var(--float-bg);border:1px solid var(--hair);border-radius:var(--radius);padding:7px 12px;
+    font-size:12.5px;color:var(--ink);box-shadow:var(--shadow-1);font-variant-numeric:tabular-nums;white-space:nowrap}
+  .statchip.on{display:flex}
+  .statchip span{display:flex;align-items:center;gap:5px}
+  .statchip i{width:8px;height:8px;border-radius:50%;flex:none}
+  .statchip b{font-weight:700}
   .maptag{position:absolute;right:12px;bottom:12px;z-index:1000;background:var(--float-bg2);border:1px solid var(--hair);border-radius:var(--radius);padding:5px 10px;font-size:11px;color:var(--sub)}
 
   /* 지도 노드 */
@@ -201,8 +208,8 @@
     .mbtn,.msel{padding:11px 12px;min-height:42px;font-size:12.5px}
     .msel{padding-right:27px}
     .maptag{left:8px;right:auto;bottom:8px;font-size:10px;padding:4px 8px}
-    .trafficbox{left:auto;right:8px;bottom:8px;padding:9px 11px;min-width:0}
-    .tr-row{font-size:12px;padding:2px 0}
+    .statchip{left:8px;bottom:36px;gap:9px;padding:6px 10px;font-size:12px}
+    .trafficbox,.trafficbox.on{display:none}     /* 모바일에선 지도를 가려서 표 숨김 — 도로 색만 표시 */
 
     .list{max-height:none;border-top:0}
     .list-head{padding:12px 16px 10px}
@@ -243,6 +250,7 @@
       <button class="mbtn tgl on" id="tg-cam" title="지점 주변 CCTV 위치 표시 (확대하면 나타남)">CCTV</button>
       <button class="mbtn tgl" id="tg-traffic" disabled title="실시간 도로 상황 켜기/끄기">도로 상황</button>
     </div>
+    <div class="statchip" id="statchip"></div>
     <div class="maptag">지도: OpenStreetMap · CARTO</div>
     <div class="trafficbox" id="trafficbox"></div>
   </div>
@@ -478,6 +486,8 @@ function renderTraffic(){
   box.innerHTML=`<div class="tb-title">도로 상황<span class="num">${itsAsof?itsAsof+' 기준':''}</span></div>`
     + rows.map(r=>`<div class="tr-row num"><i style="background:${LVC[r.level]||'#b5afa3'}"></i>${r.road}<span class="sp">${r.speed}<small>km/h</small></span></div>`).join('');
   box.classList.toggle('on',showTraffic);
+  const chip=document.getElementById('statchip');           // 도로 상황 카드가 뜨면 개수 칩이 위로 비켜난다
+  if(chip) chip.style.bottom = (showTraffic && window.innerWidth>600) ? (box.offsetHeight+20)+'px' : '';
   if(showTraffic){ loadLinks().then(()=>drawLinks(LINK_SPD)); }
   else { linkLayer.clearLayers(); }
 }
@@ -566,7 +576,21 @@ function renderList(){
   document.querySelectorAll('.cambtn').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();openCam(CAMS[+b.dataset.ci],b.dataset.spot);}));
 }
 
+function renderStatChip(){
+  const el=document.getElementById('statchip');
+  const cnt={'여유':0,'보통':0,'약간 혼잡':0,'혼잡':0,'매우 혼잡':0};
+  SPOTS.forEach(s=>{ if(cnt[s.s]!=null) cnt[s.s]++; });
+  const busy=cnt['혼잡']+cnt['매우 혼잡'];
+  const total=cnt['여유']+cnt['보통']+cnt['약간 혼잡']+busy;
+  if(!total){ el.classList.remove('on'); return; }
+  const item=(color,label,n)=>n?`<span><i style="background:${color}"></i>${label} <b>${n}</b></span>`:'';
+  el.innerHTML=item(HEXC['여유'],'여유',cnt['여유'])+item(HEXC['보통'],'보통',cnt['보통'])
+    +item(HEXC['약간 혼잡'],'약간',cnt['약간 혼잡'])+item(HEXC['혼잡'],'혼잡',busy);
+  el.classList.add('on');
+}
+
 function renderBanner(){
+  renderStatChip();
   const el=document.getElementById('banner');
   const live=SPOTS.filter(s=>(RANK[s.s]??0)>0);
   if(!live.length){ el.textContent='실시간 데이터를 불러오는 중입니다…'; return; }
