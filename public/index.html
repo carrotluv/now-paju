@@ -140,8 +140,9 @@
     border:1px solid var(--hair);border-radius:var(--radius);padding:8px 11px;margin-bottom:13px;flex-wrap:wrap}
   .wx b{font-size:16px;font-weight:700}
   .wx i{font-style:normal;font-size:15px}
-  .wx small{color:var(--sub);font-size:12px}
-  .wx .near{color:var(--sub);font-size:11.5px;margin-left:auto}
+  .wx small{color:var(--ink);font-size:13px}
+  .wx em{font-style:normal;color:var(--t3);font-weight:600}
+  .wx .near{color:var(--ink-2);font-size:12px;margin-left:auto}
   .p-sec{font-size:12px;letter-spacing:1px;color:var(--ink);font-weight:600;margin-bottom:7px}
   .bars{display:flex;align-items:flex-end;gap:2px;height:62px}
   .bars i{flex:1;border-radius:2px 2px 0 0;background:var(--bar);min-height:2px}
@@ -389,6 +390,18 @@ let nodeMarkers={}, camMarkers=[], badge=null;
 let CAMS=[], CAM_PINS=[], ROADS=[], LINK_SPD={}, ROAD_AVG={}, showTraffic=false, itsAsof=null;
 let WX={};                                                   // 지점ID → {w:날씨, air:대기질, from:대체출처}
 const SKY_ICON=s=>/비|소나기/.test(s||'')?'🌧️':(/눈/.test(s||'')?'🌨️':(/흐림/.test(s||'')?'☁️':(/구름/.test(s||'')?'⛅':'☀️')));
+// 체감온도 — 원 데이터가 비어 있어 기상청 공식으로 계산한다(여름=습구온도식, 겨울=풍속식)
+function feelsLike(t,rh,windMs){
+  if(t==null) return null;
+  if(rh!=null&&t>=20){
+    const tw=t*Math.atan(0.151977*Math.pow(rh+8.313659,0.5))+Math.atan(t+rh)-Math.atan(rh-1.676331)
+      +0.00391838*Math.pow(rh,1.5)*Math.atan(0.023101*rh)-4.686035;
+    return Math.round(-0.2442+0.55399*tw+0.45535*t-0.0022*tw*tw+0.00278*tw*t+3.0);
+  }
+  const v=(windMs||0)*3.6;
+  if(t<=10&&v>4.8) return Math.round(13.12+0.6215*t-11.37*Math.pow(v,0.16)+0.3965*t*Math.pow(v,0.16));
+  return Math.round(t);
+}
 
 function nodeIcon(s){
   const r=RAD[s.s];
@@ -623,9 +636,11 @@ function renderList(){
       const rec = mode==='E' ? (rk>=4?'지금 바로!':(rk===3?'지금 좋아요':'저녁쯤 다시'))
                              : (rk>=4?'피크 지난 뒤':(rk===3?'한 시간 뒤':'지금'));
       const wx=WX[s.id];
+      const feel=wx&&wx.w?(wx.w.feel??feelsLike(wx.w.t,wx.w.hum,wx.w.wind)):null;
       const wxRow=(wx&&wx.w)?`<div class="wx">
         <i>${SKY_ICON(wx.w.sky)}</i><b class="num">${wx.w.t}°</b>
         <span>${wx.w.sky||''}</span>
+        ${feel!=null?`<em class="num" title="기온·습도·바람으로 계산한 체감온도">체감 ${feel}°</em>`:''}
         <small class="num">최저 ${wx.w.lo}° / 최고 ${wx.w.hi}° · 습도 ${wx.w.hum}%</small>
         ${wx.air?`<small class="num">미세 ${wx.air.pm10g} ${wx.air.pm10}</small>`:''}
         ${wx.from?`<span class="near">${wx.from} 기준</span>`:''}
