@@ -494,12 +494,28 @@ function drawLinks(speeds){
   Object.keys(measured).slice().forEach(ri=>{              // 왕복 분리도로는 반대편 차로도 같이 칠한다
     (ROADSIB[ri]||[]).forEach(s=>{ if(!measured[s]) measured[s]=measured[ri].slice(); });
   });
+  // 교차로 조각 메우기: 색이 없는 짧은 구간이라도 양 끝이 색칠 도로에 붙어 있으면 이웃 속도를 물려받는다
+  const val=i=>{ const a=measured[i]; return a?Math.round(a.reduce((x,y)=>x+y,0)/a.length):(roadAvg[ROADGEO[i].n]??null); };
+  if(!ROADGEO._fill){
+    const k=p=>p[0].toFixed(5)+','+p[1].toFixed(5), em={};
+    ROADGEO.forEach((r,i)=>{ [r.p[0],r.p[r.p.length-1]].forEach(p=>{ (em[k(p)]=em[k(p)]||[]).push(i); }); });
+    ROADGEO._fill=em;
+  }
+  const inherit={};
+  ROADGEO.forEach((r,i)=>{
+    if(val(i)!=null||r.p.length>6) return;
+    const k=p=>p[0].toFixed(5)+','+p[1].toFixed(5);
+    const nb=[];
+    [r.p[0],r.p[r.p.length-1]].forEach(p=>(ROADGEO._fill[k(p)]||[]).forEach(j=>{ if(j!==i){const v=val(j); if(v!=null) nb.push(v);} }));
+    if(nb.length>=2) inherit[i]=Math.round(nb.reduce((a,b)=>a+b,0)/nb.length);
+  });
+
   ROADGEO.forEach((r,i)=>{
     if(r.p.length<2) return;
     if((r.h||5)>st.maxClass) return;                       // 현재 줌에서 안 보일 등급
     const arr=measured[i];
     const own=arr?Math.round(arr.reduce((a,b)=>a+b,0)/arr.length):null;
-    const v=(own!=null)?own:roadAvg[r.n];
+    const v=(own!=null)?own:(roadAvg[r.n]??inherit[i]);
     if(v==null) return;
     L.polyline(r.p,{color:spdColor(v),weight:own!=null?st.weight:st.weight-0.5,
       opacity:own!=null?.85:.5,lineCap:'round',interactive:false}).addTo(linkLayer);
