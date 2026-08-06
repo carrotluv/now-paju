@@ -249,7 +249,6 @@
       <select class="msel" id="spot-jump"><option value="__all">파주 전체</option></select>
       <button class="mbtn tgl on" id="tg-cam" title="지점 주변 CCTV 위치 표시 (확대하면 나타남)">CCTV</button>
       <button class="mbtn tgl" id="tg-traffic" disabled title="실시간 도로 상황 켜기/끄기">도로 상황</button>
-      <button class="mbtn" id="tg-base" title="배경지도 전환 (OSM ↔ 브이월드)">OSM</button>
     </div>
     <div class="statchip" id="statchip"></div>
     <div class="maptag">지도: OpenStreetMap · CARTO</div>
@@ -347,25 +346,9 @@ const FEATURE_ITS=true;    // CCTV·도로 소통 스위치 (2026-08-06) — fal
 
 // ── 지도
 const map=L.map('map',{zoomControl:true,zoomSnap:.25,attributionControl:false});
-// 배경지도 — OSM(CARTO)과 브이월드(국토부) 전환. 브이월드는 도로 선형이 우리 노드링크와 같은 출처라 더 잘 맞는다.
-// 브이월드 타일은 워커(/tiles)를 거쳐 받는다 — 인증키가 브라우저에 노출되지 않도록.
-const BASEMAPS={
-  osm:L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{maxZoom:18,subdomains:'abcd'}),
-  vworld:L.tileLayer('/tiles/{z}/{y}/{x}.png',{maxZoom:18})
-};
-let baseKey=(localStorage.getItem('np_base')==='vworld')?'vworld':'osm';
-BASEMAPS[baseKey].addTo(map);
-function setBase(k){
-  if(k===baseKey||!BASEMAPS[k]) return;
-  map.removeLayer(BASEMAPS[baseKey]);
-  BASEMAPS[k].addTo(map).bringToBack();
-  baseKey=k;
-  try{ localStorage.setItem('np_base',k); }catch(e){}
-  const b=document.getElementById('tg-base');
-  if(b) b.textContent=(k==='vworld')?'브이월드':'OSM';
-  const tag=document.querySelector('.maptag');
-  if(tag) tag.textContent=(k==='vworld')?'지도: 브이월드(국토교통부)':'지도: OpenStreetMap · CARTO';
-}
+// 배경지도 — OSM(CARTO). 브이월드는 Cloudflare에서 나가는 요청을 막아(502) 사용 불가,
+// 워커의 /tiles 프록시는 남겨둠(다른 타일 소스로 되살릴 때 재사용).
+L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{maxZoom:18,subdomains:'abcd'}).addTo(map);
 const WORLD=[[85,-180],[85,180],[-85,180],[-85,-180]];
 const maskLayer=L.polygon([WORLD,PAJU_RING],{stroke:false,fillColor:'#f7f5ef',fillOpacity:.62,interactive:false}).addTo(map);
 const boundaryLayer=L.polyline(PAJU_RING.concat([PAJU_RING[0]]),{color:'#23272f',weight:2,dashArray:'6 5',opacity:.55,interactive:false}).addTo(map);
@@ -457,12 +440,6 @@ function thinByRoute(cams){                                 // 같은 노선(고
 }
 badge=L.marker([37.7270,126.7950],{icon:L.divIcon({className:'',iconSize:[0,0],html:`<div class="clusterbadge" style="transform:translate(-50%,-50%)">운정 5곳<span>확대</span></div>`})}).addTo(map);
 badge.on('click',()=>map.flyToBounds(clusterBounds,{duration:.7}));
-
-// ── 배경지도 전환
-const tgBase=document.getElementById('tg-base');
-tgBase.onclick=()=>setBase(baseKey==='osm'?'vworld':'osm');
-setBase(baseKey==='vworld'?'vworld':'osm');
-tgBase.textContent=(baseKey==='vworld')?'브이월드':'OSM';
 
 // ── 로고 클릭 = 새로고침
 const brand=document.getElementById('brand');
