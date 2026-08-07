@@ -117,10 +117,12 @@
   /* 우측 리스트 */
   .list{order:-1;border-right:1px solid var(--hair);background:var(--card);overflow-y:auto;display:flex;flex-direction:column}
   #rows{padding-bottom:18px}
+  @media (max-width:640px){ #rows{padding-top:0!important} }
   .list-head{padding:10px 18px 9px;border-bottom:1px solid var(--hair);display:flex;align-items:baseline;gap:8px;position:sticky;top:0;background:var(--card);z-index:5}
   .list-head b{font-size:14px;line-height:20px}
   .list-head span{font-size:12px;line-height:18px;font-weight:600;color:var(--ink);margin-left:auto}
-  .row{display:flex;align-items:center;gap:10px;padding:8px 18px;border-bottom:1px solid var(--hair2);cursor:pointer}
+  .row{display:flex;align-items:center;gap:10px;padding:8px 18px;border-bottom:1px solid var(--hair2);cursor:pointer;
+    height:var(--rowh,60px);box-sizing:border-box}
   .row:hover{background:var(--hover)}
   .row.sel{background:var(--sel-bg)}
   .row.tint-hot{background:var(--tint-hot)}
@@ -256,7 +258,7 @@
     .list-head{padding:12px 16px 10px}
     .row{padding:14px 16px}
     .det{padding:14px 16px 18px}
-    .row{padding:12px 16px}
+    .row{padding:12px 16px;height:auto}
     .info b{line-height:19px} .info span{line-height:18px}
     .navbtn{padding:11px 4px}
     .cambtn{padding:9px 12px;font-size:13px}
@@ -735,6 +737,23 @@ function trafficReady(){ if(tgTr.disabled){ tgTr.disabled=false; tgTr.title='실
 tgTr.onclick=()=>{ if(tgTr.disabled) return; showTraffic=!showTraffic; tgTr.classList.toggle('on',showTraffic); renderTraffic(); };
 if(!FEATURE_ITS){ tgCam.style.display='none'; tgTr.style.display='none'; }
 
+// 목록이 상태창 바로 위에서 딱 떨어지도록 행 높이를 창에 맞춰 계산한다(넓은 화면만)
+const ROWS_VISIBLE=10;
+function fitRows(){
+  const list=document.getElementById('list');
+  if(!list||innerWidth<=640){ document.documentElement.style.removeProperty('--rowh'); return; }
+  const head=list.querySelector('.list-head');
+  const avail=list.clientHeight-(head?head.offsetHeight:0);
+  if(avail<=0) return;
+  let n=ROWS_VISIBLE, h=Math.floor(avail/n);
+  if(h>84){ n=Math.ceil(avail/84); h=Math.floor(avail/n); }          // 큰 화면은 개수를 늘려 여백을 없앤다
+  if(h<48){ n=Math.max(4,Math.floor(avail/48)); h=Math.floor(avail/n); }
+  document.documentElement.style.setProperty('--rowh',h+'px');
+  const rows=document.getElementById('rows');                        // 남는 몇 px 때문에 다음 행이 살짝 보이던 것 제거
+  if(rows) rows.style.paddingTop=Math.max(0,avail-h*n)+'px';
+}
+addEventListener('resize',fitRows);
+
 function zoomClass(){
   const el=document.getElementById('map');
   const lo=map.getZoom()<11.4;
@@ -1071,6 +1090,7 @@ zoomClass();
 renderBanner(); renderNodes(); renderCams(); renderList();
 loadSummary();
 loadIts();
+fitRows();
 loadVisits();
 </script>
 </body>
