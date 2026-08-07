@@ -138,7 +138,7 @@
   .p-sec .hint{order:2;font-weight:600;letter-spacing:0}
   /* 핵심 지표 4개 — 값의 자리와 크기를 맞춰 훑기 좋게(추정 인구만 강조) */
   .grid2{display:grid;grid-template-columns:1fr 1fr;gap:7px}
-  .mcard{background:var(--card);border:1px solid var(--hair);border-radius:var(--radius);padding:9px 11px;min-width:0}
+  .mcard{background:var(--card);border:1px solid var(--hair);border-radius:var(--radius);padding:9px 11px;min-width:0;text-align:center}
   .mcard .lb{font-size:12px;line-height:16px;font-weight:600;color:var(--ink);margin-bottom:4px}
   .mcard .v{font-size:19px;font-weight:800;letter-spacing:-.4px;line-height:24px;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -169,7 +169,8 @@
     border:0;border-bottom:1px solid var(--hair2);padding:9px 11px;font-size:13px;cursor:pointer;font-family:inherit}
   .cambtn:last-child{border-bottom:0}
   .cambtn:hover{background:var(--hover)}
-  .cambtn .tag{flex:0 0 auto;font-size:12px;line-height:15px;font-weight:600;color:var(--ink);border:1px solid var(--hair);border-radius:3px;padding:1px 5px}
+  .cambtn .tag{flex:0 0 90px;text-align:center;font-size:12px;line-height:15px;font-weight:600;color:var(--ink);border:1px solid var(--hair);border-radius:3px;padding:1px 4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .cambtn .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .cambtn .go{margin-left:auto;color:var(--ink);font-size:12px;font-weight:600}
   .navs{display:flex;gap:6px;margin-top:0}
   .navbtn{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;font-size:13px;line-height:19px;font-weight:600;
@@ -740,15 +741,25 @@ function renderList(){
       camSec=`<div class="p-sec">주변 도로 CCTV</div><div class="cams">${near.map(x=>{
         const m=(x.c.n||'').match(/^\[(.+?)\]\s*(.*)$/);          // [노선]이름 → 태그와 이름으로 분리
         const tag=m?m[1]:'', nm=(m?m[2]:(x.c.n||'')).replace(/</g,'&lt;');
-        return `<button class="cambtn" data-ci="${x.i}" data-spot="${s.n}">${tag?`<span class="tag">${tag}</span>`:''}${nm}<span class="go">보기 ›</span></button>`;
+        return `<button class="cambtn" data-ci="${x.i}" data-spot="${s.n}">${tag?`<span class="tag">${tag}</span>`:''}<span class="nm">${nm}</span><span class="go">보기 ›</span></button>`;
       }).join('')}</div>`;
     } else {
       camSec=`<div class="p-sec">주변 도로 CCTV</div><div style="font-size:13px;color:var(--sub)">연동 대기 중</div>`;
     }
+    const wx=WX[s.id];
+    const feel=wx&&wx.w?(wx.w.feel??feelsLike(wx.w.t,wx.w.hum,wx.w.wind)):null;
+    const wxRow=(wx&&wx.w)?`<div class="wx">
+      <i class="ic">${SKY_ICON(wx.w.sky)}</i>
+      <div class="main"><span class="t num">${wx.w.t}°</span>
+        <span class="cond" title="기온·습도·바람으로 계산한 체감온도">${wx.w.sky||''}${feel!=null?` · 체감 ${feel}°`:''}</span></div>
+      <div class="r num">최저 ${wx.w.lo}° / 최고 ${wx.w.hi}°<br>습도 ${wx.w.hum}%${wx.air?` · 미세 ${wx.air.pm10}`:''}
+        ${wx.from?`<br><span class="near">${wx.from} 기준${wx.km?` · ${wx.km}km`:''}</span>`:''}</div>
+    </div>`:'';
     let det;
     if(!s.api){
       det=`<div class="headline" style="color:var(--sub)"><span>${MSG[mode][s.s]}</span></div>
-      <div style="font-size:13px;color:var(--ink);line-height:1.6">경기도 관측망에 아직 없는 지점이라 혼잡도가 제공되지 않습니다. 위치와 주변 CCTV만 표시합니다.</div>${camSec}${navSec}`;
+      <div style="font-size:13px;color:var(--ink);line-height:20px">경기도 관측망에 아직 없는 지점이라 혼잡도는 제공되지 않습니다. 날씨·위치·주변 CCTV만 표시합니다.</div>
+      ${wxRow}${camSec}${navSec}`;
     } else if(!s.loaded){
       det=`<div class="headline" style="color:${TXTC[s.s]}"><span>${MSG[mode][s.s]}</span></div>
       <div style="font-size:13px;color:var(--ink)">상세 데이터를 불러오는 중입니다…</div>${camSec}${navSec}`;
@@ -963,15 +974,18 @@ async function loadWx(){
     list.forEach(x=>{ bySpot[x.id]={w:x.w||null, air:x.air||null, name:x.name}; });
     // 날씨가 없는 지점은 가장 가까운 '날씨 있는' 지점 값으로 채우고 출처를 남긴다
     const have=SPOTS.filter(s=>s.spotId&&bySpot[s.spotId]&&bySpot[s.spotId].w);
+    const nearest=s=>{                                       // 가장 가까운 '날씨 있는' 지점
+      let best=null,bd=1e9;
+      have.forEach(h=>{ const dy=h.lat-s.lat,dx=(h.lng-s.lng)*0.79,q=dy*dy+dx*dx; if(q<bd){bd=q;best=h;} });
+      return best?{best,km:Math.round(Math.sqrt(bd)*111.32)}:null;
+    };
     SPOTS.forEach(s=>{
-      if(!s.spotId||!bySpot[s.spotId]) return;
-      const d=bySpot[s.spotId];
-      if(!d.w&&have.length){
-        let best=null,bd=1e9;
-        have.forEach(h=>{ const dy=h.lat-s.lat,dx=(h.lng-s.lng)*0.79,q=dy*dy+dx*dx; if(q<bd){bd=q;best=h;} });
-        if(best){ d.w=bySpot[best.spotId].w; d.from=best.short; }
-      }
-      WX[s.id]=d;
+      const own=s.spotId?bySpot[s.spotId]:null;
+      if(own&&own.w){ WX[s.id]=own; return; }
+      if(!have.length) return;
+      const n=nearest(s); if(!n) return;                     // 관측망에 없는 지점도 가까운 곳 기준으로 표시
+      const src=bySpot[n.best.spotId];
+      WX[s.id]={w:src.w, air:(own&&own.air)||src.air, from:n.best.short, km:n.km};
     });
     renderList();
   }catch(e){}
@@ -983,7 +997,7 @@ function fixRoute(n){
     let x=t.replace(/\s+/g,'').replace(/\([^)]*\)$/,'');   // 공백 제거 + 뒤 구간 괄호 제거
     if(/^국도\d+$/.test(x)) x+='호선';
     return `[${x}] `;
-  });
+  }).replace(/^(\[[^\]]+\]\s*)\[[^\]]+\]\s*/,'$1');   // 이름 앞 [지역] 중복 표기 제거
 }
 async function loadIts(){
   if(!FEATURE_ITS) return;
