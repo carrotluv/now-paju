@@ -27,18 +27,18 @@
   header .t:hover b{text-decoration:underline;text-underline-offset:4px;text-decoration-thickness:2px}
   header .t svg{flex:none}
   header .t b{font-size:28px;display:block;letter-spacing:.5px;font-weight:800;line-height:32px;white-space:nowrap}
-  header .t span{font-size:13px;line-height:16px;letter-spacing:6px;color:var(--sub);margin-top:2px;display:block}
+  header .t span{font-size:13px;line-height:16px;font-weight:600;letter-spacing:6px;color:var(--sub);margin-top:2px;display:block}
   .tabs{display:flex;padding:3px;border:1.5px solid var(--hair);border-radius:8px;background:var(--float-bg)}
   .tab{display:flex;align-items:center;padding:6px 13px;font-size:13px;line-height:20px;color:var(--sub);cursor:pointer;border:0;border-radius:var(--radius);background:transparent;font-family:inherit}
   .tab b{font-size:14px;margin-right:5px}
   .tab:hover{color:var(--ink)}
   .tab.on{color:var(--btn-dark-ink);background:var(--btn-dark);font-weight:700}
   .tab.on:hover{color:var(--btn-dark-ink)}
-  .legend{margin-left:auto;display:flex;gap:15px;font-size:14px;line-height:20px;color:var(--ink);align-items:flex-end;flex-wrap:wrap}
+  .legend{margin-left:auto;display:flex;gap:15px;font-size:14px;line-height:20px;font-weight:500;color:var(--ink);align-items:flex-end;flex-wrap:wrap}
   .legend i{width:12px;height:12px;border-radius:50%;display:inline-block;margin-right:6px;vertical-align:-1px}
-  .asof{font-size:13px;color:var(--ink);border-left:1px solid var(--hair);padding-left:15px}
+  .asof{font-weight:600;font-size:13px;color:var(--ink);border-left:1px solid var(--hair);padding-left:15px}
 
-  .banner{padding:9px 24px;font-size:14px;line-height:20px;border-bottom:1px solid var(--hair);background:var(--banner)}
+  .banner{padding:9px 24px;font-size:14px;line-height:20px;font-weight:600;border-bottom:1px solid var(--hair);background:var(--banner)}
   .banner b{font-weight:700}
 
   .wrap{display:grid;grid-template-columns:352px 1fr;height:round(down, calc(100vh - 144px), 1px);min-height:540px}
@@ -109,17 +109,17 @@
   /* 우측 리스트 */
   .list{order:-1;border-right:1px solid var(--hair);background:var(--card);overflow-y:auto;display:flex;flex-direction:column}
   .list-head{padding:13px 18px 11px;border-bottom:1px solid var(--hair);display:flex;align-items:baseline;gap:8px;position:sticky;top:0;background:var(--card);z-index:5}
-  .list-head b{font-size:14px}
-  .list-head span{font-size:12px;color:var(--sub);margin-left:auto}
+  .list-head b{font-size:14px;line-height:20px}
+  .list-head span{font-size:12px;line-height:18px;font-weight:600;color:var(--ink);margin-left:auto}
   .row{display:flex;align-items:center;gap:10px;padding:12px 18px;border-bottom:1px solid var(--hair2);cursor:pointer}
   .row:hover{background:var(--hover)}
   .row.sel{background:var(--sel-bg)}
   .row.tint-hot{background:var(--tint-hot)}
   .row.tint-cool{background:var(--tint-cool)}
-  .rk{font-size:12px;line-height:19px;color:var(--sub);width:20px;flex:none}
+  .rk{font-size:12px;line-height:19px;font-weight:600;color:var(--ink);width:20px;flex:none}
   .info{flex:1;min-width:0}
   .info b{font-size:14px;font-weight:600;display:block;line-height:19px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .info span{font-size:12px;line-height:18px;display:block;color:var(--ink)}
+  .info span{font-size:12px;line-height:18px;display:block;font-weight:600;color:var(--ink)}
   .pill{display:inline-flex;align-items:center;gap:6px;font-size:13px;line-height:19px;font-weight:600;white-space:nowrap;flex:none;color:var(--ink)}
   .pill::before{content:"";width:8px;height:8px;border-radius:50%;flex:none}
   .p1::before{background:var(--s1)} .p2::before{background:var(--s2)}
@@ -129,17 +129,17 @@
   .dv{font-size:13px;line-height:19px;font-weight:600;width:48px;text-align:right;flex:none}
   .du{color:var(--t4)} .dd{color:var(--dd)}
 
-  .det{display:none;padding:14px 18px 18px;border-bottom:1px solid var(--hair2);background:var(--panel)}
+  .det{display:none;font-weight:600;padding:14px 18px 18px;border-bottom:1px solid var(--hair2);background:var(--panel)}
   .row.sel + .det{display:block}
   .headline{font-size:15px;font-weight:700;line-height:22px;display:flex;gap:9px;align-items:stretch;margin-bottom:13px}
   .headline::before{content:'';width:3px;border-radius:2px;background:currentColor;flex:0 0 3px}
   .p-sec{display:flex;align-items:center;gap:8px;font-size:12px;line-height:18px;letter-spacing:.6px;color:var(--ink);font-weight:600;margin:16px 0 8px}
   .p-sec::after{content:'';height:1px;background:var(--hair2);flex:1;order:1}
-  .p-sec .hint{order:2;font-weight:400;letter-spacing:0}
+  .p-sec .hint{order:2;font-weight:600;letter-spacing:0}
   /* 핵심 지표 4개 — 값의 자리와 크기를 맞춰 훑기 좋게(추정 인구만 강조) */
   .grid2{display:grid;grid-template-columns:1fr 1fr;gap:7px}
   .mcard{background:var(--card);border:1px solid var(--hair);border-radius:var(--radius);padding:9px 11px;min-width:0}
-  .mcard .lb{font-size:11px;line-height:16px;color:var(--ink);margin-bottom:4px}
+  .mcard .lb{font-size:12px;line-height:16px;font-weight:600;color:var(--ink);margin-bottom:4px}
   .mcard .v{font-size:19px;font-weight:800;letter-spacing:-.4px;line-height:24px;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .mcard .v small{font-size:12px;font-weight:600;color:var(--ink);margin-left:2px}
@@ -150,27 +150,27 @@
   .bars i.now::after{content:'';position:absolute;left:50%;top:-7px;width:5px;height:5px;border-radius:50%;
     background:currentColor;transform:translateX(-50%)}
   .bars i.mark{background:#c9c1ae}
-  .bars i b{position:absolute;bottom:100%;left:50%;transform:translateX(-50%);margin-bottom:5px;font-size:10px;line-height:14px;
+  .bars i b{position:absolute;bottom:100%;left:50%;transform:translateX(-50%);margin-bottom:5px;font-size:11px;line-height:14px;
     font-style:normal;font-weight:700;color:var(--ink);white-space:nowrap}
   .bars i.s b{left:0;transform:none} .bars i.e b{left:auto;right:0;transform:none}
-  .bar-x{display:flex;justify-content:space-between;font-size:11px;line-height:16px;color:var(--ink);margin-top:6px}
-  .kv{font-size:13px;line-height:19px;color:var(--ink);margin-top:7px;text-align:right}
+  .bar-x{display:flex;justify-content:space-between;font-size:12px;line-height:16px;font-weight:600;color:var(--ink);margin-top:6px}
+  .kv{font-size:13px;line-height:19px;font-weight:600;color:var(--ink);margin-top:7px;text-align:right}
   .kv b{font-weight:700}
   .wx{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--hair);
     border-radius:var(--radius);padding:10px 12px;margin-top:14px}
   .wx .ic{font-style:normal;font-size:24px;line-height:1;flex:0 0 auto}
   .wx .main{min-width:0}
   .wx .t{display:block;font-size:22px;font-weight:800;letter-spacing:-.5px;line-height:26px}
-  .wx .cond{font-size:12px;line-height:18px;color:var(--ink)}
-  .wx .r{margin-left:auto;text-align:right;font-size:12px;color:var(--ink);line-height:19px;white-space:nowrap}
+  .wx .cond{font-size:12px;line-height:18px;font-weight:600;color:var(--ink)}
+  .wx .r{margin-left:auto;text-align:right;font-size:12px;font-weight:600;color:var(--ink);line-height:19px;white-space:nowrap}
   .wx .near{color:var(--ink)}
   .cams{display:flex;flex-direction:column;border:1px solid var(--hair);border-radius:var(--radius);background:var(--card);overflow:hidden}
-  .cambtn{display:flex;align-items:center;gap:8px;width:100%;line-height:19px;text-align:left;background:transparent;color:var(--ink);
+  .cambtn{display:flex;align-items:center;gap:8px;width:100%;line-height:19px;font-weight:600;text-align:left;background:transparent;color:var(--ink);
     border:0;border-bottom:1px solid var(--hair2);padding:9px 11px;font-size:13px;cursor:pointer;font-family:inherit}
   .cambtn:last-child{border-bottom:0}
   .cambtn:hover{background:var(--hover)}
-  .cambtn .tag{flex:0 0 auto;font-size:11px;line-height:15px;color:var(--ink);border:1px solid var(--hair);border-radius:3px;padding:1px 5px}
-  .cambtn .go{margin-left:auto;color:var(--ink);font-size:12px}
+  .cambtn .tag{flex:0 0 auto;font-size:12px;line-height:15px;font-weight:600;color:var(--ink);border:1px solid var(--hair);border-radius:3px;padding:1px 5px}
+  .cambtn .go{margin-left:auto;color:var(--ink);font-size:12px;font-weight:600}
   .navs{display:flex;gap:6px;margin-top:0}
   .navbtn{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;font-size:13px;line-height:19px;font-weight:600;
     padding:9px 6px;border:1px solid var(--hair);border-radius:var(--radius);background:var(--card);color:var(--ink);
@@ -197,8 +197,8 @@
   .m-note{color:#9aa5bd;font-size:12px}
   .m-foot{padding:10px 16px;font-size:11px;color:var(--sub);background:var(--banner)}
 
-  footer{padding:9px 12px 9px 24px;font-size:11px;color:var(--sub);display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;border-top:1px solid var(--hair)}
-  #visits{font-size:12px}                        /* 지도 출처 표기 오른쪽 끝과 맞춘다 */
+  footer{padding:9px 12px 9px 24px;font-size:12px;font-weight:600;color:var(--sub);display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;border-top:1px solid var(--hair)}
+  #visits{font-size:12px;font-weight:600}                        /* 지도 출처 표기 오른쪽 끝과 맞춘다 */
   @media (prefers-reduced-motion: reduce){
     .nd .pulse,.m-live i{animation:none}
     .nd .core{transition:none}
@@ -786,14 +786,14 @@ function renderList(){
         <div class="mcard"><div class="lb">평시 피크</div><div class="v num">${s.peak??'—'}</div></div>
         <div class="mcard"><div class="lb">${mode==='E'?'가기 좋은 때':'조용한 방문'}</div><div class="v">${rec}</div></div>
       </div>
-      <div class="kv">주 방문층 <b>${ageBand}</b>${agePct?` <span class="num">${agePct}</span>`:''}${s.sex?` · <b>${s.sex}</b>`:''}</div>
       ${wxRow}
       <div class="p-sec">24시간 흐름<span class="hint num">지금 ${s.nowIdx}시</span></div>
       <div class="bars">${bars}</div>
       <div class="bar-x num"><span>0시</span><span>6시</span><span>12시</span><span>18시</span><span>23시</span></div>
+      <div class="kv">주 방문층 <b>${ageBand}</b>${agePct?` <span class="num">${agePct}</span>`:''}${s.sex?` · <b>${s.sex}</b>`:''}</div>
       ${camSec}${navSec}`;
     }
-    const diffCell = s.diff ? `<span class="dv ${s.diff.startsWith('-')?'dd':'du'} num">${s.diff}</span>` : `<span class="dv num" style="color:var(--sub);font-weight:400">—</span>`;
+    const diffCell = s.diff ? `<span class="dv ${s.diff.startsWith('-')?'dd':'du'} num">${s.diff}</span>` : `<span class="dv num" style="font-weight:600">—</span>`;
     return `
     <div class="row ${sel===s.id?'sel':''} ${tint}" data-id="${s.id}">
       <span class="rk num">${String(i+1).padStart(2,'0')}</span>
