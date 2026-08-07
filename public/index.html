@@ -168,7 +168,7 @@
   .kv b{font-weight:700}
   .wx{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--hair);
     border-radius:var(--radius);padding:7px 12px;margin-top:9px}
-  .wx .ic{display:flex;align-items:center;flex:0 0 auto;color:var(--ink)}
+  .wx .ic{display:flex;align-items:center;flex:0 0 auto}
   .wx .main{min-width:0}
   .wx .t{display:block;font-size:22px;font-weight:800;letter-spacing:-.5px;line-height:26px}
   .wx .cond{font-size:12px;line-height:18px;font-weight:600;color:var(--ink)}
@@ -429,17 +429,18 @@ let nodeMarkers={}, camMarkers=[], badge=null;
 let CAMS=[], CAM_PINS=[], ROADS=[], LINK_SPD={}, ROAD_AVG={}, showTraffic=false, itsAsof=null;
 let WX={};                                                   // 지점ID → {w:날씨, air:대기질, from:대체출처}
 // WMO 날씨 코드 → 한글 하늘 상태·아이콘 (Open-Meteo 표준 코드)
-//   아이콘은 카메라 아이콘과 같은 선 굵기(1.6)·같은 계열로 직접 그린다(이모지 혼용 방지)
-const _sv=(d)=>`<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor"
-  stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
-const _sun='<circle cx="12" cy="12" r="4.2"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M18.4 5.6L17 7M7 17l-1.4 1.4"/>';
-const _cloud='<path d="M7.5 18h9a3.5 3.5 0 0 0 .3-7 5 5 0 0 0-9.6 1.2A3.4 3.4 0 0 0 7.5 18z"/>';
-const _sunCloud='<circle cx="8.5" cy="8" r="3"/><path d="M8.5 2.6v1.5M3.6 8H2.1M4.9 4.4 3.9 3.4M12.1 4.4l1-1"/>'+
-  '<path d="M9.5 19h7.5a3.2 3.2 0 0 0 .3-6.4 4.6 4.6 0 0 0-8.8 1.1A3.1 3.1 0 0 0 9.5 19z"/>';
-const _rain=_cloud+'<path d="M9 20.5l-.8 1.6M12.5 20.5l-.8 1.6M16 20.5l-.8 1.6"/>';
-const _snow=_cloud+'<path d="M9 21h.01M12.5 21.6h.01M16 21h.01"/>';
-const _fog='<path d="M4 9h16M6 13h12M4 17h16"/>';
-const _storm=_cloud+'<path d="M13 19.5l-2.2 3.2h3l-2 3"/>';
+//   선 아이콘 계열은 유지하되 날씨는 색을 준다 — 해는 노랑, 구름은 청회색, 비는 파랑
+const _SUN='#f2a72c', _CLOUD='#8fa6bd', _RAIN='#4a90d9', _SNOW='#8ec6ea', _FOG='#9aa7b4';
+const _sv=(d)=>`<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke-width="1.6"
+  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+const _sun=`<g stroke="${_SUN}"><circle cx="12" cy="12" r="4.2"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M18.4 5.6L17 7M7 17l-1.4 1.4"/></g>`;
+const _cloud=`<path stroke="${_CLOUD}" d="M7.5 18h9a3.5 3.5 0 0 0 .3-7 5 5 0 0 0-9.6 1.2A3.4 3.4 0 0 0 7.5 18z"/>`;
+const _sunCloud=`<g stroke="${_SUN}"><circle cx="8.5" cy="8" r="3"/><path d="M8.5 2.6v1.5M3.6 8H2.1M4.9 4.4 3.9 3.4M12.1 4.4l1-1"/></g>`
+  +`<path stroke="${_CLOUD}" d="M9.5 19h7.5a3.2 3.2 0 0 0 .3-6.4 4.6 4.6 0 0 0-8.8 1.1A3.1 3.1 0 0 0 9.5 19z"/>`;
+const _rain=_cloud+`<path stroke="${_RAIN}" d="M9 20.5l-.8 1.6M12.5 20.5l-.8 1.6M16 20.5l-.8 1.6"/>`;
+const _snow=_cloud+`<path stroke="${_SNOW}" d="M9 21h.01M12.5 21.6h.01M16 21h.01"/>`;
+const _fog=`<path stroke="${_FOG}" d="M4 9h16M6 13h12M4 17h16"/>`;
+const _storm=_cloud+`<path stroke="${_SUN}" d="M13 19.5l-2.2 3.2h3l-2 3"/>`;
 const SKY={0:['맑음',_sun],1:['대체로 맑음',_sunCloud],2:['구름 조금',_sunCloud],3:['흐림',_cloud],
   45:['안개',_fog],48:['서리 안개',_fog],51:['이슬비',_rain],53:['이슬비',_rain],55:['이슬비',_rain],
   56:['얼음 이슬비',_rain],57:['얼음 이슬비',_rain],61:['비',_rain],63:['비',_rain],65:['강한 비',_rain],
