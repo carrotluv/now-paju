@@ -72,9 +72,9 @@
   .nd.pulse-gold .pulse{border-color:#d9a62e}
   @keyframes pw{0%{width:18px;height:18px;opacity:.8}100%{width:52px;height:52px;opacity:0}}
   .nd .selring{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);border-radius:50%;border:1.6px dashed var(--ink);pointer-events:none}
-  .nd .lb{position:absolute;left:calc(50% + var(--r) + 7px);top:50%;transform:translateY(-50%);white-space:nowrap;font-size:14px;font-weight:700;color:var(--ink);pointer-events:none;
+  .nd .lb{position:absolute;right:calc(50% + var(--r) + 7px);top:50%;transform:translateY(-50%);text-align:right;white-space:nowrap;font-size:14px;font-weight:700;color:var(--ink);pointer-events:none;
     text-shadow:0 1px 0 var(--halo),0 -1px 0 var(--halo),1px 0 0 var(--halo),-1px 0 0 var(--halo),0 0 6px var(--halo)}
-  .nd.west .lb{left:auto;right:calc(50% + var(--r) + 7px);text-align:right}
+  .nd.east .lb{right:auto;left:calc(50% + var(--r) + 7px);text-align:left}   /* 왼쪽이 막힌 지점만 오른쪽 */
   .nd.up .lb{left:50%;right:auto;top:auto;bottom:calc(50% + var(--r) + 5px);transform:translateX(-50%);text-align:center}
   .nd .chip{display:block;font-size:11px;font-weight:700;margin-top:1px}
   .z-lo .nd.small .lb{display:none}
@@ -285,7 +285,7 @@
 </div>
 
 <footer>
-  <span>데이터: 경기도 실시간 방문소비 현황지도 (KT 통신 기반) · 5분 주기</span>
+  <span>데이터: 경기도 실시간 방문소비 현황지도 (KT 통신 기반) · 5분 주기 · 날씨 Open-Meteo · 도로 국가교통정보센터</span>
   <span id="visits" class="num"></span>
 </footer>
 
@@ -356,7 +356,7 @@ const SPOTS=[
   lat:37.9450,lng:126.9585,peak:'11시',cams:[{n:'설마천로 출렁다리 입구',lat:37.9480,lng:126.9550}],
   t:[1,1,1,1,1,2,6,16,34,56,72,80,76,66,54,44,34,24,14,8,4,2,1,1]},
  {id:'agtech',n:'파주시 농업기술센터',short:'농업기술센터',c:'공공기관',s:'여유',pop:150,diff:'-10%',g:9,age:'50~60대 42%',sex:'남 56%',
-  lat:37.8110,lng:126.7930,peak:'10시',cams:[{n:'통일로 진입로',lat:37.8090,lng:126.7900}],
+  lat:37.764425,lng:126.795971,peak:'10시',cams:[{n:'통일로 진입로',lat:37.7630,lng:126.7940}],
   t:[1,1,1,1,1,2,5,12,22,30,32,30,26,24,22,20,16,12,8,4,2,1,1,1]},
  {id:'garden',n:'운정중앙공원(파주가든)',short:'운정중앙공원',c:'문화관광',s:'여유',pop:310,diff:'-26%',g:16,age:'가족 단위',sex:'여 55%',
   lat:37.718483,lng:126.72339,small:1,up:1,peak:'19시',cams:[{n:'가온로',lat:37.7170,lng:126.7215}],
@@ -391,7 +391,7 @@ const jayuLine=L.polyline(JAYU,{color:'#a49d90',weight:3,dashArray:'8 7',opacity
 const IMJINBELT=[[37.8934,126.7447],[37.8850,126.7900],[37.8700,126.8500],[37.8610,126.9090],[37.8482,126.9310],[37.9000,126.9420],[37.9450,126.9585]];
 L.polyline(IMJINBELT,{color:'#a49d90',weight:3,dashArray:'8 7',opacity:.85}).addTo(map);
 L.polyline([[37.7597,126.7740],[37.7598,126.7799]],{color:'#c9c2b3',weight:2,opacity:.9}).addTo(map);
-L.polyline([[37.8110,126.7858],[37.8110,126.7930]],{color:'#c9c2b3',weight:2,opacity:.9}).addTo(map);
+L.polyline([[37.764425,126.7860],[37.764425,126.795971]],{color:'#c9c2b3',weight:2,opacity:.9}).addTo(map);
 const lineLabel=(lat,lng,txt)=>L.marker([lat,lng],{icon:L.divIcon({className:'',html:`<span class="llb">${txt}</span>`,iconSize:[0,0]}),interactive:false}).addTo(map);
 lineLabel(37.836,126.792,'경의중앙선');
 lineLabel(37.700,126.744,'GTX-A · 서울 20분');
@@ -406,7 +406,16 @@ const pajuBounds=L.latLngBounds(PAJU_RING).pad(.03);
 let nodeMarkers={}, camMarkers=[], badge=null;
 let CAMS=[], CAM_PINS=[], ROADS=[], LINK_SPD={}, ROAD_AVG={}, showTraffic=false, itsAsof=null;
 let WX={};                                                   // 지점ID → {w:날씨, air:대기질, from:대체출처}
-const SKY_ICON=s=>/비|소나기/.test(s||'')?'🌧️':(/눈/.test(s||'')?'🌨️':(/흐림/.test(s||'')?'☁️':(/구름/.test(s||'')?'⛅':'☀️')));
+// WMO 날씨 코드 → 한글 하늘 상태·아이콘 (Open-Meteo 표준 코드)
+const SKY={0:['맑음','☀️'],1:['대체로 맑음','🌤️'],2:['구름 조금','⛅'],3:['흐림','☁️'],
+  45:['안개','🌫️'],48:['서리 안개','🌫️'],51:['이슬비','🌦️'],53:['이슬비','🌦️'],55:['이슬비','🌦️'],
+  56:['얼음 이슬비','🌧️'],57:['얼음 이슬비','🌧️'],61:['비','🌧️'],63:['비','🌧️'],65:['강한 비','🌧️'],
+  66:['얼어붙는 비','🌧️'],67:['얼어붙는 비','🌧️'],71:['눈','🌨️'],73:['눈','🌨️'],75:['많은 눈','🌨️'],
+  77:['싸락눈','🌨️'],80:['소나기','🌦️'],81:['소나기','🌦️'],82:['강한 소나기','🌧️'],
+  85:['소낙눈','🌨️'],86:['소낙눈','🌨️'],95:['천둥번개','⛈️'],96:['천둥번개','⛈️'],99:['우박 천둥번개','⛈️']};
+const skyText=c=>(SKY[c]||['-','☀️'])[0];
+const SKY_ICON=c=>(SKY[c]||['-','☀️'])[1];
+const PM_GRADE=v=>v==null?null:(v<=30?'좋음':(v<=80?'보통':(v<=150?'나쁨':'매우나쁨')));   // 환경부 기준
 // 체감온도 — 원 데이터가 비어 있어 기상청 공식으로 계산한다(여름=습구온도식, 겨울=풍속식)
 function feelsLike(t,rh,windMs){
   if(t==null) return null;
@@ -427,7 +436,7 @@ function nodeIcon(s){
   const chip=(mode==='I'&&s.s==='여유')?`<span class="chip" style="color:var(--t1)">지금 기회</span>`
             :(mode==='E'&&s.s==='혼잡')?`<span class="chip" style="color:var(--t4)">오늘의 핫플</span>`:'';
   return L.divIcon({className:'',iconSize:[0,0],html:
-    `<div class="nd ${s.small?'small':''} ${s.west?'west':''} ${s.up?'up':''} ${mode==='E'?'pulse-gold':''}" style="--r:${r}px">
+    `<div class="nd ${s.small?'small':''} ${s.east?'east':''} ${s.up?'up':''} ${mode==='E'?'pulse-gold':''}" style="--r:${r}px">
       ${pulse?`<span class="pulse"></span>`:''}
       ${isSel?`<span class="selring" style="width:${r*2+11}px;height:${r*2+11}px"></span>`:''}
       <span class="core" style="width:${r*2}px;height:${r*2}px;background:${HEXC[s.s]}"></span>
@@ -512,12 +521,16 @@ async function loadLinks(){
 // 줌에 따라 보여줄 도로 등급과 선 굵기 (축소 시 간선만 남겨 뭉침 방지)
 function trafficStyleForZoom(){
   const z=map.getZoom();
-  if(z<11.5) return {maxClass:1, weight:2.5};      // 고속·국도만
-  if(z<12.5) return {maxClass:2, weight:3};        // + 주요 간선
-  if(z<13.5) return {maxClass:3, weight:3.5};      // + 보조 간선
-  if(z<14.5) return {maxClass:4, weight:4};        // + 지방도
-  return {maxClass:5, weight:5};                   // 전체
+  // 멀리서 볼수록 선을 가늘게, 그리고 왕복 분리도로는 한 줄만 그린다.
+  //   두 줄이 몇 픽셀 간격으로 붙으면 한 덩어리로 뭉쳐 보이기 때문.
+  if(z<11.5) return {maxClass:1, weight:2.5, single:true};   // 고속·국도만
+  if(z<12.5) return {maxClass:2, weight:2.8, single:true};   // + 주요 간선
+  if(z<13.5) return {maxClass:3, weight:3,   single:true};   // + 보조 간선
+  if(z<14.5) return {maxClass:4, weight:3.5, single:true};   // + 지방도
+  if(z<15.5) return {maxClass:5, weight:4.5, single:false};  // 전체
+  return {maxClass:5, weight:5, single:false};
 }
+
 // 도로별 색(속도) 계산 — 화면 이동과 무관하므로 소통 데이터가 바뀔 때만 다시 계산한다
 function computeColors(speeds){
   const roadAvg=Object.assign({},ROAD_AVG);
@@ -644,6 +657,7 @@ function drawLinks(speeds){
   ROADGEO.forEach((r,i)=>{
     if(r.p.length<2) return;
     if((r.h||5)>st.maxClass) return;                       // 현재 줌에서 안 보일 등급
+    if(st.single&&(ROADSIB[i]||[]).some(j=>j<i)) return;    // 왕복 짝 중 한 줄만
     let vis=false;
     for(const p of r.p){ if(p[0]>=vS&&p[0]<=vN&&p[1]>=vW&&p[1]<=vE){ vis=true; break; } }
     if(!vis) return;
@@ -749,11 +763,10 @@ function renderList(){
     const wx=WX[s.id];
     const feel=wx&&wx.w?(wx.w.feel??feelsLike(wx.w.t,wx.w.hum,wx.w.wind)):null;
     const wxRow=(wx&&wx.w)?`<div class="wx">
-      <i class="ic">${SKY_ICON(wx.w.sky)}</i>
+      <i class="ic">${SKY_ICON(wx.w.code)}</i>
       <div class="main"><span class="t num">${wx.w.t}°</span>
-        <span class="cond" title="기온·습도·바람으로 계산한 체감온도">${wx.w.sky||''}${feel!=null?` · 체감 ${feel}°`:''}</span></div>
-      <div class="r num">최저 ${wx.w.lo}° / 최고 ${wx.w.hi}°<br>습도 ${wx.w.hum}%${wx.air?` · 미세 ${wx.air.pm10}`:''}
-        ${wx.from?`<br><span class="near">${wx.from} 기준${wx.km?` · ${wx.km}km`:''}</span>`:''}</div>
+        <span class="cond" title="기온·습도·바람을 반영한 체감온도">${skyText(wx.w.code)}${feel!=null?` · 체감 ${feel}°`:''}</span></div>
+      <div class="r num">최저 ${wx.w.lo}° / 최고 ${wx.w.hi}°<br>습도 ${wx.w.hum}%${wx.air?` · 미세 ${PM_GRADE(wx.air.pm10)} ${wx.air.pm10}`:''}</div>
     </div>`:'';
     let det;
     if(!s.api){
@@ -780,15 +793,6 @@ function renderList(){
                              : (rk>=4?'피크 지난 뒤':(rk===3?'한 시간 뒤':'지금'));
       const am=(s.age||'').match(/^(.*?)\s*([\d.]+%)$/);           // '60대 이상 26.1%' → 연령대 + 비율
       const ageBand=am?am[1]:(s.age||'—'), agePct=am?am[2]:'';
-      const wx=WX[s.id];
-      const feel=wx&&wx.w?(wx.w.feel??feelsLike(wx.w.t,wx.w.hum,wx.w.wind)):null;
-      const wxRow=(wx&&wx.w)?`<div class="wx">
-        <i class="ic">${SKY_ICON(wx.w.sky)}</i>
-        <div class="main"><span class="t num">${wx.w.t}°</span>
-          <span class="cond" title="기온·습도·바람으로 계산한 체감온도">${wx.w.sky||''}${feel!=null?` · 체감 ${feel}°`:''}</span></div>
-        <div class="r num">최저 ${wx.w.lo}° / 최고 ${wx.w.hi}°<br>습도 ${wx.w.hum}%${wx.air?` · 미세 ${wx.air.pm10}`:''}
-          ${wx.from?`<br><span class="near">${wx.from} 기준</span>`:''}</div>
-      </div>`:'';
       det=`<div class="headline" style="color:${TXTC[s.s]}"><span>${MSG[mode][s.s]}</span></div>
       <div class="grid2">
         <div class="mcard acc"><div class="lb">추정 인구</div>
@@ -849,6 +853,27 @@ function renderBanner(){
     : `지금 한적한 곳 — <b style="color:${TXTC[calm[0].s]}">${calm[0].short}</b>, <b style="color:#55514a">${c2.short}</b> · <b style="color:${TXTC[busy[0].s]}">${busy[0].short}</b>${(RANK[busy[0].s]>=3)?'은 피하세요':' 정도가 제일 붐빕니다'}`;
 }
 
+// 정보창이 스크롤에 잘리지 않게 — 선택한 행을 맨 위로 올려 아래 공간을 정보창에 다 준다.
+//   넓은 화면은 리스트가, 좁은 화면은 페이지가 스크롤되므로 둘 다 대응한다.
+function revealDetail(id){
+  const list=document.getElementById('list');
+  const row=list&&list.querySelector(`.row[data-id="${id}"]`);
+  if(!row) return;
+  const head=list.querySelector('.list-head');
+  const headH=head?head.offsetHeight:0;
+  const go=()=>{
+    if(list.scrollHeight>list.clientHeight+1){                 // 리스트 자체가 스크롤되는 경우
+      const d=row.getBoundingClientRect().top-(list.getBoundingClientRect().top+headH);
+      if(Math.abs(d)>1) list.scrollBy({top:d,behavior:'smooth'});
+      return;
+    }
+    const mp=document.querySelector('.mapwrap');               // 좁은 화면: 지도가 위에 고정돼 있다
+    const stick=(mp&&getComputedStyle(mp).position==='sticky')?mp.getBoundingClientRect().height:0;
+    const d=row.getBoundingClientRect().top-stick-headH;
+    if(Math.abs(d)>1) window.scrollBy({top:d,behavior:'smooth'});
+  };
+  requestAnimationFrame(go); setTimeout(go,80);              // 애니메이션이 억제된 환경 대비
+}
 function select(id,{fly}){
   const js=document.getElementById('spot-jump');
   if(sel===id){ sel=null; renderNodes(); renderList(); if(js) js.value='__all'; return; }
@@ -856,8 +881,7 @@ function select(id,{fly}){
   if(js) js.value=id;
   const sp=SPOTS.find(x=>x.id===id);
   if(sp&&sp.api&&sp.spotId&&!sp.loaded&&!sp.loading) fetchDetail(sp);
-  const row=document.querySelector(`.row[data-id="${id}"]`);
-  if(row) row.scrollIntoView({block:'nearest',behavior:'smooth'});
+  revealDetail(id);
   if(fly){
     const s=SPOTS.find(x=>x.id===id);
     const z=s.small?13:12;
@@ -929,7 +953,7 @@ async function fetchDetail(s, rerender=true){
     if(j.sex&&j.sex.highestGender) s.sex=(j.sex.highestGender==='여성'?'여 ':'남 ')+Math.max(j.sex.maleRatio,j.sex.femaleRatio).toFixed(0)+'%';
     s.loaded=true;
   }catch(e){}
-  finally{ s.loading=false; if(rerender) renderList(); }
+  finally{ s.loading=false; if(rerender){ renderList(); if(sel===s.id) revealDetail(s.id); } }
 }
 async function loadAllDetails(){
   const targets=SPOTS.filter(s=>s.api&&s.spotId&&!s.loaded&&!s.loading);
@@ -967,26 +991,10 @@ async function loadVisits(){                                 // 방문자 수 �
 
 async function loadWx(){
   try{
-    const r=await fetch('/api/weather'); if(!r.ok) return;
+    const pts=SPOTS.map(s=>`${s.lat.toFixed(4)},${s.lng.toFixed(4)}`).join(';');
+    const r=await fetch('/api/weather?pts='+encodeURIComponent(pts)); if(!r.ok) return;
     const j=await r.json();
-    const list=(j.spots||[]);
-    const bySpot={};                                         // 경기도 지점ID → 데이터
-    list.forEach(x=>{ bySpot[x.id]={w:x.w||null, air:x.air||null, name:x.name}; });
-    // 날씨가 없는 지점은 가장 가까운 '날씨 있는' 지점 값으로 채우고 출처를 남긴다
-    const have=SPOTS.filter(s=>s.spotId&&bySpot[s.spotId]&&bySpot[s.spotId].w);
-    const nearest=s=>{                                       // 가장 가까운 '날씨 있는' 지점
-      let best=null,bd=1e9;
-      have.forEach(h=>{ const dy=h.lat-s.lat,dx=(h.lng-s.lng)*0.79,q=dy*dy+dx*dx; if(q<bd){bd=q;best=h;} });
-      return best?{best,km:Math.round(Math.sqrt(bd)*111.32)}:null;
-    };
-    SPOTS.forEach(s=>{
-      const own=s.spotId?bySpot[s.spotId]:null;
-      if(own&&own.w){ WX[s.id]=own; return; }
-      if(!have.length) return;
-      const n=nearest(s); if(!n) return;                     // 관측망에 없는 지점도 가까운 곳 기준으로 표시
-      const src=bySpot[n.best.spotId];
-      WX[s.id]={w:src.w, air:(own&&own.air)||src.air, from:n.best.short, km:n.km};
-    });
+    (j.spots||[]).forEach((d,i)=>{ if(SPOTS[i]&&(d.w||d.air)) WX[SPOTS[i].id]=d; });   // 지점마다 제 좌표 값
     renderList();
   }catch(e){}
 }

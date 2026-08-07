@@ -187,25 +187,47 @@ export default {
         return json({ asof: new Date().toISOString(), spots }, 200, 120);
       }
 
-      if (url.pathname === '/api/weather') {                 // 파주 9지점 날씨·대기질 (경기도 제공)
-        const [listRaw] = await Promise.all([upstreamJson(LIST_PATH, 180, ctx)]);
-        const items = listRaw.content || listRaw;
-        const paju = items.filter(x => (x.sggName || '').includes('파주'));
-        const one = async (p) => {
-          const out = { id: p.interestRegionId, name: p.interestRegionName };
-          try {
-            const w = await upstreamJson(`/api/weather/${p.interestRegionId}/info`, 900, ctx);
-            out.w = { sky: w.weather, t: w.temperature, feel: w.perceiveTemperature,
-                      hum: w.humidity, wind: w.windSpeed, lo: w.lowestTemperature, hi: w.highestTemperature };
-          } catch (e) { /* 이 지점은 날씨 미제공 */ }
-          try {
-            const a = await upstreamJson(`/api/air-quality/${p.interestRegionId}`, 900, ctx);
-            out.air = { pm10: a.pm10Value, pm10g: a.pm10Grade, pm25: a.pm25Value, pm25g: a.pm25Grade };
-          } catch (e) { /* 대기질 미제공 */ }
-          return out;
+      if (url.pathname === '/api/weather') {                 // 지점별 날씨 — 좌표 기반(Open-Meteo, 키 불필요)
+        const pts = (url.searchParams.get('pts') || '').split(';').filter(Boolean)
+          .map(t => t.split(',').map(Number)).filter(a => a.length === 2 && a.every(n => isFinite(n)));
+        if (!pts.length) return json({ error: 'no-points' }, 400);
+        const lat = pts.map(a => a[0].toFixed(4)).join(',');
+        const lng = pts.map(a => a[1].toFixed(4)).join(',');
+        const asArr = v => Array.isArray(v) ? v : [v];
+        const grab = async (base, q, ttl) => {
+          const u = `${base}?latitude=${lat}&longitude=${lng}&${q}&timezone=Asia%2FSeoul`;
+          const cache = caches.default;
+          const key = new Request('https://cache.now-paju.internal/om' + encodeURIComponent(u));
+          const hit = await cache.match(key);
+          if (hit) return hit.json();
+          const r = await fetch(u, { headers: { 'accept': 'application/json' } });
+          if (!r.ok) throw new Error('open-meteo ' + r.status);
+          const j = await r.json();
+          ctx.waitUntil(cache.put(key, new Response(JSON.stringify(j), {
+            headers: { 'content-type': 'application/json', 'cache-control': 'max-age=' + ttl } })));
+          return j;
         };
-        const spots = await Promise.all(paju.map(one));
-        return json({ asof: new Date().toISOString(), spots }, 200, 600);
+        const [wRaw, aRaw] = await Promise.all([
+          grab('https://api.open-meteo.com/v1/forecast',
+               'current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m'
+               + '&daily=temperature_2m_max,temperature_2m_min&forecast_days=1', 600),
+          grab('https://air-quality-api.open-meteo.com/v1/air-quality', 'current=pm10,pm2_5', 1800)
+            .catch(() => null)
+        ]);
+        const W = asArr(wRaw), A = aRaw ? asArr(aRaw) : [];
+        const spots = pts.map((_, i) => {
+          const c = W[i] && W[i].current, dd = W[i] && W[i].daily;
+          const a = A[i] && A[i].current;
+          return {
+            w: c ? { code: c.weather_code, t: Math.round(c.temperature_2m),
+                     feel: Math.round(c.apparent_temperature), hum: Math.round(c.relative_humidity_2m),
+                     wind: c.wind_speed_10m,
+                     lo: dd ? Math.round(dd.temperature_2m_min[0]) : null,
+                     hi: dd ? Math.round(dd.temperature_2m_max[0]) : null } : null,
+            air: a ? { pm10: Math.round(a.pm10), pm25: Math.round(a.pm2_5) } : null
+          };
+        });
+        return json({ asof: new Date().toISOString(), src: 'open-meteo', spots }, 200, 600);
       }
 
       const mSpot = url.pathname.match(/^\/api\/spot\/(\d+)$/);
