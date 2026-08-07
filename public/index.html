@@ -135,33 +135,33 @@
   .headline::before{content:'';width:3px;border-radius:2px;background:currentColor;flex:0 0 3px}
   .p-sec{display:flex;align-items:center;gap:8px;font-size:11.5px;letter-spacing:.6px;color:var(--ink);font-weight:600;margin:16px 0 8px}
   .p-sec::after{content:'';height:1px;background:var(--hair2);flex:1}
-  /* 24시간 흐름 — 지금 위치가 곡선 어디인지가 이 서비스의 답이라 맨 위 주인공으로 둔다 */
-  .chart{background:var(--card);border:1px solid var(--hair);border-radius:var(--radius);padding:12px 12px 9px}
-  .chart .top{display:flex;align-items:baseline;gap:7px;margin-bottom:19px}
-  .chart .now{font-size:24px;font-weight:800;letter-spacing:-.5px;color:var(--hero)}   /* 가장 중요한 수치 */
-  .chart .nowlb{font-size:11.5px;color:var(--ink)}
+  /* 24시간 흐름 — 지금 위치가 곡선 어디인지가 이 서비스의 답이라 맨 위 주인공으로 둔다.
+     테두리 박스를 겹치지 않고 얇은 선으로만 단을 나눈다(박스 속 박스 방지) */
+  .chart{padding:2px 0 0}
+  .chart .now{font-size:26px;font-weight:800;letter-spacing:-.6px;color:var(--hero);line-height:1.1}
+  .chart .nowlb{display:block;font-size:11.5px;color:var(--ink);margin:2px 0 20px}
   .bars{display:flex;align-items:flex-end;gap:2px;height:64px}
   .bars i{flex:1;border-radius:2px 2px 0 0;background:#ece7db;min-height:2px;position:relative}
   .bars i.now::after{content:'';position:absolute;left:50%;top:-7px;width:5px;height:5px;border-radius:50%;
     background:currentColor;transform:translateX(-50%)}
   .bars i.mark{background:#c9c1ae}
   .bars i b{position:absolute;bottom:100%;left:50%;transform:translateX(-50%);margin-bottom:5px;font-size:10px;
-    font-weight:700;color:var(--ink);white-space:nowrap}
+    font-style:normal;font-weight:700;color:var(--ink);white-space:nowrap}
   .bars i.s b{left:0;transform:none} .bars i.e b{left:auto;right:0;transform:none}
   .bar-x{display:flex;justify-content:space-between;font-size:11px;color:var(--ink);margin-top:6px}
-  .strip{display:flex;margin-top:11px;border:1px solid var(--hair);border-radius:var(--radius);background:var(--card);overflow:hidden}
-  .strip > div{flex:1;min-width:0;padding:8px 10px;border-right:1px solid var(--hair2)}
-  .strip > div:last-child{border-right:0}
-  .strip > div:nth-child(2){text-align:right}       /* 주 방문층은 값이 길어 오른쪽에 맞춘다 */
-  .strip .lb{font-size:11px;color:var(--ink);margin-bottom:2px}
-  .strip .v{font-size:14.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .strip .v small{font-size:11px;font-weight:600;color:var(--ink);margin-left:3px}
-  .strip .v.dn{color:var(--dd)} .strip .v.up{color:var(--t4)}
-  .wx{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--ink);margin-top:11px;flex-wrap:wrap}
-  .wx .ic{font-style:normal;font-size:15px}
-  .wx .t{font-size:16px;font-weight:700;color:var(--ink)}
-  .wx .r{margin-left:auto;color:var(--ink)}
-  .wx .near{color:var(--ink);font-size:11.5px}
+  .strip{margin-top:16px;border-top:1px solid var(--hair2)}
+  .strip > div{display:flex;align-items:baseline;justify-content:space-between;gap:10px;
+    padding:8px 0;border-bottom:1px solid var(--hair2)}
+  .strip .lb{font-size:12.5px;color:var(--ink)}
+  .strip .v{font-size:14px;font-weight:700;white-space:nowrap}
+  .wx{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--hair);
+    border-radius:var(--radius);padding:10px 12px;margin-top:14px}
+  .wx .ic{font-style:normal;font-size:24px;line-height:1;flex:0 0 auto}
+  .wx .main{min-width:0}
+  .wx .t{display:block;font-size:22px;font-weight:800;letter-spacing:-.5px;line-height:1.1}
+  .wx .cond{font-size:11.5px;color:var(--ink)}
+  .wx .r{margin-left:auto;text-align:right;font-size:11.5px;color:var(--ink);line-height:1.65;white-space:nowrap}
+  .wx .near{color:var(--ink)}
   .cams{display:flex;flex-direction:column;border:1px solid var(--hair);border-radius:var(--radius);background:var(--card);overflow:hidden}
   .cambtn{display:flex;align-items:center;gap:8px;width:100%;text-align:left;background:transparent;color:var(--ink);
     border:0;border-bottom:1px solid var(--hair2);padding:9px 11px;font-size:12.5px;cursor:pointer;font-family:inherit}
@@ -236,7 +236,6 @@
     .list-head{padding:12px 16px 10px}
     .row{padding:14px 16px}
     .det{padding:14px 16px 18px}
-    .strip .v small{display:none}                 /* 좁은 화면에선 비율을 빼 연령대만 (잘림 방지) */
     .navbtn{padding:11px 4px}
     .cambtn{padding:9px 12px;font-size:12.5px}
     .modal{width:94vw}
@@ -771,10 +770,11 @@ function renderList(){
       const wx=WX[s.id];
       const feel=wx&&wx.w?(wx.w.feel??feelsLike(wx.w.t,wx.w.hum,wx.w.wind)):null;
       const wxRow=(wx&&wx.w)?`<div class="wx">
-        <i class="ic">${SKY_ICON(wx.w.sky)}</i><span class="t num">${wx.w.t}°</span>
-        <span title="기온·습도·바람으로 계산한 체감온도">${wx.w.sky||''}${feel!=null?` · 체감 ${feel}°`:''}</span>
-        <span class="r num">${wx.w.lo}~${wx.w.hi}° · 습도 ${wx.w.hum}%${wx.air?` · 미세 ${wx.air.pm10}`:''}</span>
-        ${wx.from?`<span class="near">${wx.from} 기준</span>`:''}
+        <i class="ic">${SKY_ICON(wx.w.sky)}</i>
+        <div class="main"><span class="t num">${wx.w.t}°</span>
+          <span class="cond" title="기온·습도·바람으로 계산한 체감온도">${wx.w.sky||''}${feel!=null?` · 체감 ${feel}°`:''}</span></div>
+        <div class="r num">최저 ${wx.w.lo}° / 최고 ${wx.w.hi}°<br>습도 ${wx.w.hum}%${wx.air?` · 미세 ${wx.air.pm10}`:''}
+          ${wx.from?`<br><span class="near">${wx.from} 기준</span>`:''}</div>
       </div>`:'';
       det=`<div class="headline" style="color:${TXTC[s.s]}"><span>${MSG[mode][s.s]}</span></div>
       <div class="chart">
@@ -784,9 +784,9 @@ function renderList(){
         <div class="bar-x num"><span>0시</span><span>6시</span><span>12시</span><span>18시</span><span>23시</span></div>
       </div>
       <div class="strip">
-        <div><div class="lb">평시 대비</div><div class="v num ${s.diff&&s.diff.startsWith('-')?'dn':(s.diff?'up':'')}">${s.diff??'—'}</div></div>
-        <div><div class="lb">주 방문층</div><div class="v" title="${s.age??''}${s.sex?' · '+s.sex:''}">${ageBand}${agePct?`<small class="num">${agePct}</small>`:''}</div></div>
-        <div><div class="lb">${mode==='E'?'가기 좋은 때':'조용한 방문'}</div><div class="v num">${rec}</div></div>
+        <div><span class="lb">평시 대비</span><span class="v num">${s.diff??'—'}</span></div>
+        <div><span class="lb">주 방문층</span><span class="v" title="${s.age??''}${s.sex?' · '+s.sex:''}">${ageBand}</span></div>
+        <div><span class="lb">${mode==='E'?'가기 좋은 때':'조용한 방문'}</span><span class="v num">${rec}</span></div>
       </div>
       ${wxRow}${camSec}${navSec}`;
     }
