@@ -134,13 +134,18 @@
   .headline{font-size:15px;font-weight:700;line-height:1.45;display:flex;gap:9px;align-items:stretch;margin-bottom:13px}
   .headline::before{content:'';width:3px;border-radius:2px;background:currentColor;flex:0 0 3px}
   .p-sec{display:flex;align-items:center;gap:8px;font-size:11.5px;letter-spacing:.6px;color:var(--ink);font-weight:600;margin:16px 0 8px}
-  .p-sec::after{content:'';height:1px;background:var(--hair2);flex:1}
-  /* 24시간 흐름 — 지금 위치가 곡선 어디인지가 이 서비스의 답이라 맨 위 주인공으로 둔다.
-     테두리 박스를 겹치지 않고 얇은 선으로만 단을 나눈다(박스 속 박스 방지) */
-  .chart{padding:2px 0 0}
-  .chart .now{font-size:26px;font-weight:800;letter-spacing:-.6px;color:var(--hero);line-height:1.1}
-  .chart .nowlb{display:block;font-size:11.5px;color:var(--ink);margin:2px 0 20px}
-  .bars{display:flex;align-items:flex-end;gap:2px;height:64px}
+  .p-sec::after{content:'';height:1px;background:var(--hair2);flex:1;order:1}
+  .p-sec .hint{order:2;font-weight:400;letter-spacing:0}
+  /* 핵심 지표 4개 — 값의 자리와 크기를 맞춰 훑기 좋게(추정 인구만 강조) */
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+  .mcard{background:var(--card);border:1px solid var(--hair);border-radius:var(--radius);padding:9px 11px;min-width:0}
+  .mcard .lb{font-size:11px;color:var(--ink);margin-bottom:4px}
+  .mcard .v{font-size:19px;font-weight:800;letter-spacing:-.4px;line-height:1.15;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .mcard .v small{font-size:12px;font-weight:600;color:var(--ink);margin-left:2px}
+  .mcard.acc{background:color-mix(in srgb, var(--hero) 6%, var(--card));border-color:#eccfcb}
+  .mcard.acc .v{color:var(--hero)}
+  .bars{display:flex;align-items:flex-end;gap:2px;height:64px;margin-top:18px}
   .bars i{flex:1;border-radius:2px 2px 0 0;background:#ece7db;min-height:2px;position:relative}
   .bars i.now::after{content:'';position:absolute;left:50%;top:-7px;width:5px;height:5px;border-radius:50%;
     background:currentColor;transform:translateX(-50%)}
@@ -149,11 +154,6 @@
     font-style:normal;font-weight:700;color:var(--ink);white-space:nowrap}
   .bars i.s b{left:0;transform:none} .bars i.e b{left:auto;right:0;transform:none}
   .bar-x{display:flex;justify-content:space-between;font-size:11px;color:var(--ink);margin-top:6px}
-  .strip{margin-top:16px;border-top:1px solid var(--hair2)}
-  .strip > div{display:flex;align-items:baseline;justify-content:space-between;gap:10px;
-    padding:8px 0;border-bottom:1px solid var(--hair2)}
-  .strip .lb{font-size:12.5px;color:var(--ink)}
-  .strip .v{font-size:14px;font-weight:700;white-space:nowrap}
   .wx{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--hair);
     border-radius:var(--radius);padding:10px 12px;margin-top:14px}
   .wx .ic{font-style:normal;font-size:24px;line-height:1;flex:0 0 auto}
@@ -777,18 +777,19 @@ function renderList(){
           ${wx.from?`<br><span class="near">${wx.from} 기준</span>`:''}</div>
       </div>`:'';
       det=`<div class="headline" style="color:${TXTC[s.s]}"><span>${MSG[mode][s.s]}</span></div>
-      <div class="chart">
-        <div class="top"><span class="now num">${s.pop!=null?s.pop.toLocaleString()+'명':'—'}</span>
-          <span class="nowlb num">지금 ${s.nowIdx}시 추정</span></div>
-        <div class="bars">${bars}</div>
-        <div class="bar-x num"><span>0시</span><span>6시</span><span>12시</span><span>18시</span><span>23시</span></div>
+      <div class="grid2">
+        <div class="mcard acc"><div class="lb">추정 인구</div>
+          <div class="v num">${s.pop!=null?s.pop.toLocaleString():'—'}${s.pop!=null?'<small>명</small>':''}</div></div>
+        <div class="mcard"><div class="lb">평시 대비</div><div class="v num">${s.diff??'—'}</div></div>
+        <div class="mcard"><div class="lb">주 방문층</div>
+          <div class="v" title="${s.age??''}${s.sex?' · '+s.sex:''}">${ageBand}</div></div>
+        <div class="mcard"><div class="lb">${mode==='E'?'가기 좋은 때':'조용한 방문'}</div><div class="v">${rec}</div></div>
       </div>
-      <div class="strip">
-        <div><span class="lb">평시 대비</span><span class="v num">${s.diff??'—'}</span></div>
-        <div><span class="lb">주 방문층</span><span class="v" title="${s.age??''}${s.sex?' · '+s.sex:''}">${ageBand}</span></div>
-        <div><span class="lb">${mode==='E'?'가기 좋은 때':'조용한 방문'}</span><span class="v num">${rec}</span></div>
-      </div>
-      ${wxRow}${camSec}${navSec}`;
+      ${wxRow}
+      <div class="p-sec">24시간 흐름<span class="hint num">지금 ${s.nowIdx}시</span></div>
+      <div class="bars">${bars}</div>
+      <div class="bar-x num"><span>0시</span><span>6시</span><span>12시</span><span>18시</span><span>23시</span></div>
+      ${camSec}${navSec}`;
     }
     const diffCell = s.diff ? `<span class="dv ${s.diff.startsWith('-')?'dd':'du'} num">${s.diff}</span>` : `<span class="dv num" style="color:var(--sub);font-weight:400">—</span>`;
     return `
