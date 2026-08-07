@@ -138,24 +138,24 @@
   .dv{font-size:13px;line-height:19px;font-weight:600;width:48px;text-align:right;flex:none}
   .du{color:var(--t4)} .dd{color:var(--dd)}
 
-  .det{display:none;font-weight:600;padding:14px 18px 18px;border-bottom:1px solid var(--hair2);background:var(--panel)}
+  .det{display:none;font-weight:600;padding:10px 18px 8px;border-bottom:1px solid var(--hair2);background:var(--panel)}
   .row.sel + .det{display:block}
-  .headline{font-size:15px;font-weight:700;line-height:22px;display:flex;gap:9px;align-items:stretch;margin-bottom:13px}
+  .headline{font-size:15px;font-weight:700;line-height:22px;display:flex;gap:9px;align-items:stretch;margin-bottom:10px}
   .headline::before{content:'';width:3px;border-radius:2px;background:currentColor;flex:0 0 3px}
-  .p-sec{display:flex;align-items:center;gap:8px;font-size:12px;line-height:18px;letter-spacing:.6px;color:var(--ink);font-weight:600;margin:16px 0 8px}
+  .p-sec{display:flex;align-items:center;gap:8px;font-size:12px;line-height:18px;letter-spacing:.6px;color:var(--ink);font-weight:600;margin:9px 0 5px}
   .p-sec::after{content:'';height:1px;background:var(--hair2);flex:1;order:1}
   .p-sec .hint{order:2;font-weight:600;letter-spacing:0}
   /* 핵심 지표 4개 — 값의 자리와 크기를 맞춰 훑기 좋게(추정 인구만 강조) */
-  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:7px}
-  .mcard{background:var(--card);border:1px solid var(--hair);border-radius:var(--radius);padding:9px 11px;min-width:0;text-align:center}
-  .mcard .lb{font-size:12px;line-height:16px;font-weight:600;color:var(--ink);margin-bottom:4px}
-  .mcard .v{font-size:19px;font-weight:800;letter-spacing:-.4px;line-height:24px;
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .mcard{background:var(--card);border:1px solid var(--hair);border-radius:var(--radius);padding:7px 10px;min-width:0;text-align:center}
+  .mcard .lb{font-size:12px;line-height:16px;font-weight:600;color:var(--ink);margin-bottom:2px}
+  .mcard .v{font-size:19px;font-weight:800;letter-spacing:-.4px;line-height:22px;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .mcard .v small{font-size:12px;font-weight:600;color:var(--ink);margin-left:2px}
   .mcard.acc{background:color-mix(in srgb, var(--c) 7%, var(--card));
     border-color:color-mix(in srgb, var(--c) 32%, var(--hair))}
   .mcard.acc .v{color:var(--c)}                   /* 등급색과 같은 색 — 강조색은 하나만 */
-  .bars{display:flex;align-items:flex-end;gap:2px;height:64px;margin-top:18px}
+  .bars{display:flex;align-items:flex-end;gap:2px;height:46px;margin-top:13px}
   .bars i{flex:1;border-radius:2px 2px 0 0;background:#ece7db;min-height:2px;position:relative}
   .bars i.now::after{content:'';position:absolute;left:50%;top:-7px;width:5px;height:5px;border-radius:50%;
     background:currentColor;transform:translateX(-50%)}
@@ -163,11 +163,11 @@
   .bars i b{position:absolute;bottom:100%;left:50%;transform:translateX(-50%);margin-bottom:5px;font-size:11px;line-height:14px;
     font-style:normal;font-weight:700;color:var(--ink);white-space:nowrap}
   .bars i.s b{left:0;transform:none} .bars i.e b{left:auto;right:0;transform:none}
-  .bar-x{display:flex;justify-content:space-between;font-size:12px;line-height:16px;font-weight:600;color:var(--ink);margin-top:6px}
-  .kv{font-size:13px;line-height:19px;font-weight:600;color:var(--ink);margin-top:7px;text-align:right}
+  .bar-x{display:flex;justify-content:space-between;font-size:12px;line-height:16px;font-weight:600;color:var(--ink);margin-top:4px}
+  .kv{font-size:13px;line-height:19px;font-weight:600;color:var(--ink);margin-top:6px;text-align:right}
   .kv b{font-weight:700}
   .wx{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--hair);
-    border-radius:var(--radius);padding:10px 12px;margin-top:14px}
+    border-radius:var(--radius);padding:7px 12px;margin-top:9px}
   .wx .ic{display:flex;align-items:center;flex:0 0 auto;color:var(--ink)}
   .wx .main{min-width:0}
   .wx .t{display:block;font-size:22px;font-weight:800;letter-spacing:-.5px;line-height:26px}
@@ -181,7 +181,7 @@
   .wx .near{color:var(--ink)}
   .cams{display:flex;flex-direction:column;border:1px solid var(--hair);border-radius:var(--radius);background:var(--card);overflow:hidden}
   .cambtn{display:flex;align-items:center;gap:8px;width:100%;line-height:19px;font-weight:600;text-align:left;background:transparent;color:var(--ink);
-    border:0;border-bottom:1px solid var(--hair2);padding:9px 11px;font-size:13px;cursor:pointer;font-family:inherit}
+    border:0;border-bottom:1px solid var(--hair2);padding:6px 11px;font-size:13px;cursor:pointer;font-family:inherit}
   .cambtn:last-child{border-bottom:0}
   .cambtn:hover{background:var(--hover)}
   .cambtn .tag{flex:0 0 90px;text-align:center;font-size:12px;line-height:15px;font-weight:600;color:var(--ink);border:1px solid var(--hair);border-radius:3px;padding:1px 4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -189,7 +189,7 @@
   .cambtn .go{margin-left:auto;color:var(--ink);font-size:12px;font-weight:600}
   .navs{display:flex;gap:6px;margin-top:0}
   .navbtn{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;font-size:13px;line-height:19px;font-weight:600;
-    padding:9px 6px;border:1px solid var(--hair);border-radius:var(--radius);background:var(--card);color:var(--ink);
+    padding:7px 6px;border:1px solid var(--hair);border-radius:var(--radius);background:var(--card);color:var(--ink);
     text-decoration:none;white-space:nowrap}
   .navbtn:hover{background:var(--hover)}
   .navbtn::before{content:'';width:6px;height:6px;border-radius:50%;flex:0 0 6px}   /* 브랜드 색은 점으로만 */
@@ -822,7 +822,7 @@ function renderList(){
       const bars=s.t.map((v,j)=>{
         const isNow=j===s.nowIdx, isMk=j===mk;
         const cls=(isNow?'now ':'')+(isMk&&!isNow?'mark ':'')+(isMk?(j<=1?'s':(j>=22?'e':'')):'');
-        const st=`height:${Math.max(3,Math.round(v*0.64))}px`+(isNow?`;color:${HEXC[s.s]};background:${HEXC[s.s]}`:'');
+        const st=`height:${Math.max(3,Math.round(v*0.46))}px`+(isNow?`;color:${HEXC[s.s]};background:${HEXC[s.s]}`:'');
         return `<i class="${cls.trim()}" style="${st}">${isMk?`<b>${mkTxt}</b>`:''}</i>`;
       }).join('');
       const rec = mode==='E' ? (rk>=4?'지금 바로!':(rk===3?'지금 좋아요':'저녁쯤 다시'))
