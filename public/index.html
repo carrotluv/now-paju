@@ -162,10 +162,11 @@
   .wx .main{min-width:0}
   .wx .t{display:block;font-size:22px;font-weight:800;letter-spacing:-.5px;line-height:26px}
   .wx .cond{font-size:12px;line-height:18px;font-weight:600;color:var(--ink)}
-  .wx .r{margin-left:auto;display:grid;grid-template-columns:auto auto auto;column-gap:5px;row-gap:2px;
+  .wx .r{margin-left:auto;display:grid;grid-template-columns:auto auto auto auto auto;column-gap:4px;row-gap:2px;
     font-size:12px;font-weight:600;color:var(--ink);line-height:19px;white-space:nowrap}
-  .wx .r>*:nth-child(3n+1){text-align:right} .wx .r>*:nth-child(3n){text-align:left}
-  .wx .r i{font-style:normal}
+  .wx .r b{font-weight:600}                       /* 항목 이름 — 왼쪽 맞춤 */
+  .wx .r span{text-align:right}                   /* 값 — 오른쪽 맞춤 */
+  .wx .r i{font-style:normal;padding:0 2px}       /* 가운데 구분자 */
   .wx .near{color:var(--ink)}
   .cams{display:flex;flex-direction:column;border:1px solid var(--hair);border-radius:var(--radius);background:var(--card);overflow:hidden}
   .cambtn{display:flex;align-items:center;gap:8px;width:100%;line-height:19px;font-weight:600;text-align:left;background:transparent;color:var(--ink);
@@ -769,8 +770,8 @@ function renderList(){
       <i class="ic">${SKY_ICON(wx.w.code)}</i>
       <div class="main"><span class="t num">${wx.w.t}°</span>
         <span class="cond" title="기온·습도·바람을 반영한 체감온도">${skyText(wx.w.code)}${feel!=null?` · 체감 ${feel}°`:''}</span></div>
-      <div class="r num"><span>최저 ${wx.w.lo}°</span><i>/</i><span>최고 ${wx.w.hi}°</span>
-        <span>습도 ${wx.w.hum}%</span>${wx.air?`<i>/</i><span title="미세먼지 ${PM_GRADE(wx.air.pm10)}">미세 ${wx.air.pm10}</span>`:'<i></i><span></span>'}</div>
+      <div class="r num"><b>최저</b><span>${wx.w.lo}°</span><i>/</i><b>최고</b><span>${wx.w.hi}°</span>
+        <b>습도</b><span>${wx.w.hum}%</span>${wx.air?`<i>/</i><b title="미세먼지 ${PM_GRADE(wx.air.pm10)}">미세</b><span>${wx.air.pm10}</span>`:'<i></i><b></b><span></span>'}</div>
     </div>`:'';
     let det;
     if(!s.api){
