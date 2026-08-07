@@ -1,6 +1,8 @@
-name: 지금 파주 ITS 동기화
+name: 지금 파주 소통정보 동기화
 
-# 이 PC의 스케줄러가 하던 일(5분마다 국가교통정보센터 → data 브랜치)을 깃허브가 대신한다.
+# 도로 소통은 경기도교통정보센터에서 받는다.
+#   국가교통정보센터(ITS)는 해외 IP를 막아 깃허브·클라우드플레어에서 닿지 않는다(실측 timeout).
+#   CCTV는 ITS에만 있어 이 PC가 하루 1회 갱신하고, 그 목록은 여기서 그대로 물려받는다.
 on:
   schedule:
     - cron: '*/5 * * * *'          # 5분마다 (깃허브 부하에 따라 몇 분 늦을 수 있음)
@@ -24,10 +26,16 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: 국가교통정보센터에서 수집
+      - name: 직전 데이터 가져오기 (CCTV 목록 이월용)
+        run: |
+          git fetch -q origin data || true
+          git show origin/data:its.json > prev.json 2>/dev/null || echo '{}' > prev.json
+          python -c "import json;d=json.load(open('prev.json',encoding='utf-8'));print('이월 CCTV', len(d.get('cams') or []), '건')"
+
+      - name: 경기도교통정보센터에서 수집
         env:
-          ITS_KEY: ${{ secrets.ITS_KEY }}
-        run: python scripts/its_sync_ci.py out/its.json
+          GITS_KEY: ${{ secrets.GITS_KEY }}
+        run: python scripts/gg_sync_ci.py prev.json out/its.json
 
       - name: data 브랜치에 올리기 (항상 1커밋 유지)
         run: |
@@ -46,7 +54,7 @@ jobs:
           git config user.name "now-paju bot"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
-          git commit -q -m "its data $asof"
+          git commit -q -m "traffic $asof"
           git push -q -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" HEAD:data
           echo "data 브랜치 갱신: $asof"
 
