@@ -1,0 +1,44 @@
+name: 지금 파주 ITS 동기화
+
+# 이 PC의 스케줄러가 하던 일(5분마다 국가교통정보센터 → data 브랜치)을 깃허브가 대신한다.
+on:
+  schedule:
+    - cron: '*/5 * * * *'          # 5분마다 (깃허브 부하에 따라 몇 분 늦을 수 있음)
+  workflow_dispatch:                # 수동 실행 버튼
+
+permissions:
+  contents: write
+
+concurrency:
+  group: its-sync
+  cancel-in-progress: true
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: 국가교통정보센터에서 수집
+        env:
+          ITS_KEY: ${{ secrets.ITS_KEY }}
+        run: python scripts/its_sync_ci.py out/its.json
+
+      - name: data 브랜치에 올리기 (항상 1커밋 유지)
+        run: |
+          set -e
+          asof=$(python -c "import json;print(json.load(open('out/its.json',encoding='utf-8'))['asof'])")
+          mkdir -p /tmp/pub && cp out/its.json /tmp/pub/
+          cd /tmp/pub
+          git init -q
+          git config user.name "now-paju bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add its.json
+          git commit -q -m "its data $asof"
+          git push -q -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" HEAD:data
+          echo "data 브랜치 갱신: $asof"
