@@ -1043,8 +1043,9 @@ async function loadIts(){
     const [c,t]=await Promise.all([fetch('/api/cctv'),fetch('/api/traffic')]);
     if(c.ok){ const j=await c.json(); if(j.cams&&j.cams.length){
       CAMS=j.cams.filter(c2=>inPaju(c2.lat,c2.lng)).map(c2=>({...c2,n:fixRoute(c2.n)}));
-      const nearSet=new Set();                               // 지도 핀 = 각 지점에서 2.5km 안 최근접 4개만 (지점 중심 표시)
-      SPOTS.forEach(s=>nearestCams(s,4).filter(x=>x.d<=0.000506).forEach(x=>nearSet.add(x.i)));
+      const nearSet=new Set();                               // 지도 핀 = 각 지점에서 4.5km 안 최근접 4개만 (지점 중심 표시)
+      const R45=(4.5/111.32)**2;                             // 파주 시내엔 ITS 카메라가 없어 2.5km로는 절반이 빈다
+      SPOTS.forEach(s=>nearestCams(s,4).filter(x=>x.d<=R45).forEach(x=>nearSet.add(x.i)));
       CAM_PINS=thinByRoute([...nearSet].map(i=>CAMS[i]));     // 같은 노선 연속분은 3개로 솎음
       renderCams(); renderList();
     } }
