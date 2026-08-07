@@ -3,10 +3,11 @@
 지금 파주 — ITS(국가교통정보센터) 데이터 수집 (GitHub Actions용)
   이 PC의 its_sync.py와 같은 일을 하되, 깃 작업은 워크플로가 맡고 여기서는 its.json만 만든다.
   인증키는 환경변수 ITS_KEY(저장소 Secret)로 받는다.
+  실패하면 원인을 diag.txt로 남겨 data 브랜치에 함께 올린다(관리자 권한 없이도 원인 확인 가능).
 
   사용: python scripts/its_sync_ci.py out/its.json
 """
-import io, sys, os, json, datetime, urllib.request, urllib.error, ssl
+import io, sys, os, json, time, datetime, urllib.request, ssl
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
@@ -14,6 +15,7 @@ BASE = 'https://openapi.its.go.kr:9443'
 BBOX = 'minX=126.66&maxX=126.99&minY=37.68&maxY=38.00'
 UA = ('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
       '(KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36')
+NL = chr(10)
 
 
 def get(url, timeout=45):
@@ -71,19 +73,52 @@ def fetch(key):
             'links': by_link}
 
 
+def probe(url, timeout=20):
+    """상류에 닿는지만 확인 — 어디서 막히는지 진단용"""
+    t0 = time.time()
+    try:
+        ctx = ssl.create_default_context()
+        ctx.check_hostname = False
+        ctx.verify_mode = ssl.CERT_NONE
+        req = urllib.request.Request(url, headers={'User-Agent': UA})
+        with urllib.request.urlopen(req, timeout=timeout, context=ctx) as r:
+            head = r.read(140).decode('utf-8', 'replace').replace(NL, ' ')
+            return f'{r.status} {int((time.time() - t0) * 1000)}ms :: {head}'
+    except Exception as e:
+        return f'실패 {type(e).__name__} {str(e)[:130]} ({int((time.time() - t0) * 1000)}ms)'
+
+
 def main():
     key = (os.environ.get('ITS_KEY') or '').strip()
-    if not key:
-        print('ITS_KEY 시크릿이 없습니다 — 저장소 Settings > Secrets에 추가하세요')
-        sys.exit(1)
     out = sys.argv[1] if len(sys.argv) > 1 else 'its.json'
     os.makedirs(os.path.dirname(out) or '.', exist_ok=True)
+    diag = os.path.join(os.path.dirname(out) or '.', 'diag.txt')
+    kst = datetime.timezone(datetime.timedelta(hours=9))
+    stamp = datetime.datetime.now(kst).isoformat(timespec='seconds')
+
+    def write_diag(reason):
+        lines = [
+            f'시각: {stamp}',
+            f'사유: {reason}',
+            'ITS_KEY 시크릿: ' + (f'있음({len(key)}자)' if key else '없음'),
+            '',
+            '상류 도달 점검',
+            '  국가교통정보센터: ' + probe(f'{BASE}/cctvInfo?apiKey={key or "x"}&type=ex&cctvType=1&{BBOX}&getType=json'),
+            '  경기도교통정보센터: ' + probe('https://openapigits.gg.go.kr/api/rest/getIncidentInfo'),
+        ]
+        text = NL.join(lines) + NL
+        with open(diag, 'w', encoding='utf-8') as f:
+            f.write(text)
+        print(text)
+
+    if not key:
+        write_diag('ITS_KEY 시크릿이 저장소에 없음')
+        return
     try:
         data = fetch(key)
     except Exception as e:
-        print(f'수집 실패: {type(e).__name__} {str(e)[:200]}')
-        print('※ 상류(국가교통정보센터)가 해외 IP를 막고 있으면 이 단계에서 실패합니다.')
-        sys.exit(1)
+        write_diag(f'수집 실패 {type(e).__name__} {str(e)[:200]}')
+        return
     with open(out, 'w', encoding='utf-8') as f:
         json.dump(data, f, ensure_ascii=False, separators=(',', ':'))
     print(f"ok cams={len(data['cams'])} roads={len(data['roads'])} links={len(data['links'])} asof={data['asof']}")

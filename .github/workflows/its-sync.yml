@@ -18,9 +18,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 6
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
 
@@ -32,13 +32,29 @@ jobs:
       - name: data 브랜치에 올리기 (항상 1커밋 유지)
         run: |
           set -e
-          asof=$(python -c "import json;print(json.load(open('out/its.json',encoding='utf-8'))['asof'])")
-          mkdir -p /tmp/pub && cp out/its.json /tmp/pub/
+          mkdir -p /tmp/pub
+          if [ -f out/its.json ]; then
+            cp out/its.json /tmp/pub/
+            asof=$(python -c "import json;print(json.load(open('out/its.json',encoding='utf-8'))['asof'])")
+          else
+            asof="수집 실패"
+          fi
+          # 실패 진단서도 함께 올린다 — 관리자 권한 없이 원인을 확인하기 위함
+          [ -f out/diag.txt ] && cp out/diag.txt /tmp/pub/
           cd /tmp/pub
           git init -q
           git config user.name "now-paju bot"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add its.json
+          git add -A
           git commit -q -m "its data $asof"
           git push -q -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" HEAD:data
           echo "data 브랜치 갱신: $asof"
+
+      - name: 수집 성공 여부 판정
+        run: |
+          if [ ! -f out/its.json ]; then
+            echo "::error::수집 실패 — data 브랜치의 diag.txt에 원인이 적혀 있습니다"
+            cat out/diag.txt 2>/dev/null || true
+            exit 1
+          fi
+          echo "정상"
