@@ -101,35 +101,6 @@ async function ghItsData(env, ctx) {
   return JSON.parse(body);
 }
 
-// 브이월드 배경지도 타일 프록시 — 인증키(VWORLD_KEY Secret)는 서버에만 두고 브라우저엔 노출하지 않는다.
-async function vworldTile(url, env, ctx) {
-  const m = url.pathname.match(/^\/tiles\/(\d+)\/(\d+)\/(\d+)\.png$/);
-  if (!m) return new Response('bad tile', { status: 400 });
-  const cache = caches.default;
-  const ck = new Request(url.toString());
-  const hit = await cache.match(ck);
-  if (hit) return hit;
-  const [z, y, x] = [m[1], m[2], m[3]];
-  const sources = [                                        // 타일 서버 순차 시도
-    `https://xdworld.vworld.kr/2d/Base/service/${z}/${x}/${y}.png`,
-    env.VWORLD_KEY ? `https://api.vworld.kr/req/wmts/1.0.0/${env.VWORLD_KEY}/Base/${z}/${y}/${x}.png` : null
-  ].filter(Boolean);
-  let up = null, lastWhy = '';
-  for (const src of sources) {
-    try {
-      const r = await fetch(src, { headers: { referer: 'https://now-paju.pajulab.workers.dev/' } });
-      if (r.ok && (r.headers.get('content-type') || '').includes('image')) { up = r; break; }
-      lastWhy = r.status + ' ' + (await r.text().catch(() => '')).replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').slice(0, 120);
-    } catch (e) { lastWhy = String(e && e.message || e).slice(0, 120); }
-  }
-  if (!up) return new Response('tile unavailable :: ' + lastWhy, { status: 502 });
-  const res = new Response(up.body, {
-    headers: { 'content-type': 'image/png', 'cache-control': 'public, max-age=604800' }   // 7일 캐시
-  });
-  ctx.waitUntil(cache.put(ck, res.clone()));
-  return res;
-}
-
 // 방문자 수 — Cloudflare KV(STATS)에 오늘/전체 카운트를 둔다. 바인딩이 없으면 조용히 비활성.
 function kstToday() {
   const d = new Date(Date.now() + 9 * 3600 * 1000);          // 한국시간 기준 날짜
@@ -216,7 +187,6 @@ async function ggTraffic(env, ctx) {
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
-    if (url.pathname.startsWith('/tiles/')) return vworldTile(url, env, ctx);
     if (url.pathname === '/api/visit' || url.pathname === '/api/stats') {
       const s = await visitStats(env, url.pathname === '/api/visit');
       return json(s || { off: true });
