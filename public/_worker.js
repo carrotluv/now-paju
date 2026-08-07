@@ -184,7 +184,87 @@ async function ggTraffic(env, ctx) {
   return out;
 }
 
+// 경기도 전체 소통정보를 5분마다 미리 받아 KV에 저장한다.
+//   응답이 46MB라 요청 때 받으면 1분 가까이 걸리므로, 스케줄러가 미리 추려 110KB로 줄여 둔다.
+async function ggLinkTable(env) {
+  const cache = caches.default;
+  const ck = new Request('https://cache.now-paju.internal/link-table');
+  const hit = await cache.match(ck);
+  if (hit) return hit.json();
+  const r = await env.ASSETS.fetch(new Request('https://now-paju.internal/paju_links.csv'));
+  if (!r.ok) throw new Error('link table ' + r.status);
+  const txt = await r.text();
+  const name = {};
+  for (const line of txt.split(String.fromCharCode(10))) {
+    if (!line) continue;
+    const i = line.indexOf(',');
+    if (i > 0) name[line.slice(0, i)] = line.slice(i + 1).trim();
+  }
+  ctxSafePut(cache, ck, JSON.stringify(name), 86400);
+  return name;
+}
+function ctxSafePut(cache, key, body, ttl) {
+  cache.put(key, new Response(body, {
+    headers: { 'content-type': 'application/json', 'cache-control': 'public, max-age=' + ttl }
+  })).catch(() => {});
+}
+
+async function ggRefresh(env) {
+  if (!env.GITS_KEY || !env.STATS) return null;
+  const name = await ggLinkTable(env);
+  const r = await fetch('https://openapigits.gg.go.kr/api/rest/getRoadTrafficInfoList?serviceKey='
+    + encodeURIComponent(env.GITS_KEY), { headers: { accept: 'application/xml' } });
+  if (!r.ok) throw new Error('gg ' + r.status);
+  const reader = r.body.getReader();
+  const dec = new TextDecoder('utf-8');
+  const re = /<collDate>([^<]*)<\/collDate>[\s\S]{0,200}?<linkId>(\d+)<\/linkId>[\s\S]{0,200}?<spd>(\d+)<\/spd>/g;
+  const links = {}, sum = {}, cnt = {};
+  let carry = '', latest = null;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    const chunk = carry + dec.decode(value, { stream: true });
+    let last = 0, m;
+    re.lastIndex = 0;
+    while ((m = re.exec(chunk)) !== null) {
+      last = re.lastIndex;
+      const id = m[2];
+      if (name[id] === undefined) continue;          // 파주 지도에 없는 링크는 버린다
+      const v = +m[3];
+      if (!(v >= 0 && v <= 200)) continue;
+      links[id] = v;
+      const nm = name[id];
+      if (nm) { sum[nm] = (sum[nm] || 0) + v; cnt[nm] = (cnt[nm] || 0) + 1; }
+      if (m[1] && (!latest || m[1] > latest)) latest = m[1];
+    }
+    carry = chunk.slice(Math.max(last, chunk.length - 600));
+  }
+  const roads = Object.keys(sum).map(nm => {
+    const avg = Math.round(sum[nm] / cnt[nm]);
+    return { road: nm, speed: avg, links: cnt[nm], level: avg >= 60 ? '원활' : (avg >= 35 ? '서행' : '정체') };
+  }).sort((a, b) => b.links - a.links);
+  const out = {
+    asof: latest ? latest.slice(0, 19).replace(' ', 'T') + '+09:00' : new Date().toISOString(),
+    roads: roads.slice(0, 24), roadAvg: Object.fromEntries(roads.map(x => [x.road, x.speed])),
+    links, src: 'gg', n: Object.keys(links).length
+  };
+  await env.STATS.put('traffic', JSON.stringify(out), { expirationTtl: 3600 });
+  return out;
+}
+
+async function ggFromKV(env) {
+  if (!env.STATS) return null;
+  try {
+    const t = await env.STATS.get('traffic');
+    return t ? JSON.parse(t) : null;
+  } catch (e) { return null; }
+}
+
 export default {
+  async scheduled(event, env, ctx) {            // 5분마다: 경기도 전체 소통을 추려 KV에 저장
+    ctx.waitUntil(ggRefresh(env).catch(() => {}));
+  },
+
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
     if (url.pathname === '/api/visit' || url.pathname === '/api/stats') {
@@ -200,7 +280,10 @@ export default {
           if (!d) return json({ error: 'no-key', message: '데이터 채널(GH_TOKEN)이 아직 연결되지 않았습니다' }, 503);
           return json({ asof: d.asof, count: (d.cams || []).length, cams: d.cams || [] }, 200, 180);
         }
-        // 중계본이 없거나 10분 이상 낡으면 경기도 소통정보로 갈아탄다(주요 간선 유지)
+        // 스케줄러가 5분마다 채워 두는 경기도 전체 소통이 가장 넓다 — 신선하면 그것을 쓴다
+        const kv = await ggFromKV(env);
+        const kvAge = kv && kv.asof ? (Date.now() - Date.parse(kv.asof)) / 60000 : Infinity;
+        if (kvAge <= 12) return json(kv, 200, 180);
         const age = d && d.asof ? (Date.now() - Date.parse(d.asof)) / 60000 : Infinity;
         if (age <= 10) {
           return json({ asof: d.asof, roads: d.roads || [], roadAvg: d.roadAvg || {}, links: d.links || {}, src: d.src || 'its' }, 200, 180);
@@ -293,34 +376,6 @@ export default {
           vsAvg: x.equalHourAvgContrastIncreaseRatio
         }));
         return json({ trend, sex, age }, 200, 300);
-      }
-
-      if (url.pathname === '/api/gg-full-probe') {           // 임시: 경기도 전체 소통(38MB)을 워커가 감당하는지 시험
-        if (!env.GITS_KEY) return json({ error: 'no-key' }, 400);
-        const t0 = Date.now();
-        try {
-          const r = await fetch('https://openapigits.gg.go.kr/api/rest/getRoadTrafficInfoList?serviceKey='
-            + encodeURIComponent(env.GITS_KEY), { headers: { accept: 'application/xml' } });
-          if (!r.ok) return json({ ok: false, status: r.status, ms: Date.now() - t0 });
-          const reader = r.body.getReader();
-          const dec = new TextDecoder('utf-8');
-          const re = /<linkId>(\d+)<\/linkId>[\s\S]{0,400}?<spd>(\d+)<\/spd>/g;
-          let carry = '', bytes = 0, found = 0;
-          for (;;) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            bytes += value.byteLength;
-            const chunk = carry + dec.decode(value, { stream: true });
-            let last = 0;
-            re.lastIndex = 0;
-            let m;
-            while ((m = re.exec(chunk)) !== null) { found++; last = re.lastIndex; }
-            carry = chunk.slice(Math.max(last, chunk.length - 600));
-          }
-          return json({ ok: true, ms: Date.now() - t0, MB: +(bytes / 1048576).toFixed(1), links: found });
-        } catch (e) {
-          return json({ ok: false, ms: Date.now() - t0, error: String(e && e.message || e).slice(0, 200) });
-        }
       }
 
       return json({ error: 'not found' }, 404);

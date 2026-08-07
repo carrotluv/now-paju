@@ -3,5 +3,6 @@
   "main": "public/_worker.js",
   "compatibility_date": "2026-08-01",
   "assets": { "directory": "./public", "binding": "ASSETS" },
+  "triggers": { "crons": ["*/5 * * * *"] },
   "kv_namespaces": [{ "binding": "STATS", "id": "763b6ab1c9d04e85a9750adf3e4cddff" }]
 }
