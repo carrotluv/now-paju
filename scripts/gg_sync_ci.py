@@ -36,8 +36,10 @@ def tag(chunk, name):
     return chunk[a:b] if b > 0 else None
 
 
-def collect(key, wanted):
-    """전체 소통정보에서 우리 지도에 있는 링크만 추린다 (전체 11만건 중 약 4천건)"""
+def collect(key, wanted, roadname):
+    """전체 소통정보에서 우리 지도에 있는 링크만 추린다 (전체 11만건 중 약 4천건).
+       도로 이름은 경기도 routeNm 대신 우리 지도(OSM)의 이름을 쓴다 —
+       경기도는 링크의 83%에 노선명이 없어 통일로 같은 주요 도로가 빠지기 때문."""
     xml = fetch_xml(f'{API}?serviceKey={key}')
     links, by_road, latest = {}, {}, None
     for chunk in xml.split('<itemList>')[1:]:
@@ -53,7 +55,7 @@ def collect(key, wanted):
             continue
         if wanted and lid not in wanted:
             continue                                   # 파주 지도에 없는 링크는 도로 평균에도 넣지 않는다
-        nm = (tag(chunk, 'routeNm') or '').strip()
+        nm = (roadname.get(lid) or '').strip()
         if nm:
             by_road.setdefault(nm, []).append(sp)
         links[lid] = round(sp)
@@ -90,13 +92,18 @@ def main():
     cams = prev.get('cams') or []                       # CCTV 목록은 이 PC가 하루 1회 갱신한 것을 물려받는다
 
     # 우리 지도에 실제로 쓰이는 링크만 남긴다 — 응답 11만건을 4천건대로 줄여 용량을 지킨다
-    wanted = set()
+    wanted, roadname = set(), {}
     rp = os.path.join('public', 'paju_roads.json')
     if os.path.isfile(rp):
         try:
-            wanted = set(json.load(open(rp, encoding='utf-8')).get('map', {}).keys())
+            R = json.load(open(rp, encoding='utf-8'))
+            wanted = set(R.get('map', {}).keys())
+            roads_ = R.get('roads', [])
+            for lid, ri in R.get('map', {}).items():       # 링크ID → 우리 지도의 도로명
+                if 0 <= ri < len(roads_):
+                    roadname[lid] = roads_[ri].get('n') or ''
         except Exception:
-            wanted = set()
+            wanted, roadname = set(), {}
 
     if not key:
         with open(diag, 'w', encoding='utf-8') as f:
@@ -105,7 +112,7 @@ def main():
         return
     t0 = time.time()
     try:
-        asof, links, roads = collect(key, wanted)
+        asof, links, roads = collect(key, wanted, roadname)
     except Exception as e:
         with open(diag, 'w', encoding='utf-8') as f:
             f.write(f'시각: {stamp}{NL}사유: 수집 실패 {type(e).__name__} {str(e)[:200]}{NL}')
