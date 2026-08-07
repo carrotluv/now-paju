@@ -246,6 +246,25 @@ export default {
         return json({ trend, sex, age }, 200, 300);
       }
 
+      if (url.pathname === '/api/gg-probe') {                // 임시 점검: 경기도 교통정보 서버에 워커가 닿는가
+        const targets = [
+          ['gits', 'https://openapigits.gg.go.kr/api/rest/getIncidentInfo'],
+          ['its', 'https://openapi.its.go.kr:9443/cctvInfo?type=its']
+        ];
+        const out = [];
+        for (const [name, u] of targets) {
+          const t0 = Date.now();
+          try {
+            const r = await fetch(u, { headers: { 'accept': 'application/xml, application/json' } });
+            const head = (await r.text()).slice(0, 160).replace(/\s+/g, ' ');
+            out.push({ name, ok: true, status: r.status, ms: Date.now() - t0, head });
+          } catch (e) {
+            out.push({ name, ok: false, ms: Date.now() - t0, error: String(e && e.message || e).slice(0, 160) });
+          }
+        }
+        return json({ probe: out }, 200, 0);
+      }
+
       return json({ error: 'not found' }, 404);
     } catch (e) {
       return json({ error: 'upstream unavailable', detail: String(e && e.message || e).slice(0, 300) }, 503);
