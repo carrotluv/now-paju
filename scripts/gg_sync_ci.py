@@ -51,11 +51,11 @@ def collect(key, wanted):
             continue
         if not 0 <= sp <= 200:
             continue
+        if wanted and lid not in wanted:
+            continue                                   # 파주 지도에 없는 링크는 도로 평균에도 넣지 않는다
         nm = (tag(chunk, 'routeNm') or '').strip()
         if nm:
             by_road.setdefault(nm, []).append(sp)
-        if wanted and lid not in wanted:
-            continue
         links[lid] = round(sp)
         cd = tag(chunk, 'collDate')
         if cd and (not latest or cd > latest):

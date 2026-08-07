@@ -203,7 +203,7 @@ export default {
         // 중계본이 없거나 10분 이상 낡으면 경기도 소통정보로 갈아탄다(주요 간선 유지)
         const age = d && d.asof ? (Date.now() - Date.parse(d.asof)) / 60000 : Infinity;
         if (age <= 10) {
-          return json({ asof: d.asof, roads: d.roads || [], roadAvg: d.roadAvg || {}, links: d.links || {}, src: 'its' }, 200, 180);
+          return json({ asof: d.asof, roads: d.roads || [], roadAvg: d.roadAvg || {}, links: d.links || {}, src: d.src || 'its' }, 200, 180);
         }
         const g = await ggTraffic(env, ctx);
         if (g) {
