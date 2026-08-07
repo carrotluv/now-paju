@@ -766,7 +766,7 @@ function renderList(){
       <i class="ic">${SKY_ICON(wx.w.code)}</i>
       <div class="main"><span class="t num">${wx.w.t}°</span>
         <span class="cond" title="기온·습도·바람을 반영한 체감온도">${skyText(wx.w.code)}${feel!=null?` · 체감 ${feel}°`:''}</span></div>
-      <div class="r num">최저 ${wx.w.lo}° / 최고 ${wx.w.hi}°<br>습도 ${wx.w.hum}%${wx.air?` · 미세 ${PM_GRADE(wx.air.pm10)} ${wx.air.pm10}`:''}</div>
+      <div class="r num">최저 ${wx.w.lo}° / 최고 ${wx.w.hi}°<br>습도 ${wx.w.hum}%${wx.air?` / <span title="미세먼지 ${PM_GRADE(wx.air.pm10)}">미세 ${wx.air.pm10}</span>`:''}</div>
     </div>`:'';
     let det;
     if(!s.api){
