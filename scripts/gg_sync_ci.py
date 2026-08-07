@@ -4,7 +4,7 @@
 
   국가교통정보센터(ITS)는 해외 IP를 막아 깃허브·클라우드플레어에서 닿지 않는다(실측 timeout).
   경기도는 깃허브에서 정상 접속되므로(실측 0.8초) 도로 소통은 여기서 받는다.
-  CCTV는 ITS에만 있어 이 PC가 하루 1회만 갱신한다 — 그 목록은 이전 its.json에서 그대로 물려받는다.
+  CCTV는 ITS에만 있어 이 PC가 30분마다 갱신한다 — 그 목록은 이전 its.json에서 그대로 물려받는다.
 
   사용: python scripts/gg_sync_ci.py <이전 its.json 경로|없으면 -> out/its.json
 """
@@ -89,7 +89,7 @@ def main():
             prev = json.load(open(prev_path, encoding='utf-8'))
         except Exception:
             prev = {}
-    cams = prev.get('cams') or []                       # CCTV 목록은 이 PC가 하루 1회 갱신한 것을 물려받는다
+    cams = prev.get('cams') or []                       # CCTV 목록은 이 PC가 30분마다 갱신한 것을 물려받는다
 
     # 우리 지도에 실제로 쓰이는 링크만 남긴다 — 응답 11만건을 4천건대로 줄여 용량을 지킨다
     wanted, roadname = set(), {}
@@ -119,7 +119,7 @@ def main():
         print(f'수집 실패 {type(e).__name__} {str(e)[:200]}')
         return
 
-    data = {'asof': asof, 'cams': cams, 'roads': roads[:24],
+    data = {'asof': asof, 'cams': cams, 'camsAsof': prev.get('camsAsof'), 'roads': roads[:24],
             'roadAvg': {r['road']: r['speed'] for r in roads}, 'links': links, 'src': 'gg'}
     with open(out, 'w', encoding='utf-8') as f:
         json.dump(data, f, ensure_ascii=False, separators=(',', ':'))
