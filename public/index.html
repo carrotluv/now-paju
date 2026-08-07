@@ -30,7 +30,7 @@
   }
   .num{font-variant-numeric:tabular-nums}
 
-  header{display:flex;align-items:flex-end;gap:20px;padding:16px 24px;border-bottom:1px solid var(--hair);flex-wrap:wrap;background:var(--bg);position:relative;z-index:1200}
+  header{display:flex;align-items:flex-end;gap:20px;padding:12px 24px;border-bottom:1px solid var(--hair);flex-wrap:wrap;background:var(--bg);position:relative;z-index:1200}
   header .t{display:flex;align-items:center;gap:11px;cursor:pointer;user-select:none}
   header .t:hover b{text-decoration:underline;text-underline-offset:4px;text-decoration-thickness:2px}
   header .t svg{flex:none}
@@ -46,7 +46,7 @@
   .legend i{width:12px;height:12px;border-radius:50%;display:inline-block;margin-right:6px;vertical-align:-1px}
   .asof{font-weight:600;font-size:13px;color:var(--ink);border-left:1px solid var(--hair);padding-left:15px}
 
-  .banner{padding:9px 24px;font-size:14px;line-height:20px;font-weight:600;border-bottom:1px solid var(--hair);background:var(--banner)}
+  .banner{padding:7px 24px;font-size:14px;line-height:20px;font-weight:600;border-bottom:1px solid var(--hair);background:var(--banner)}
   .banner b{font-weight:700}
 
   .wrap{display:grid;grid-template-columns:352px 1fr}
@@ -117,18 +117,18 @@
   /* 우측 리스트 */
   .list{order:-1;border-right:1px solid var(--hair);background:var(--card);overflow-y:auto;display:flex;flex-direction:column}
   #rows{padding-bottom:18px}
-  .list-head{padding:13px 18px 11px;border-bottom:1px solid var(--hair);display:flex;align-items:baseline;gap:8px;position:sticky;top:0;background:var(--card);z-index:5}
+  .list-head{padding:10px 18px 9px;border-bottom:1px solid var(--hair);display:flex;align-items:baseline;gap:8px;position:sticky;top:0;background:var(--card);z-index:5}
   .list-head b{font-size:14px;line-height:20px}
   .list-head span{font-size:12px;line-height:18px;font-weight:600;color:var(--ink);margin-left:auto}
-  .row{display:flex;align-items:center;gap:10px;padding:12px 18px;border-bottom:1px solid var(--hair2);cursor:pointer}
+  .row{display:flex;align-items:center;gap:10px;padding:8px 18px;border-bottom:1px solid var(--hair2);cursor:pointer}
   .row:hover{background:var(--hover)}
   .row.sel{background:var(--sel-bg)}
   .row.tint-hot{background:var(--tint-hot)}
   .row.tint-cool{background:var(--tint-cool)}
   .rk{font-size:12px;line-height:19px;font-weight:600;color:var(--ink);width:20px;flex:none}
   .info{flex:1;min-width:0}
-  .info b{font-size:14px;font-weight:600;display:block;line-height:19px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .info span{font-size:12px;line-height:18px;display:block;font-weight:600;color:var(--ink)}
+  .info b{font-size:14px;font-weight:600;display:block;line-height:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .info span{font-size:12px;line-height:16px;display:block;font-weight:600;color:var(--ink)}
   .pill{display:inline-flex;align-items:center;gap:6px;font-size:13px;line-height:19px;font-weight:600;white-space:nowrap;flex:none;color:var(--ink)}
   .pill::before{content:"";width:8px;height:8px;border-radius:50%;flex:none}
   .p1::before{background:var(--s1)} .p2::before{background:var(--s2)}
@@ -205,6 +205,8 @@
   .m-x{margin-left:auto;display:flex;align-items:center;border:0;background:transparent;cursor:pointer;color:var(--ink);padding:4px}
   .m-x:hover{color:var(--ink)}
   .m-body{position:relative;aspect-ratio:16/10;background:linear-gradient(135deg,#191d26 0%,#232937 55%,#1a1f2b 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px}
+  .m-src{position:absolute;left:14px;bottom:12px;color:#fff;font-size:11px;font-weight:600;letter-spacing:.2px;
+    text-shadow:0 1px 3px rgba(0,0,0,.9);pointer-events:none}
   .m-live{position:absolute;top:12px;left:14px;display:flex;align-items:center;gap:6px;color:#fff;font-size:11px;letter-spacing:1.5px}
   .m-live i{width:8px;height:8px;border-radius:50%;background:#ff4d4d;animation:blink 1.4s infinite}
   @keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
@@ -213,7 +215,7 @@
   .m-note{color:#9aa5bd;font-size:12px}
   .m-foot{padding:10px 16px;font-size:11px;color:var(--sub);background:var(--banner)}
 
-  footer{padding:9px 12px 9px 24px;font-size:12px;font-weight:600;color:var(--sub);display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;border-top:1px solid var(--hair)}
+  footer{padding:7px 12px 7px 24px;font-size:12px;font-weight:600;color:var(--sub);display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;border-top:1px solid var(--hair)}
   #visits{font-size:12px;font-weight:600}                        /* 지도 출처 표기 오른쪽 끝과 맞춘다 */
   @media (prefers-reduced-motion: reduce){
     .nd .pulse,.m-live i{animation:none}
@@ -254,6 +256,8 @@
     .list-head{padding:12px 16px 10px}
     .row{padding:14px 16px}
     .det{padding:14px 16px 18px}
+    .row{padding:12px 16px}
+    .info b{line-height:19px} .info span{line-height:18px}
     .navbtn{padding:11px 4px}
     .cambtn{padding:9px 12px;font-size:13px}
     .modal{width:94vw}
@@ -682,11 +686,13 @@ function drawLinks(speeds){
 
   const vb=map.getBounds().pad(0.25);                      // 화면 밖 도로는 그리지 않는다(성능)
   const vN=vb.getNorth(), vS=vb.getSouth(), vE=vb.getEast(), vW=vb.getWest();
+  const hasColor=i=>measured[i]!=null||roadAvg[ROADGEO[i].n]!=null||inherit[i]!=null||split[i]!=null;
   const est={}, real={};                                   // 색깔별로 한 줄기로 묶는다 — 겹쳐도 진해지지 않게
   ROADGEO.forEach((r,i)=>{
     if(r.p.length<2) return;
     if((r.h||5)>st.maxClass) return;                       // 현재 줌에서 안 보일 등급
-    if(st.single&&(ROADSIB[i]||[]).some(j=>j<i)) return;    // 왕복 짝 중 한 줄만
+    // 왕복 짝 중 한 줄만 — 단, 남길 쪽에 색이 있을 때만 건너뛴다(색 없는 쪽만 남으면 구간이 통째로 빈다)
+    if(st.single&&(ROADSIB[i]||[]).some(j=>j<i&&hasColor(j))) return;
     let vis=false;
     for(const p of r.p){ if(p[0]>=vS&&p[0]<=vN&&p[1]>=vW&&p[1]<=vE){ vis=true; break; } }
     if(!vis) return;
@@ -939,7 +945,7 @@ function openCam(cam,sub){
   document.getElementById('m-sub').textContent=sub||'실시간 도로 CCTV';
   stopStream();
   if(cam&&cam.url){
-    M_BODY.innerHTML=`<video id="cv" autoplay muted playsinline controls style="width:100%;height:100%;object-fit:contain;background:#000"></video><div class="m-live"><i></i>LIVE</div>`;
+    M_BODY.innerHTML=`<video id="cv" autoplay muted playsinline controls style="width:100%;height:100%;object-fit:contain;background:#000"></video><div class="m-live"><i></i>LIVE</div><div class="m-src">${cam.src==='utic'?'경찰청(UTIC)':'국가교통정보센터'} 제공 · LIVE</div>`;
     const v=document.getElementById('cv');
     if(window.Hls&&Hls.isSupported()){ camHls=new Hls({maxBufferLength:15}); camHls.loadSource(cam.url); camHls.attachMedia(v); }
     else{ v.src=cam.url; }
