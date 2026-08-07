@@ -481,6 +481,8 @@ const LVC={'원활':'#2fa876','서행':'#e07b2f','정체':'#d94f3d'};
 // 도로 선형은 배경지도와 같은 출처(OSM)를 쓰고, ITS 실측 속도는 미리 만든 링크 매핑으로 얹는다
 let ROADGEO=[], LINKMAP={}, ROADSIB={}, linkLayer=L.layerGroup();
 const spdColor=v=>v>=60?LVC['원활']:(v>=35?LVC['서행']:LVC['정체']);
+const mixWhite=(hex,t)=>{ const n=parseInt(hex.slice(1),16), m=x=>Math.round(x+(255-x)*t);
+  return `rgb(${m((n>>16)&255)},${m((n>>8)&255)},${m(n&255)})`; };   // 추정 구간은 같은 색을 옅게
 async function loadLinks(){
   if(ROADGEO.length) return;
   try{
@@ -542,7 +544,7 @@ function computeColors(speeds){
       }
       const len=roadLen(r.p);
       if(!r.lk&&len>800) return;                           // 램프는 길이 제한 없이, 그 외는 800m 이하만
-      let go=false;                                        // 곧게 이어지거나 같은 도로명이면 한쪽만으로도 잇는다
+      const line=[];                                       // 곧게 이어지거나 같은 도로명인 이웃 — 이쪽 색을 우선한다
       [0,1].forEach(e=>{
         const at=e===0, p=at?r.p[0]:r.p[r.p.length-1], mine=dirAt(r.p,at);
         (ROADGEO._fill[kf(p)]||[]).forEach(j=>{
@@ -550,11 +552,12 @@ function computeColors(speeds){
           const v=cur(j); if(v==null) return;
           nb.push(v);
           const jp=ROADGEO[j].p, js=kf(jp[0])===kf(p);
-          if(angGap(mine,(dirAt(jp,js)+180)%360)<=50||(r.n&&ROADGEO[j].n===r.n)) go=true;
+          if(angGap(mine,(dirAt(jp,js)+180)%360)<=50||(r.n&&ROADGEO[j].n===r.n)) line.push(v);
         });
       });
-      if(nb.length>=(r.lk||go?1:2)&&(len<=300||r.lk||go))
-        add[i]=Math.round(nb.reduce((a,b)=>a+b,0)/nb.length);
+      const use=line.length?line:nb;                       // 교차하는 다른 도로 색이 섞이지 않게
+      if(nb.length>=(r.lk||line.length?1:2)&&(len<=300||r.lk||line.length))
+        add[i]=Math.round(use.reduce((a,b)=>a+b,0)/use.length);
     });
     const keys=Object.keys(add);
     if(!keys.length) break;
@@ -585,23 +588,30 @@ function computeColors(speeds){
     if(!keys.length) break;
     keys.forEach(i=>inherit[i]=add[i]);
   }
-  // 램프 마무리 — 끝점이 본선에 정확히 맞물리지 않는 나들목 조각은 50m 안의 색을 가져온다
-  const rest=[];
-  ROADGEO.forEach((r,i)=>{ if(r.lk&&cur(i)==null) rest.push(i); });
-  if(rest.length){
+  // 램프 마무리 — 나들목 조각은 양 끝에서 가장 가까이 맞닿은 도로 색을 각각 받아, 반씩 나눠 칠한다.
+  //   한쪽 색으로만 칠하면 본선 색과 부딪혀 보이므로 양쪽을 이어 주는 셈.
+  const split={};
+  const ramps=[];
+  ROADGEO.forEach((r,i)=>{ if(r.lk&&val(i)==null) ramps.push(i); });
+  if(ramps.length){
     const GC=0.0006, gk=(a,b)=>Math.round(a/GC)+','+Math.round(b/GC), gm={};
-    ROADGEO.forEach((r,i)=>{ const v=cur(i); if(v==null) return;
-      r.p.forEach(p=>{ (gm[gk(p[0],p[1])]=gm[gk(p[0],p[1])]||[]).push(v); }); });
-    rest.forEach(i=>{
-      const nb=[];
-      [ROADGEO[i].p[0],ROADGEO[i].p[ROADGEO[i].p.length-1]].forEach(p=>{
-        const cy=Math.round(p[0]/GC), cx=Math.round(p[1]/GC);
-        for(let dy=-1;dy<=1;dy++) for(let dx=-1;dx<=1;dx++) (gm[(cy+dy)+','+(cx+dx)]||[]).forEach(v=>nb.push(v));
+    ROADGEO.forEach((r,i)=>{ if(r.lk) return; const v=cur(i); if(v==null) return;
+      r.p.forEach(p=>{ (gm[gk(p[0],p[1])]=gm[gk(p[0],p[1])]||[]).push([p,v]); }); });
+    const nearest=p=>{
+      let best=null, bd=80, cy=Math.round(p[0]/GC), cx=Math.round(p[1]/GC);
+      for(let dy=-1;dy<=1;dy++) for(let dx=-1;dx<=1;dx++) (gm[(cy+dy)+','+(cx+dx)]||[]).forEach(([q,v])=>{
+        const d=Math.hypot((q[0]-p[0])*111320,(q[1]-p[1])*88000);
+        if(d<bd){ bd=d; best=v; }
       });
-      if(nb.length) inherit[i]=Math.round(nb.reduce((a,b)=>a+b,0)/nb.length);
+      return best;
+    };
+    ramps.forEach(i=>{
+      const p=ROADGEO[i].p, a=nearest(p[0]), b=nearest(p[p.length-1]);
+      if(a!=null&&b!=null&&spdColor(a)!==spdColor(b)) split[i]={a,b};
+      else if(a!=null||b!=null) inherit[i]=(a!=null&&b!=null)?Math.round((a+b)/2):(a??b);
     });
   }
-  return {measured,inherit,roadAvg};
+  return {measured,inherit,roadAvg,split};
 }
 
 function drawLinks(speeds){
@@ -609,10 +619,11 @@ function drawLinks(speeds){
   if(!showTraffic||!ROADGEO.length) return;
   const st=trafficStyleForZoom();
   if(ROADGEO._for!==speeds){ ROADGEO._col=computeColors(speeds); ROADGEO._for=speeds; }
-  const {measured,inherit,roadAvg}=ROADGEO._col;
+  const {measured,inherit,roadAvg,split}=ROADGEO._col;
 
   const vb=map.getBounds().pad(0.25);                      // 화면 밖 도로는 그리지 않는다(성능)
   const vN=vb.getNorth(), vS=vb.getSouth(), vE=vb.getEast(), vW=vb.getWest();
+  const est={}, real={};                                   // 색깔별로 한 줄기로 묶는다 — 겹쳐도 진해지지 않게
   ROADGEO.forEach((r,i)=>{
     if(r.p.length<2) return;
     if((r.h||5)>st.maxClass) return;                       // 현재 줌에서 안 보일 등급
@@ -621,11 +632,23 @@ function drawLinks(speeds){
     if(!vis) return;
     const arr=measured[i];
     const own=arr?Math.round(arr.reduce((a,b)=>a+b,0)/arr.length):null;
+    if(own==null&&split[i]){                               // 램프: 앞뒤 절반을 각 끝 색으로 이어 준다
+      const m=Math.max(1,Math.floor(r.p.length/2)), s=split[i];
+      const ca=spdColor(s.a), cb=spdColor(s.b);
+      (est[ca]=est[ca]||[]).push(r.p.slice(0,m+1));
+      (est[cb]=est[cb]||[]).push(r.p.slice(m));
+      return;
+    }
     const v=(own!=null)?own:(roadAvg[r.n]??inherit[i]);
     if(v==null) return;
-    L.polyline(r.p,{color:spdColor(v),weight:own!=null?st.weight:st.weight-0.5,
-      opacity:own!=null?.85:.5,lineCap:'round',interactive:false}).addTo(linkLayer);
+    const g=(own!=null)?real:est, c=spdColor(v);
+    (g[c]=g[c]||[]).push(r.p);
   });
+  const paint=(g,w,light)=>Object.keys(g).forEach(c=>                 // 추정 구간을 먼저 깔고 실측을 위에 얹는다
+    L.polyline(g[c],{color:light?mixWhite(c,.42):c,weight:w,opacity:1,
+      lineCap:'round',lineJoin:'round',interactive:false}).addTo(linkLayer));
+  paint(est,Math.max(2,st.weight-0.5),true);
+  paint(real,st.weight,false);
   if(!map.hasLayer(linkLayer)) linkLayer.addTo(map);
 }
 
