@@ -154,8 +154,8 @@
     font-style:normal;font-weight:700;color:var(--ink);white-space:nowrap}
   .bars i.s b{left:0;transform:none} .bars i.e b{left:auto;right:0;transform:none}
   .bar-x{display:flex;justify-content:space-between;font-size:11px;line-height:16px;color:var(--ink);margin-top:6px}
-  .kv{font-size:13px;line-height:19px;color:var(--ink);margin-top:10px}
-  .kv b{font-weight:700} .kv .num{margin-left:3px}
+  .kv{font-size:13px;line-height:19px;color:var(--ink);margin-top:7px;text-align:right}
+  .kv b{font-weight:700}
   .wx{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--hair);
     border-radius:var(--radius);padding:10px 12px;margin-top:14px}
   .wx .ic{font-style:normal;font-size:24px;line-height:1;flex:0 0 auto}
@@ -786,11 +786,11 @@ function renderList(){
         <div class="mcard"><div class="lb">평시 피크</div><div class="v num">${s.peak??'—'}</div></div>
         <div class="mcard"><div class="lb">${mode==='E'?'가기 좋은 때':'조용한 방문'}</div><div class="v">${rec}</div></div>
       </div>
+      <div class="kv">주 방문층 <b>${ageBand}</b>${agePct?` <span class="num">${agePct}</span>`:''}${s.sex?` · <b>${s.sex}</b>`:''}</div>
       ${wxRow}
       <div class="p-sec">24시간 흐름<span class="hint num">지금 ${s.nowIdx}시</span></div>
       <div class="bars">${bars}</div>
       <div class="bar-x num"><span>0시</span><span>6시</span><span>12시</span><span>18시</span><span>23시</span></div>
-      <div class="kv">주 방문층 <b>${ageBand}</b>${agePct?`<span class="num">${agePct}</span>`:''}${s.sex?` · <b>${s.sex}</b>`:''}</div>
       ${camSec}${navSec}`;
     }
     const diffCell = s.diff ? `<span class="dv ${s.diff.startsWith('-')?'dd':'du'} num">${s.diff}</span>` : `<span class="dv num" style="color:var(--sub);font-weight:400">—</span>`;
