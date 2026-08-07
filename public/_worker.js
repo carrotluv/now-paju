@@ -151,6 +151,68 @@ async function visitStats(env, bump) {
   return { today, total, date: kstToday() };
 }
 
+// 경기도교통정보센터 소통정보 — 이 PC 중계가 끊겨도 주요 간선은 계속 나오게 하는 예비 경로.
+//   국가교통정보센터(ITS)는 워커에서 막히지만(522) 경기도 서버는 직접 닿는다(실측 502ms).
+const GG_ROUTES = [
+  ['1050000231', '자유로'], ['1030000012', '국도1호선'], ['1050000561', '파주로'],
+  ['1050003571', '제2자유로'], ['1010000173', '서울문산고속도로'], ['1010004008', '수도권제2순환선'],
+  ['1070000101', '신평화로'], ['1050000566', '광남로']
+];
+const GG_LEVEL = { '1': '원활', '2': '서행', '3': '정체', '4': '정체' };
+
+async function ggTraffic(env, ctx) {
+  if (!env.GITS_KEY) return null;
+  const cache = caches.default;
+  const ck = new Request('https://cache.now-paju.internal/gg-traffic');
+  const hit = await cache.match(ck);
+  if (hit) return hit.json();
+
+  const one = async ([rid, nm]) => {
+    try {
+      const u = 'https://openapigits.gg.go.kr/api/rest/getRoadLinkTrafficInfoList'
+        + '?serviceKey=' + encodeURIComponent(env.GITS_KEY) + '&routeId=' + rid;
+      const r = await fetch(u, { headers: { accept: 'application/xml' } });
+      if (!r.ok) return null;
+      const t = await r.text();
+      const items = t.split('<itemList>').slice(1);
+      const links = {}; let sum = 0, n = 0, last = null;
+      for (const it of items) {
+        const id = (it.match(/<linkId>(\d+)<\/linkId>/) || [])[1];
+        const sp = (it.match(/<spd>(\d+)<\/spd>/) || [])[1];
+        if (!id || sp == null) continue;
+        const v = +sp;
+        if (!(v >= 0 && v <= 200)) continue;
+        links[id] = v; sum += v; n++;
+        const cd = (it.match(/<collDate>([^<]+)<\/collDate>/) || [])[1];
+        if (cd && (!last || cd > last)) last = cd;
+      }
+      if (!n) return null;
+      const avg = Math.round(sum / n);
+      const g = (it => it >= 60 ? '1' : (it >= 35 ? '2' : '3'))(avg);
+      return { nm, links, avg, level: GG_LEVEL[g], last };
+    } catch (e) { return null; }
+  };
+
+  const got = (await Promise.all(GG_ROUTES.map(one))).filter(Boolean);
+  if (!got.length) return null;
+  const links = {}, roadAvg = {}, roads = [];
+  let asof = null;
+  for (const g of got) {
+    Object.assign(links, g.links);
+    roadAvg[g.nm] = g.avg;
+    roads.push({ road: g.nm, speed: g.avg, links: Object.keys(g.links).length, level: g.level });
+    if (g.last && (!asof || g.last > asof)) asof = g.last;
+  }
+  const out = {
+    asof: asof ? asof.slice(0, 16).replace(' ', 'T') + ':00+09:00' : new Date().toISOString(),
+    roads: roads.sort((a, b) => a.speed - b.speed), roadAvg, links, src: 'gg'
+  };
+  const body = JSON.stringify(out);
+  ctx.waitUntil(cache.put(ck, new Response(body, {
+    headers: { 'content-type': 'application/json', 'cache-control': 'public, max-age=240' } })));
+  return out;
+}
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
@@ -162,10 +224,27 @@ export default {
     if (!url.pathname.startsWith('/api/')) return env.ASSETS.fetch(request);
     try {
       if (url.pathname === '/api/cctv' || url.pathname === '/api/traffic') {
-        if (!env.GH_TOKEN) return json({ error: 'no-key', message: '데이터 채널(GH_TOKEN)이 아직 연결되지 않았습니다' }, 503);
-        const d = await ghItsData(env, ctx);
-        if (url.pathname === '/api/cctv') return json({ asof: d.asof, count: (d.cams || []).length, cams: d.cams || [] }, 200, 180);
-        return json({ asof: d.asof, roads: d.roads || [], roadAvg: d.roadAvg || {}, links: d.links || {} }, 200, 180);
+        let d = null;
+        if (env.GH_TOKEN) { try { d = await ghItsData(env, ctx); } catch (e) { d = null; } }
+        if (url.pathname === '/api/cctv') {
+          if (!d) return json({ error: 'no-key', message: '데이터 채널(GH_TOKEN)이 아직 연결되지 않았습니다' }, 503);
+          return json({ asof: d.asof, count: (d.cams || []).length, cams: d.cams || [] }, 200, 180);
+        }
+        // 중계본이 없거나 10분 이상 낡으면 경기도 소통정보로 갈아탄다(주요 간선 유지)
+        const age = d && d.asof ? (Date.now() - Date.parse(d.asof)) / 60000 : Infinity;
+        if (age <= 10) {
+          return json({ asof: d.asof, roads: d.roads || [], roadAvg: d.roadAvg || {}, links: d.links || {}, src: 'its' }, 200, 180);
+        }
+        const g = await ggTraffic(env, ctx);
+        if (g) {
+          if (d) {                                            // 낡은 중계본은 빈 구간을 메우는 데만 쓴다
+            for (const [k, v] of Object.entries(d.links || {})) if (g.links[k] == null) g.links[k] = v;
+            for (const [k, v] of Object.entries(d.roadAvg || {})) if (g.roadAvg[k] == null) g.roadAvg[k] = v;
+          }
+          return json(g, 200, 180);
+        }
+        if (d) return json({ asof: d.asof, roads: d.roads || [], roadAvg: d.roadAvg || {}, links: d.links || {}, src: 'its-stale' }, 200, 180);
+        return json({ error: 'no-key', message: '도로 소통 데이터 경로가 아직 연결되지 않았습니다' }, 503);
       }
 
       if (url.pathname === '/api/summary') {
