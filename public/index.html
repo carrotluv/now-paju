@@ -182,7 +182,8 @@
   .m-note{color:#9aa5bd;font-size:12px}
   .m-foot{padding:10px 16px;font-size:11px;color:var(--sub);background:var(--banner)}
 
-  footer{padding:9px 24px;font-size:11px;color:var(--sub);display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;border-top:1px solid var(--hair)}
+  footer{padding:9px 12px 9px 24px;font-size:11px;color:var(--sub);display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;border-top:1px solid var(--hair)}
+  #visits{font-size:12px}                        /* 지도 출처 표기 오른쪽 끝과 맞춘다 */
   @media (prefers-reduced-motion: reduce){
     .nd .pulse,.m-live i{animation:none}
     .nd .core{transition:none}
@@ -918,7 +919,7 @@ async function loadVisits(){                                 // 방문자 수 �
     const j=await r.json();
     if(j.off||j.today==null) return;
     document.getElementById('visits').textContent=
-      `방문 오늘 ${j.today.toLocaleString()} · 전체 ${j.total.toLocaleString()}`;
+      `오늘 ${j.today.toLocaleString()} / 전체 ${j.total.toLocaleString()}`;
   }catch(e){}
 }
 
