@@ -295,6 +295,34 @@ export default {
         return json({ trend, sex, age }, 200, 300);
       }
 
+      if (url.pathname === '/api/gg-full-probe') {           // 임시: 경기도 전체 소통(38MB)을 워커가 감당하는지 시험
+        if (!env.GITS_KEY) return json({ error: 'no-key' }, 400);
+        const t0 = Date.now();
+        try {
+          const r = await fetch('https://openapigits.gg.go.kr/api/rest/getRoadTrafficInfoList?serviceKey='
+            + encodeURIComponent(env.GITS_KEY), { headers: { accept: 'application/xml' } });
+          if (!r.ok) return json({ ok: false, status: r.status, ms: Date.now() - t0 });
+          const reader = r.body.getReader();
+          const dec = new TextDecoder('utf-8');
+          const re = /<linkId>(\d+)<\/linkId>[\s\S]{0,400}?<spd>(\d+)<\/spd>/g;
+          let carry = '', bytes = 0, found = 0;
+          for (;;) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            bytes += value.byteLength;
+            const chunk = carry + dec.decode(value, { stream: true });
+            let last = 0;
+            re.lastIndex = 0;
+            let m;
+            while ((m = re.exec(chunk)) !== null) { found++; last = re.lastIndex; }
+            carry = chunk.slice(Math.max(last, chunk.length - 600));
+          }
+          return json({ ok: true, ms: Date.now() - t0, MB: +(bytes / 1048576).toFixed(1), links: found });
+        } catch (e) {
+          return json({ ok: false, ms: Date.now() - t0, error: String(e && e.message || e).slice(0, 200) });
+        }
+      }
+
       return json({ error: 'not found' }, 404);
     } catch (e) {
       return json({ error: 'upstream unavailable', detail: String(e && e.message || e).slice(0, 300) }, 503);
