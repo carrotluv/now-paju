@@ -154,6 +154,8 @@
     font-style:normal;font-weight:700;color:var(--ink);white-space:nowrap}
   .bars i.s b{left:0;transform:none} .bars i.e b{left:auto;right:0;transform:none}
   .bar-x{display:flex;justify-content:space-between;font-size:11px;color:var(--ink);margin-top:6px}
+  .kv{font-size:12.5px;color:var(--ink);margin-top:10px}
+  .kv b{font-weight:700} .kv .num{margin-left:3px}
   .wx{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--hair);
     border-radius:var(--radius);padding:10px 12px;margin-top:14px}
   .wx .ic{font-style:normal;font-size:24px;line-height:1;flex:0 0 auto}
@@ -756,7 +758,7 @@ function renderList(){
       let lo=null;
       for(let j=s.nowIdx;j<24;j++){ if(s.t[j]>0&&(lo===null||s.t[j]<s.t[lo])) lo=j; }
       if(lo===null) lo=s.t.reduce((b,v,j)=>(v>0&&v<s.t[b])?j:b,hi);
-      const mk = mode==='E' ? hi : lo, mkTxt = mode==='E' ? `피크 ${hi}시` : `한산 ${lo}시`;
+      const mk = mode==='E' ? hi : lo, mkTxt = mode==='E' ? `붐빔 ${hi}시` : `한산 ${lo}시`;
       const bars=s.t.map((v,j)=>{
         const isNow=j===s.nowIdx, isMk=j===mk;
         const cls=(isNow?'now ':'')+(isMk&&!isNow?'mark ':'')+(isMk?(j<=1?'s':(j>=22?'e':'')):'');
@@ -781,14 +783,14 @@ function renderList(){
         <div class="mcard acc"><div class="lb">추정 인구</div>
           <div class="v num">${s.pop!=null?s.pop.toLocaleString():'—'}${s.pop!=null?'<small>명</small>':''}</div></div>
         <div class="mcard"><div class="lb">평시 대비</div><div class="v num">${s.diff??'—'}</div></div>
-        <div class="mcard"><div class="lb">주 방문층</div>
-          <div class="v" title="${s.age??''}${s.sex?' · '+s.sex:''}">${ageBand}</div></div>
+        <div class="mcard"><div class="lb">평시 피크</div><div class="v num">${s.peak??'—'}</div></div>
         <div class="mcard"><div class="lb">${mode==='E'?'가기 좋은 때':'조용한 방문'}</div><div class="v">${rec}</div></div>
       </div>
       ${wxRow}
       <div class="p-sec">24시간 흐름<span class="hint num">지금 ${s.nowIdx}시</span></div>
       <div class="bars">${bars}</div>
       <div class="bar-x num"><span>0시</span><span>6시</span><span>12시</span><span>18시</span><span>23시</span></div>
+      <div class="kv">주 방문층 <b>${ageBand}</b>${agePct?`<span class="num">${agePct}</span>`:''}${s.sex?` · <b>${s.sex}</b>`:''}</div>
       ${camSec}${navSec}`;
     }
     const diffCell = s.diff ? `<span class="dv ${s.diff.startsWith('-')?'dd':'du'} num">${s.diff}</span>` : `<span class="dv num" style="color:var(--sub);font-weight:400">—</span>`;
@@ -975,12 +977,20 @@ async function loadWx(){
   }catch(e){}
 }
 
+// 노선 표기 통일 — 원본이 '국도 77호선'·'국도77호선'·'국도77'로 제각각이라 '국도77호선'으로 맞춘다
+function fixRoute(n){
+  return (n||'').replace(/^\[(.+?)\]\s*/,(m,t)=>{
+    let x=t.replace(/\s+/g,'').replace(/\([^)]*\)$/,'');   // 공백 제거 + 뒤 구간 괄호 제거
+    if(/^국도\d+$/.test(x)) x+='호선';
+    return `[${x}] `;
+  });
+}
 async function loadIts(){
   if(!FEATURE_ITS) return;
   try{
     const [c,t]=await Promise.all([fetch('/api/cctv'),fetch('/api/traffic')]);
     if(c.ok){ const j=await c.json(); if(j.cams&&j.cams.length){
-      CAMS=j.cams.filter(c2=>inPaju(c2.lat,c2.lng));
+      CAMS=j.cams.filter(c2=>inPaju(c2.lat,c2.lng)).map(c2=>({...c2,n:fixRoute(c2.n)}));
       const nearSet=new Set();                               // 지도 핀 = 각 지점에서 2.5km 안 최근접 4개만 (지점 중심 표시)
       SPOTS.forEach(s=>nearestCams(s,4).filter(x=>x.d<=0.000506).forEach(x=>nearSet.add(x.i)));
       CAM_PINS=thinByRoute([...nearSet].map(i=>CAMS[i]));     // 같은 노선 연속분은 3개로 솎음
