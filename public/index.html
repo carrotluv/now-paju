@@ -21,6 +21,13 @@
   *{margin:0;padding:0;box-sizing:border-box}
   :focus-visible{outline:2px solid var(--ink);outline-offset:2px;border-radius:3px}
   body{background:var(--bg);color:var(--ink);font-family:'Pretendard','Malgun Gothic',-apple-system,BlinkMacSystemFont,system-ui,sans-serif;word-break:keep-all}
+  @media (min-width:641px){                       /* 창 높이에 딱 맞춰 페이지 스크롤을 없앤다 */
+    html,body{height:100%}
+    body{display:flex;flex-direction:column;overflow:hidden}
+    header,.banner,footer{flex:0 0 auto}
+    .wrap{flex:1 1 auto;min-height:0}
+    .mapwrap,.list{min-height:0}
+  }
   .num{font-variant-numeric:tabular-nums}
 
   header{display:flex;align-items:flex-end;gap:20px;padding:16px 24px;border-bottom:1px solid var(--hair);flex-wrap:wrap;background:var(--bg);position:relative;z-index:1200}
@@ -42,7 +49,7 @@
   .banner{padding:9px 24px;font-size:14px;line-height:20px;font-weight:600;border-bottom:1px solid var(--hair);background:var(--banner)}
   .banner b{font-weight:700}
 
-  .wrap{display:grid;grid-template-columns:352px 1fr;height:round(down, calc(100vh - 144px), 1px);min-height:540px}
+  .wrap{display:grid;grid-template-columns:352px 1fr}
   .mapwrap{position:relative}
   #map{position:absolute;inset:0;background:#eee9dd}
   .mapbtns{position:absolute;top:12px;right:12px;z-index:1000;display:flex;gap:6px}
@@ -109,6 +116,7 @@
 
   /* 우측 리스트 */
   .list{order:-1;border-right:1px solid var(--hair);background:var(--card);overflow-y:auto;display:flex;flex-direction:column}
+  #rows{padding-bottom:18px}
   .list-head{padding:13px 18px 11px;border-bottom:1px solid var(--hair);display:flex;align-items:baseline;gap:8px;position:sticky;top:0;background:var(--card);z-index:5}
   .list-head b{font-size:14px;line-height:20px}
   .list-head span{font-size:12px;line-height:18px;font-weight:600;color:var(--ink);margin-left:auto}
