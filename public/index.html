@@ -14,11 +14,12 @@
     --t1:#17714b; --t2:#7a5f0e; --t3:#8f4713; --t4:#b03225; --dd:#31648f;
     --bar:#e3ddcf; --demo-bg:#ffffff; --float-bg:#ffffff; --float-bg2:rgba(255,255,255,.88); --pill-bg:rgba(255,255,255,.93);
     --btn-dark:#23272f; --btn-dark-ink:#f2efe6; --btn-dark-hover:#3a404d;
-    --hero:#d9635a; --tint-hot:#fdf0ec; --tint-cool:#eef7f2; --halo:#ffffff;
+    --tint-hot:#fdf0ec; --tint-cool:#eef7f2; --halo:#ffffff;
     --radius:6px; --radius-lg:10px;
     --shadow-1:0 1px 3px rgba(35,39,47,.10); --shadow-2:0 2px 6px rgba(35,39,47,.25); --shadow-3:0 12px 32px rgba(0,0,0,.28);
   }
   *{margin:0;padding:0;box-sizing:border-box}
+  :focus-visible{outline:2px solid var(--ink);outline-offset:2px;border-radius:3px}
   body{background:var(--bg);color:var(--ink);font-family:'Pretendard','Malgun Gothic',-apple-system,BlinkMacSystemFont,system-ui,sans-serif;word-break:keep-all}
   .num{font-variant-numeric:tabular-nums}
 
@@ -28,7 +29,7 @@
   header .t svg{flex:none}
   header .t b{font-size:28px;display:block;letter-spacing:.5px;font-weight:800;line-height:32px;white-space:nowrap}
   header .t span{font-size:13px;line-height:16px;font-weight:600;letter-spacing:6px;color:var(--sub);margin-top:2px;display:block}
-  .tabs{display:flex;padding:3px;border:1.5px solid var(--hair);border-radius:8px;background:var(--float-bg)}
+  .tabs{display:flex;padding:3px;border:1.5px solid var(--hair);border-radius:calc(var(--radius) + 3px);background:var(--float-bg)}
   .tab{display:flex;align-items:center;padding:6px 13px;font-size:13px;line-height:20px;color:var(--sub);cursor:pointer;border:0;border-radius:var(--radius);background:transparent;font-family:inherit}
   .tab b{font-size:14px;margin-right:5px}
   .tab:hover{color:var(--ink)}
@@ -89,9 +90,9 @@
   .clusterbadge{width:max-content;background:var(--btn-dark);color:var(--btn-dark-ink);border-radius:var(--radius);padding:7px 12px;font-size:13px;font-weight:600;white-space:nowrap;box-shadow:var(--shadow-2);cursor:pointer}
   .clusterbadge span{opacity:.65;font-weight:400;margin-left:5px}
   .z-hi .clusterbadge{display:none}
-  .cam{width:20px;height:20px;background:#23272f;border-radius:6px;border:1.5px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;cursor:pointer}
+  .cam{width:20px;height:20px;background:var(--btn-dark);border-radius:var(--radius);border:1.5px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;cursor:pointer}
   .cam:hover{background:#3a404d}
-  .cam svg{width:11px;height:11px;fill:#fff}
+  .cam svg{width:13px;height:13px;color:#fff}
   .cam-hidden .cam{display:none}
   .hide-cam .cam{display:none}
   .trafficbox{position:absolute;left:12px;bottom:12px;z-index:1000;background:var(--float-bg2);border:1px solid var(--hair);border-radius:var(--radius);padding:10px 13px;min-width:195px;display:none;box-shadow:var(--shadow-1)}
@@ -102,7 +103,7 @@
   .tr-row i{width:8px;height:8px;border-radius:50%;flex:none}
   .tr-row .sp{margin-left:auto;font-weight:600}
   .tr-row small{font-weight:400;color:var(--sub);margin-left:2px}
-  .spdchip{transform:translate(-50%,-50%);width:max-content;background:var(--float-bg);border:2px solid;border-radius:999px;padding:3px 10px;font-size:12px;font-weight:600;white-space:nowrap;box-shadow:var(--shadow-1);font-variant-numeric:tabular-nums}
+  .spdchip{transform:translate(-50%,-50%);width:max-content;background:var(--float-bg);border:2px solid;border-radius:var(--radius);padding:3px 10px;font-size:12px;font-weight:600;white-space:nowrap;box-shadow:var(--shadow-1);font-variant-numeric:tabular-nums}
   .spdchip b{font-weight:800;margin-right:4px}
   .spdchip small{font-weight:400;opacity:.75;margin-left:1px}
 
@@ -143,8 +144,9 @@
   .mcard .v{font-size:19px;font-weight:800;letter-spacing:-.4px;line-height:24px;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .mcard .v small{font-size:12px;font-weight:600;color:var(--ink);margin-left:2px}
-  .mcard.acc{background:color-mix(in srgb, var(--hero) 6%, var(--card));border-color:#eccfcb}
-  .mcard.acc .v{color:var(--hero)}
+  .mcard.acc{background:color-mix(in srgb, var(--c) 7%, var(--card));
+    border-color:color-mix(in srgb, var(--c) 32%, var(--hair))}
+  .mcard.acc .v{color:var(--c)}                   /* 등급색과 같은 색 — 강조색은 하나만 */
   .bars{display:flex;align-items:flex-end;gap:2px;height:64px;margin-top:18px}
   .bars i{flex:1;border-radius:2px 2px 0 0;background:#ece7db;min-height:2px;position:relative}
   .bars i.now::after{content:'';position:absolute;left:50%;top:-7px;width:5px;height:5px;border-radius:50%;
@@ -158,15 +160,16 @@
   .kv b{font-weight:700}
   .wx{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--hair);
     border-radius:var(--radius);padding:10px 12px;margin-top:14px}
-  .wx .ic{font-style:normal;font-size:24px;line-height:1;flex:0 0 auto}
+  .wx .ic{display:flex;align-items:center;flex:0 0 auto;color:var(--ink)}
   .wx .main{min-width:0}
   .wx .t{display:block;font-size:22px;font-weight:800;letter-spacing:-.5px;line-height:26px}
   .wx .cond{font-size:12px;line-height:18px;font-weight:600;color:var(--ink)}
-  .wx .r{margin-left:auto;display:grid;grid-template-columns:auto auto auto auto auto;column-gap:4px;row-gap:2px;
+  .wx .r{margin-left:auto;display:grid;grid-template-columns:repeat(7,auto);row-gap:2px;
     font-size:12px;font-weight:600;color:var(--ink);line-height:19px;white-space:nowrap}
-  .wx .r b{font-weight:600}                       /* 항목 이름 — 왼쪽 맞춤 */
-  .wx .r span{text-align:right}                   /* 값 — 오른쪽 맞춤 */
-  .wx .r i{font-style:normal;padding:0 2px}       /* 가운데 구분자 */
+  .wx .r b{font-weight:600;padding-right:5px}     /* 항목 이름 — 왼쪽 맞춤 */
+  .wx .r span{text-align:right}                   /* 숫자만 오른쪽 맞춤(단위는 별도 칸) */
+  .wx .r em{font-style:normal;text-align:left;padding-right:5px}
+  .wx .r i{font-style:normal;padding:0 3px}       /* 가운데 구분자 */
   .wx .near{color:var(--ink)}
   .cams{display:flex;flex-direction:column;border:1px solid var(--hair);border-radius:var(--radius);background:var(--card);overflow:hidden}
   .cambtn{display:flex;align-items:center;gap:8px;width:100%;line-height:19px;font-weight:600;text-align:left;background:transparent;color:var(--ink);
@@ -191,7 +194,7 @@
   .m-head{display:flex;align-items:center;padding:12px 16px;border-bottom:1px solid var(--hair)}
   .m-head b{font-size:14px}
   .m-head span{font-size:12px;color:var(--sub);margin-left:8px}
-  .m-x{margin-left:auto;border:0;background:transparent;font-size:17px;cursor:pointer;color:var(--sub);line-height:1;padding:2px 4px}
+  .m-x{margin-left:auto;display:flex;align-items:center;border:0;background:transparent;cursor:pointer;color:var(--ink);padding:4px}
   .m-x:hover{color:var(--ink)}
   .m-body{position:relative;aspect-ratio:16/10;background:linear-gradient(135deg,#191d26 0%,#232937 55%,#1a1f2b 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px}
   .m-live{position:absolute;top:12px;left:14px;display:flex;align-items:center;gap:6px;color:#fff;font-size:11px;letter-spacing:1.5px}
@@ -295,7 +298,7 @@
 
 <div class="modal-bg" id="modal-bg">
   <div class="modal">
-    <div class="m-head"><b id="m-title"></b><span id="m-sub"></span><button class="m-x" id="m-x">✕</button></div>
+    <div class="m-head"><b id="m-title"></b><span id="m-sub"></span><button class="m-x" id="m-x" aria-label="닫기" title="닫기"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
     <div class="m-body" id="m-body">
       <div class="m-live"><i></i>LIVE</div>
       <svg viewBox="0 0 24 24"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>
@@ -369,7 +372,10 @@ const SPOTS=[
 const API_SET=new Set(['임진각 평화누리공원','롯데프리미엄아울렛 파주','소리천로(야당역)','운정역(스타필드빌리지 운정)','운정중앙공원(파주가든)','운정중앙역 GTX-A','운정호수공원','파주 신세계 프리미엄아울렛','헤이리예술마을']);
 SPOTS.forEach(s=>{s.api=API_SET.has(s.apiName||s.n);s.s=s.api?'집계중':'관측 준비';s.pop=null;s.diff=null;s.age=null;s.sex=null;s.t=null;s.peak=null;s.nowIdx=null;s.spotId=null;s.loaded=false;s.loading=false;});
 let mode='I', sel=null;
-const CAMSVG='<svg viewBox="0 0 24 24"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>';
+// 카메라 아이콘 — 날씨·닫기와 같은 선 아이콘 계열(굵기 1.6, 채움 없음)
+const CAMSVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" '
+  +'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+  +'<rect x="2.5" y="6.5" width="13" height="11" rx="1.6"/><path d="M15.5 10.5l6-3.5v10l-6-3.5z"/></svg>';
 const FEATURE_ITS=true;    // CCTV·도로 소통 스위치 (2026-08-06) — false로 바꾸고 스케줄러 삭제하면 보류
 
 // ── 지도
@@ -411,14 +417,25 @@ let nodeMarkers={}, camMarkers=[], badge=null;
 let CAMS=[], CAM_PINS=[], ROADS=[], LINK_SPD={}, ROAD_AVG={}, showTraffic=false, itsAsof=null;
 let WX={};                                                   // 지점ID → {w:날씨, air:대기질, from:대체출처}
 // WMO 날씨 코드 → 한글 하늘 상태·아이콘 (Open-Meteo 표준 코드)
-const SKY={0:['맑음','☀️'],1:['대체로 맑음','🌤️'],2:['구름 조금','⛅'],3:['흐림','☁️'],
-  45:['안개','🌫️'],48:['서리 안개','🌫️'],51:['이슬비','🌦️'],53:['이슬비','🌦️'],55:['이슬비','🌦️'],
-  56:['얼음 이슬비','🌧️'],57:['얼음 이슬비','🌧️'],61:['비','🌧️'],63:['비','🌧️'],65:['강한 비','🌧️'],
-  66:['얼어붙는 비','🌧️'],67:['얼어붙는 비','🌧️'],71:['눈','🌨️'],73:['눈','🌨️'],75:['많은 눈','🌨️'],
-  77:['싸락눈','🌨️'],80:['소나기','🌦️'],81:['소나기','🌦️'],82:['강한 소나기','🌧️'],
-  85:['소낙눈','🌨️'],86:['소낙눈','🌨️'],95:['천둥번개','⛈️'],96:['천둥번개','⛈️'],99:['우박 천둥번개','⛈️']};
-const skyText=c=>(SKY[c]||['-','☀️'])[0];
-const SKY_ICON=c=>(SKY[c]||['-','☀️'])[1];
+//   아이콘은 카메라 아이콘과 같은 선 굵기(1.6)·같은 계열로 직접 그린다(이모지 혼용 방지)
+const _sv=(d)=>`<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor"
+  stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+const _sun='<circle cx="12" cy="12" r="4.2"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M18.4 5.6L17 7M7 17l-1.4 1.4"/>';
+const _cloud='<path d="M7.5 18h9a3.5 3.5 0 0 0 .3-7 5 5 0 0 0-9.6 1.2A3.4 3.4 0 0 0 7.5 18z"/>';
+const _sunCloud='<circle cx="8.5" cy="8" r="3"/><path d="M8.5 2.6v1.5M3.6 8H2.1M4.9 4.4 3.9 3.4M12.1 4.4l1-1"/>'+
+  '<path d="M9.5 19h7.5a3.2 3.2 0 0 0 .3-6.4 4.6 4.6 0 0 0-8.8 1.1A3.1 3.1 0 0 0 9.5 19z"/>';
+const _rain=_cloud+'<path d="M9 20.5l-.8 1.6M12.5 20.5l-.8 1.6M16 20.5l-.8 1.6"/>';
+const _snow=_cloud+'<path d="M9 21h.01M12.5 21.6h.01M16 21h.01"/>';
+const _fog='<path d="M4 9h16M6 13h12M4 17h16"/>';
+const _storm=_cloud+'<path d="M13 19.5l-2.2 3.2h3l-2 3"/>';
+const SKY={0:['맑음',_sun],1:['대체로 맑음',_sunCloud],2:['구름 조금',_sunCloud],3:['흐림',_cloud],
+  45:['안개',_fog],48:['서리 안개',_fog],51:['이슬비',_rain],53:['이슬비',_rain],55:['이슬비',_rain],
+  56:['얼음 이슬비',_rain],57:['얼음 이슬비',_rain],61:['비',_rain],63:['비',_rain],65:['강한 비',_rain],
+  66:['얼어붙는 비',_rain],67:['얼어붙는 비',_rain],71:['눈',_snow],73:['눈',_snow],75:['많은 눈',_snow],
+  77:['싸락눈',_snow],80:['소나기',_rain],81:['소나기',_rain],82:['강한 소나기',_rain],
+  85:['소낙눈',_snow],86:['소낙눈',_snow],95:['천둥번개',_storm],96:['천둥번개',_storm],99:['우박 천둥번개',_storm]};
+const skyText=c=>(SKY[c]||['-',_sun])[0];
+const SKY_ICON=c=>_sv((SKY[c]||['-',_sun])[1]);
 const PM_GRADE=v=>v==null?null:(v<=30?'좋음':(v<=80?'보통':(v<=150?'나쁨':'매우나쁨')));   // 환경부 기준
 // 체감온도 — 원 데이터가 비어 있어 기상청 공식으로 계산한다(여름=습구온도식, 겨울=풍속식)
 function feelsLike(t,rh,windMs){
@@ -770,8 +787,8 @@ function renderList(){
       <i class="ic">${SKY_ICON(wx.w.code)}</i>
       <div class="main"><span class="t num">${wx.w.t}°</span>
         <span class="cond" title="기온·습도·바람을 반영한 체감온도">${skyText(wx.w.code)}${feel!=null?` · 체감 ${feel}°`:''}</span></div>
-      <div class="r num"><b>최저</b><span>${wx.w.lo}°</span><i>/</i><b>최고</b><span>${wx.w.hi}°</span>
-        <b>습도</b><span>${wx.w.hum}%</span>${wx.air?`<i>/</i><b title="미세먼지 ${PM_GRADE(wx.air.pm10)}">미세</b><span>${wx.air.pm10}</span>`:'<i></i><b></b><span></span>'}</div>
+      <div class="r num"><b>최저</b><span>${wx.w.lo}</span><em>°</em><i>/</i><b>최고</b><span>${wx.w.hi}</span><em>°</em>
+        <b>습도</b><span>${wx.w.hum}</span><em>%</em>${wx.air?`<i>/</i><b title="미세먼지 ${PM_GRADE(wx.air.pm10)}">미세</b><span>${wx.air.pm10}</span><em></em>`:'<i></i><b></b><span></span><em></em>'}</div>
     </div>`:'';
     let det;
     if(!s.api){
@@ -800,7 +817,7 @@ function renderList(){
       const ageBand=am?am[1]:(s.age||'—'), agePct=am?am[2]:'';
       det=`<div class="headline" style="color:${TXTC[s.s]}"><span>${MSG[mode][s.s]}</span></div>
       <div class="grid2">
-        <div class="mcard acc"><div class="lb">추정 인구</div>
+        <div class="mcard acc" style="--c:${TXTC[s.s]}"><div class="lb">추정 인구</div>
           <div class="v num">${s.pop!=null?s.pop.toLocaleString():'—'}${s.pop!=null?'<small>명</small>':''}</div></div>
         <div class="mcard"><div class="lb">평시 대비</div><div class="v num">${s.diff??'—'}</div></div>
         <div class="mcard"><div class="lb">평시 피크</div><div class="v num">${s.peak??'—'}</div></div>
