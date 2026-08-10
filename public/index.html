@@ -776,9 +776,15 @@ jumpSel.onchange=()=>{
 };
 
 // ── 리스트
-// 혼잡 점수 = 등급(주) + 평시 대비 증감(부) — 같은 등급이면 더 붐비는 쪽이 높은 점수
+// 정렬 점수 — 등급이 주 기준이고, 같은 등급 안에서 모드에 따라 다른 잣대를 쓴다.
+//   E(붐빔 찾기)는 실제 사람 수, I(피하기)는 평시 대비 증감.
+//   같은 '여유'라도 240명 공원(+22%)보다 7,078명 역이 붐비는 곳이므로 E는 절대 인원으로 본다.
 function crowdScore(s){
   const r=RANK[s.s]??0;
+  if(mode==='E'){
+    const p=s.pop!=null?s.pop:-1;
+    return r*1e9 + p;
+  }
   const d=s.diff!=null?parseFloat(s.diff):NaN;
   return r*10000 + (isNaN(d)?0:d);
 }
@@ -792,7 +798,7 @@ function sorted(){
   });
 }
 function renderList(){
-  document.getElementById('sort-note').textContent = mode==='I' ? '지금 가기 좋은 순' : '붐빔 순';
+  document.getElementById('sort-note').textContent = mode==='I' ? '지금 가기 좋은 순' : '사람 많은 순';
   document.getElementById('rows').innerHTML = sorted().map((s,i)=>{
     const rk=RANK[s.s]??0;
     const tint = rk<=0 ? '' : (mode==='I' ? (rk>=4?'tint-hot':(i===0?'tint-cool':'')) : (i===0?'tint-hot':''));
