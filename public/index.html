@@ -773,17 +773,26 @@ function fitRows(){
 addEventListener('resize',fitRows);
 
 // 현재 위치로 이동 — 모바일에서 내가 어디쯤인지 바로 보기 위한 버튼
-let meMarker=null, meWatch=null;
+let meMarker=null, meCircle=null, meWatch=null;
 const geoBtn=document.getElementById('tg-geo');
 function showMe(lat,lng,acc){
   if(!meMarker){
     meMarker=L.marker([lat,lng],{icon:L.divIcon({className:'',iconSize:[0,0],
       html:'<div class="me"><b></b><i></i></div>'}),interactive:false,zIndexOffset:900}).addTo(map);
   } else meMarker.setLatLng([lat,lng]);
+  // 오차 원 — 이 안 어딘가라는 뜻(PC 유선망은 IP로만 추정해 수십 km까지 벌어진다)
+  if(acc>0){
+    if(!meCircle) meCircle=L.circle([lat,lng],{radius:acc,color:'#2f6fd9',weight:1,
+      fillColor:'#2f6fd9',fillOpacity:.10,interactive:false}).addTo(map);
+    else meCircle.setLatLng([lat,lng]).setRadius(acc);
+  }
   geoBtn.classList.add('on');
-  const z=acc&&acc>500?14:16;                                  // 위치 정확도가 낮으면 덜 당긴다
-  map.flyTo([lat,lng],Math.max(map.getZoom(),z),{duration:.7});
-  if(!inPaju(lat,lng)) banner('현재 위치가 파주 밖입니다 — 지도만 이동했어요',6000);
+  const rough=acc>5000;                                        // 5km 넘으면 사실상 지역 단위 추정
+  const z=rough?11:(acc>500?14:16);
+  map.flyTo([lat,lng],rough?z:Math.max(map.getZoom(),z),{duration:.7});
+  const km=acc>=1000?Math.round(acc/1000)+'km':Math.round(acc)+'m';
+  if(rough) banner(`대략 위치입니다(오차 약 ${km}) — 유선 PC는 IP로만 추정해요. 휴대폰에서 훨씬 정확합니다`,8000);
+  else if(!inPaju(lat,lng)) banner('현재 위치가 파주 밖입니다 — 지도만 이동했어요',6000);
 }
 function banner(msg,ms){
   const b=document.getElementById('banner');
@@ -797,6 +806,7 @@ geoBtn.onclick=()=>{
   if(meWatch!=null){                                           // 다시 누르면 추적 해제
     navigator.geolocation.clearWatch(meWatch); meWatch=null;
     if(meMarker){ map.removeLayer(meMarker); meMarker=null; }
+    if(meCircle){ map.removeLayer(meCircle); meCircle=null; }
     geoBtn.classList.remove('on'); return;
   }
   geoBtn.disabled=true; geoBtn.textContent='찾는 중…';
@@ -804,7 +814,9 @@ geoBtn.onclick=()=>{
     geoBtn.disabled=false; geoBtn.innerHTML=GEO_LABEL;
     showMe(pos.coords.latitude,pos.coords.longitude,pos.coords.accuracy);
     meWatch=navigator.geolocation.watchPosition(                 // 이동하면 표시도 따라간다
-      p2=>{ if(meMarker) meMarker.setLatLng([p2.coords.latitude,p2.coords.longitude]); },
+      p2=>{ const ll=[p2.coords.latitude,p2.coords.longitude];
+            if(meMarker) meMarker.setLatLng(ll);
+            if(meCircle) meCircle.setLatLng(ll).setRadius(p2.coords.accuracy||0); },
       ()=>{}, {enableHighAccuracy:true,maximumAge:10000,timeout:20000});
   }, err=>{
     geoBtn.disabled=false; geoBtn.innerHTML=GEO_LABEL;
