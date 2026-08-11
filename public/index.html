@@ -781,12 +781,12 @@ jumpSel.onchange=()=>{
 //   같은 '여유'라도 240명 공원(+22%)보다 7,078명 역이 붐비는 곳이므로 E는 절대 인원으로 본다.
 function crowdScore(s){
   const r=RANK[s.s]??0;
-  if(mode==='E'){
-    const p=s.pop!=null?s.pop:-1;
-    return r*1e9 + p;
-  }
   const d=s.diff!=null?parseFloat(s.diff):NaN;
-  return r*10000 + (isNaN(d)?0:d);
+  if(mode==='E'){
+    return r*1e9 + (s.pop!=null?s.pop:-1);                 // 사람 많은 곳부터
+  }
+  const busy=(!isNaN(d)&&d>0)?1:0;                          // 평소보다 붐비는 중이면 뒤로 민다
+  return r*1e12 + busy*1e9 + (s.pop!=null?s.pop:1e8);       // 그다음 사람 적은 곳부터
 }
 function sorted(){
   return [...SPOTS].sort((a,b)=>{
