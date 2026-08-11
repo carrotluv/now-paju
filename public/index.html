@@ -53,6 +53,16 @@
   .mapwrap{position:relative}
   #map{position:absolute;inset:0;background:#eee9dd}
   .mapbtns{position:absolute;top:12px;right:12px;z-index:1000;display:flex;gap:6px}
+  .mapbtns.row2{top:53px;justify-content:flex-end}                 /* 도로 상황 줄 바로 아래 */
+  .mbtn.geo{display:flex;align-items:center;gap:6px}
+  .mbtn.geo.on{background:var(--btn-dark);color:var(--btn-dark-ink);border-color:var(--btn-dark)}
+  .mbtn.geo[disabled]{opacity:.55}
+  .me{position:relative}
+  .me i{position:absolute;left:50%;top:50%;width:14px;height:14px;margin:-7px 0 0 -7px;border-radius:50%;
+    background:#2f6fd9;border:2.5px solid #fff;box-shadow:0 1px 5px rgba(0,0,0,.35)}
+  .me b{position:absolute;left:50%;top:50%;width:34px;height:34px;margin:-17px 0 0 -17px;border-radius:50%;
+    background:rgba(47,111,217,.18);animation:mepulse 2s ease-out infinite}
+  @keyframes mepulse{0%{transform:scale(.6);opacity:.9}100%{transform:scale(1.5);opacity:0}}
   .mbtn{background:var(--float-bg);border:1px solid var(--hair);border-radius:var(--radius);padding:7px 12px;font-size:13px;font-weight:600;color:var(--ink);cursor:pointer;box-shadow:var(--shadow-1);font-family:inherit}
   .mbtn:hover{background:#f6f3ea}
   .mbtn.tgl{display:flex;align-items:center;gap:6px}
@@ -220,7 +230,7 @@
   footer{padding:7px 12px 7px 24px;font-size:12px;font-weight:600;color:var(--sub);display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;border-top:1px solid var(--hair)}
   #visits{font-size:12px;font-weight:600}                        /* 지도 출처 표기 오른쪽 끝과 맞춘다 */
   @media (prefers-reduced-motion: reduce){
-    .nd .pulse,.m-live i{animation:none}
+    .nd .pulse,.m-live i,.me b{animation:none}
     .nd .core{transition:none}
   }
 
@@ -248,6 +258,7 @@
 
     .mapwrap{height:round(down, 48vh, 1px);min-height:290px;position:sticky;top:0;z-index:400}
     .mapbtns{top:8px;right:8px;gap:5px}
+    .mapbtns.row2{top:58px}
     .mbtn,.msel{padding:11px 12px;min-height:42px;font-size:13px}
     .msel{padding-right:27px}
     .maptag{left:8px;right:auto;bottom:8px;font-size:10px;padding:4px 8px}
@@ -294,6 +305,13 @@
       <select class="msel" id="spot-jump"><option value="__all">파주 전체</option></select>
       <button class="mbtn tgl on" id="tg-cam" title="지점 주변 CCTV 위치 표시 (확대하면 나타남)">CCTV</button>
       <button class="mbtn tgl" id="tg-traffic" disabled title="실시간 도로 상황 켜기/끄기">도로 상황</button>
+    </div>
+    <div class="mapbtns row2">
+      <button class="mbtn geo" id="tg-geo" title="현재 위치로 지도 이동">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.6"
+          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="3.4"/><circle cx="12" cy="12" r="8"/>
+          <path d="M12 1.5v2.6M12 19.9v2.6M22.5 12h-2.6M4.1 12H1.5"/></svg>내 위치</button>
     </div>
     <div class="statchip" id="statchip"></div>
     <div class="maptag">지도: OpenStreetMap · CARTO</div>
@@ -753,6 +771,48 @@ function fitRows(){
   if(rows) rows.style.paddingTop=Math.max(0,avail-h*n)+'px';
 }
 addEventListener('resize',fitRows);
+
+// 현재 위치로 이동 — 모바일에서 내가 어디쯤인지 바로 보기 위한 버튼
+let meMarker=null, meWatch=null;
+const geoBtn=document.getElementById('tg-geo');
+function showMe(lat,lng,acc){
+  if(!meMarker){
+    meMarker=L.marker([lat,lng],{icon:L.divIcon({className:'',iconSize:[0,0],
+      html:'<div class="me"><b></b><i></i></div>'}),interactive:false,zIndexOffset:900}).addTo(map);
+  } else meMarker.setLatLng([lat,lng]);
+  geoBtn.classList.add('on');
+  const z=acc&&acc>500?14:16;                                  // 위치 정확도가 낮으면 덜 당긴다
+  map.flyTo([lat,lng],Math.max(map.getZoom(),z),{duration:.7});
+  if(!inPaju(lat,lng)) banner('현재 위치가 파주 밖입니다 — 지도만 이동했어요',6000);
+}
+function banner(msg,ms){
+  const b=document.getElementById('banner');
+  if(!b) return;
+  const prev=b.innerHTML;
+  b.innerHTML=`<b>${msg}</b>`;
+  setTimeout(()=>{ if(b.innerHTML.includes(msg)) b.innerHTML=prev; },ms||4000);
+}
+geoBtn.onclick=()=>{
+  if(!navigator.geolocation){ banner('이 브라우저는 위치 기능을 지원하지 않습니다'); return; }
+  if(meWatch!=null){                                           // 다시 누르면 추적 해제
+    navigator.geolocation.clearWatch(meWatch); meWatch=null;
+    if(meMarker){ map.removeLayer(meMarker); meMarker=null; }
+    geoBtn.classList.remove('on'); return;
+  }
+  geoBtn.disabled=true; geoBtn.textContent='찾는 중…';
+  navigator.geolocation.getCurrentPosition(pos=>{
+    geoBtn.disabled=false; geoBtn.innerHTML=GEO_LABEL;
+    showMe(pos.coords.latitude,pos.coords.longitude,pos.coords.accuracy);
+    meWatch=navigator.geolocation.watchPosition(                 // 이동하면 표시도 따라간다
+      p2=>{ if(meMarker) meMarker.setLatLng([p2.coords.latitude,p2.coords.longitude]); },
+      ()=>{}, {enableHighAccuracy:true,maximumAge:10000,timeout:20000});
+  }, err=>{
+    geoBtn.disabled=false; geoBtn.innerHTML=GEO_LABEL;
+    banner(err.code===1 ? '위치 권한이 꺼져 있습니다 — 브라우저 설정에서 허용해주세요'
+                        : '현재 위치를 찾지 못했습니다 — 잠시 후 다시 눌러주세요',6000);
+  }, {enableHighAccuracy:true,timeout:12000,maximumAge:60000});
+};
+const GEO_LABEL=geoBtn.innerHTML;
 
 function zoomClass(){
   const el=document.getElementById('map');
