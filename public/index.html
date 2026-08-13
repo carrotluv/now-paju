@@ -857,8 +857,11 @@ function crowdScore(s){
   if(mode==='E'){
     return r*1e9 + (s.pop!=null?s.pop:-1);                 // 사람 많은 곳부터
   }
-  const busy=(!isNaN(d)&&d>0)?1:0;                          // 평소보다 붐비는 중이면 뒤로 민다
-  return r*1e12 + busy*1e9 + (s.pop!=null?s.pop:1e8);       // 그다음 사람 적은 곳부터
+  // 사람 수를 기본으로 하되 평시 대비로 보정한 '체감 인원'으로 줄 세운다.
+  //   붐비면 무조건 뒤로 미는 방식은, 231명인 곳(+4.6%)이 4,269명인 곳보다 뒤로 가는 문제가 있었다.
+  const p=s.pop!=null?s.pop:1e8;
+  const adj=isNaN(d)?1:Math.max(.3,1+d/100);                 // 평소의 절반이면 0.5배, 두 배면 2배
+  return r*1e12 + p*adj;
 }
 function sorted(){
   return [...SPOTS].sort((a,b)=>{
