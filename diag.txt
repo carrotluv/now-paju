@@ -1,0 +1,2 @@
+시각: 2026-09-06T01:14:06+09:00
+사유: 수집 실패 URLError <urlopen error [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1010)>
