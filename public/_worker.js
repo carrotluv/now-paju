@@ -260,6 +260,54 @@ async function ggFromKV(env) {
   } catch (e) { return null; }
 }
 
+// 공영주차장 — 경기도교통정보센터 주차장 API 2종(기본정보·남은 면수). laeId=31200(파주)만 받는다(35KB·7KB).
+//   기본정보는 하루 한 번, 남은 면수는 3분 캐시. KV에는 쓰지 않는다(쓰기 한도는 도로 소통·방문자 몫).
+const GG_PARK = 'https://openapigits.gg.go.kr/api/rest/';
+async function ggParkItems(env, op, ttl, ctx) {
+  const cache = caches.default;
+  const ck = new Request('https://cache.now-paju.internal/park-' + op);
+  const hit = await cache.match(ck);
+  if (hit) return hit.json();
+  const r = await fetch(GG_PARK + op + '?laeId=31200&serviceKey=' + encodeURIComponent(env.GITS_KEY),
+    { headers: { accept: 'application/xml' } });
+  if (!r.ok) throw new Error('gg-park ' + r.status);
+  const items = (await r.text()).split('<itemList>').slice(1).map(it => {
+    const o = {};
+    for (const m of it.matchAll(/<([A-Za-z0-9_]+)>([^<]*)<\/\1>/g)) o[m[1]] = m[2];
+    return o;
+  });
+  ctx.waitUntil(cache.put(ck, new Response(JSON.stringify(items), {
+    headers: { 'content-type': 'application/json', 'cache-control': 'public, max-age=' + ttl } })));
+  return items;
+}
+const parkName = n => (n || '').replace('(주기장)', '').replace('(환승_월정기)', ' 환승')
+  .replace('(환승)', ' 환승').replace('(월정기)', '').replace(/\s+/g, ' ').trim();
+const toNum = v => { const n = parseFloat(v); return isFinite(n) ? n : 0; };
+
+async function ggParking(env, ctx) {
+  const [info, avail] = await Promise.all([
+    ggParkItems(env, 'getParkingPlaceInfoList', 86400, ctx),
+    ggParkItems(env, 'getParkingPlaceAvailabilityInfoList', 180, ctx)
+  ]);
+  const av = {};
+  let asof = null;
+  for (const a of avail) {
+    av[a.pkplcId] = a;
+    if (a.ocrnDt && (!asof || a.ocrnDt > asof)) asof = a.ocrnDt;
+  }
+  const lots = info.filter(p => p.laeNm === '파주시' && toNum(p.latCrdn) && toNum(p.lonCrdn)).map(p => {
+    const a = av[p.pkplcId];
+    return {
+      id: p.pkplcId, n: parkName(p.pkplcNm), lat: toNum(p.latCrdn), lng: toNum(p.lonCrdn),
+      total: toNum(p.pklotCnt), avail: a ? toNum(a.avblPklotCnt) : null,
+      bt: toNum(p.parkingBscTime), bf: toNum(p.parkingBscFare), at: toNum(p.addUnitTime),
+      af: toNum(p.addUnitFare), dd: toNum(p.ddPktckFare),
+      ws: (p.wkdayOprtStartTime || '').slice(0, 5), we: (p.wkdayOprtEndTime || '').slice(0, 5)
+    };
+  });
+  return { asof: asof ? asof.slice(0, 19).replace(' ', 'T') + '+09:00' : null, lots };
+}
+
 export default {
   async scheduled(event, env, ctx) {            // 5분마다: 경기도 전체 소통을 추려 KV에 저장
     ctx.waitUntil(ggRefresh(env).catch(() => {}));
@@ -298,6 +346,11 @@ export default {
         }
         if (d) return json({ asof: d.asof, roads: d.roads || [], roadAvg: d.roadAvg || {}, links: d.links || {}, src: 'its-stale' }, 200, 180);
         return json({ error: 'no-key', message: '도로 소통 데이터 경로가 아직 연결되지 않았습니다' }, 503);
+      }
+
+      if (url.pathname === '/api/parking') {                 // 공영주차장 34곳 — 남은 면수는 3분마다 새로
+        if (!env.GITS_KEY) return json({ error: 'no-key' }, 503);
+        return json(await ggParking(env, ctx), 200, 120);
       }
 
       if (url.pathname === '/api/summary') {

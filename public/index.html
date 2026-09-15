@@ -80,6 +80,8 @@
   .statchip span{display:flex;align-items:center;gap:5px}
   .statchip i{width:8px;height:8px;border-radius:50%;flex:none}
   .statchip b{font-weight:700}
+  .leaflet-tile-pane{filter:saturate(.4) contrast(.8) brightness(1.1)}     /* OSM 기본 타일을 한 톤 물려 지점·P가 먼저 보이게 */
+  .maptag a{color:inherit;text-decoration:none}
   .maptag{position:absolute;right:12px;bottom:12px;z-index:1000;background:var(--float-bg2);border:1px solid var(--hair);border-radius:var(--radius);padding:5px 10px;font-size:11px;color:var(--sub)}
 
   /* 지도 노드 */
@@ -112,6 +114,46 @@
   .cam svg{width:13px;height:13px;color:#fff}
   .cam-hidden .cam{display:none}
   .hide-cam .cam{display:none}
+  /* 공영주차장 P — 색은 남은 비율(여유·보통·혼잡), 회색은 정보 없음, 흰 테두리 P는 실시간 없는 시청 현황 */
+  .pk{display:flex;align-items:stretch;height:22px;width:max-content;border:1.5px solid #fff;border-radius:5px;overflow:hidden;
+    box-shadow:0 1px 4px rgba(0,0,0,.32);cursor:pointer;transform:translate(-11px,-11px);font-variant-numeric:tabular-nums}
+  .pk b{flex:0 0 19px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff;background:var(--c)}
+  .pk span{display:flex;align-items:center;padding:0 6px 0 5px;background:#fff;color:var(--ink);font-size:12px;font-weight:700;line-height:1}
+  .pk.na span{color:var(--sub)}
+  .pk.st{height:18px;border:1.5px solid #a39d91;box-shadow:0 1px 2px rgba(0,0,0,.18);transform:translate(-9px,-9px)}
+  .pk.st b{flex-basis:15px;background:#fff;color:#7d776b;font-size:11px}
+  .pk.hl{box-shadow:0 0 0 2px #fff,0 0 0 4px var(--ink)}
+  .pk-lo .pk span{display:none}                         /* 멀리서 보면 숫자 없이 P만 */
+  .pk-far .pk.st{display:none}                          /* 파주 전체 화면에선 실시간 34곳만 */
+  .pkleg{position:absolute;left:12px;bottom:12px;z-index:1000;display:flex;align-items:center;gap:11px;background:var(--float-bg);
+    border:1px solid var(--hair);border-radius:var(--radius);padding:7px 12px;font-size:12px;font-weight:600;color:var(--ink);
+    box-shadow:var(--shadow-1);white-space:nowrap}
+  .pkleg[hidden]{display:none}
+  .pkleg b{font-weight:700}
+  .pkleg span{display:flex;align-items:center;gap:5px}
+  .pkleg i{width:10px;height:10px;border-radius:3px;flex:none}
+  .pkleg em{font-style:normal;color:var(--sub);padding-left:10px;border-left:1px solid var(--hair)}
+  .c-ok{background:var(--s1)} .c-mid{background:var(--s2)} .c-low{background:var(--s4)} .c-na{background:#a39d91} .c-st{background:#fff;border:1.5px solid #a39d91}
+  .leaflet-container{font-family:inherit}
+  .leaflet-popup-content-wrapper{border-radius:var(--radius);box-shadow:var(--shadow-2);padding:0}
+  .leaflet-popup-content{margin:0;width:236px!important;line-height:normal}
+  .leaflet-container a.leaflet-popup-close-button{top:6px;right:6px}
+  .pp{padding:11px 13px 10px;color:var(--ink)}
+  .pp-h{display:flex;align-items:center;gap:7px;font-size:14px;font-weight:700;line-height:20px;padding-right:16px}
+  .pp .tag{flex:none;font-size:11px;line-height:15px;font-weight:600;border:1px solid var(--hair);border-radius:3px;padding:0 4px}
+  .pp-av{display:flex;align-items:baseline;gap:5px;margin-top:7px;font-size:12px;font-weight:600}
+  .pp-av b{font-size:21px;font-weight:800;letter-spacing:-.4px;line-height:24px}
+  .pp-av.ok b{color:var(--t1)} .pp-av.mid b{color:var(--t2)} .pp-av.low b{color:var(--t4)}
+  .pp-av.na{color:var(--sub);font-size:13px}
+  .pp-av em{margin-left:auto;font-style:normal}
+  .pp-bar{height:5px;border-radius:3px;background:var(--hair2);margin:6px 0 9px;overflow:hidden}
+  .pp-bar i{display:block;height:100%;background:var(--c)}
+  .pp-kv{display:grid;grid-template-columns:auto 1fr;gap:3px 10px;font-size:12px;font-weight:600;line-height:17px;margin:8px 0 9px}
+  .pp-kv dt{color:var(--sub)} .pp-kv dd{margin:0}
+  .pp-kv .nw{display:block;white-space:nowrap}          /* '500원'이 홀로 줄바꿈되지 않게 항목별 한 줄 */
+  .pp-note{font-size:12px;font-weight:600;color:var(--sub);margin:6px 0 9px}
+  .pp .navs{gap:5px} .pp .navbtn{padding:5px 3px;font-size:12px;line-height:17px}
+  .pp-src{margin-top:8px;font-size:11px;font-weight:600;color:var(--sub)}
   .trafficbox{position:absolute;left:12px;bottom:12px;z-index:1000;background:var(--float-bg2);border:1px solid var(--hair);border-radius:var(--radius);padding:10px 13px;min-width:195px;display:none;box-shadow:var(--shadow-1)}
   .trafficbox.on{display:block}
   .tb-title{font-size:13px;font-weight:700;color:var(--ink);margin-bottom:6px;display:flex;gap:10px;align-items:baseline}
@@ -199,6 +241,18 @@
   .cambtn .tag{flex:0 0 90px;text-align:center;font-size:12px;line-height:15px;font-weight:600;color:var(--ink);border:1px solid var(--hair);border-radius:3px;padding:1px 4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .cambtn .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .cambtn .go{margin-left:auto;color:var(--ink);font-size:12px;font-weight:600}
+  /* 주변 주차장 — CCTV 목록과 같은 틀 */
+  .pks{display:flex;flex-direction:column;border:1px solid var(--hair);border-radius:var(--radius);background:var(--card);overflow:hidden}
+  .pkrow{display:flex;align-items:center;gap:8px;width:100%;line-height:19px;font-weight:600;text-align:left;background:transparent;color:var(--ink);
+    border:0;border-bottom:1px solid var(--hair2);padding:6px 11px;font-size:13px;cursor:pointer;font-family:inherit}
+  .pkrow:last-child{border-bottom:0}
+  .pkrow:hover{background:var(--hover)}
+  .pkrow .tag{flex:0 0 36px;text-align:center;font-size:12px;line-height:15px;font-weight:600;color:var(--ink);border:1px solid var(--hair);border-radius:3px;padding:1px 0}
+  .pkrow .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .pkrow .d{flex:0 0 40px;text-align:right;font-size:12px;color:var(--ink-2)}
+  .pkrow .av{flex:0 0 60px;text-align:right;font-size:12px;white-space:nowrap}
+  .pkrow .av b{font-size:14px;font-weight:800}
+  .av.ok{color:var(--t1)} .av.mid{color:var(--t2)} .av.low{color:var(--t4)} .av.na,.av.st{color:var(--sub)}
   .navs{display:flex;gap:6px;margin-top:0}
   .navbtn{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;font-size:13px;line-height:19px;font-weight:600;
     padding:7px 6px;border:1px solid var(--hair);border-radius:var(--radius);background:var(--card);color:var(--ink);
@@ -273,6 +327,9 @@
     .info b{line-height:19px} .info span{line-height:18px}
     .navbtn{padding:11px 4px}
     .cambtn{padding:9px 12px;font-size:13px}
+    .pkrow{padding:9px 12px}
+    .pkleg{left:8px;gap:8px;padding:6px 10px;font-size:11px;flex-wrap:wrap;row-gap:3px;max-width:calc(100% - 16px)}
+    .pkleg em{border-left:0;padding-left:0}          /* 두 줄로 접히면 시각 앞 구분선이 줄머리에 오지 않게 */
     .modal{width:94vw}
     .m-foot{font-size:11px;line-height:17px}
   }
@@ -307,6 +364,7 @@
       <button class="mbtn tgl" id="tg-traffic" disabled title="실시간 도로 상황 켜기/끄기">도로 상황</button>
     </div>
     <div class="mapbtns row2">
+      <button class="mbtn tgl" id="tg-park" title="공영주차장 표시 켜기/끄기">주차</button>
       <button class="mbtn geo" id="tg-geo" title="현재 위치로 지도 이동">
         <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.6"
           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -314,8 +372,9 @@
           <path d="M12 1.5v2.6M12 19.9v2.6M22.5 12h-2.6M4.1 12H1.5"/></svg>내 위치</button>
     </div>
     <div class="statchip" id="statchip"></div>
-    <div class="maptag">지도: OpenStreetMap · CARTO</div>
+    <div class="maptag">지도: © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> 기여자</div>
     <div class="trafficbox" id="trafficbox"></div>
+    <div class="pkleg" id="pkleg" hidden></div>
   </div>
   <aside class="list" id="list">
     <div class="list-head"><b>지점 리스트</b><span id="sort-note"></span></div>
@@ -324,7 +383,7 @@
 </div>
 
 <footer>
-  <span>데이터: 경기도 실시간 방문소비 현황지도 (KT 통신 기반) · 5분 주기 · 날씨 Open-Meteo · 도로 국가교통정보센터</span>
+  <span>데이터: 경기도 실시간 방문소비 현황지도 (KT 통신 기반) · 5분 주기 · 날씨 Open-Meteo · 도로·주차 경기도교통정보센터 · CCTV 국가교통정보센터 · 공영주차장 현황 파주시</span>
   <span id="visits" class="num"></span>
 </footer>
 
@@ -401,8 +460,11 @@ const SPOTS=[
   lat:37.718483,lng:126.72339,small:1,up:1,peak:'19시',cams:[{n:'가온로',lat:37.7170,lng:126.7215}],
   t:[2,1,1,1,1,2,5,10,16,22,26,28,30,28,26,28,34,44,56,62,54,36,18,8]}
 ];
-const API_SET=new Set(['임진각 평화누리공원','롯데프리미엄아울렛 파주','소리천로(야당역)','운정역(스타필드빌리지 운정)','운정중앙공원(파주가든)','운정중앙역 GTX-A','운정호수공원','파주 신세계 프리미엄아울렛','헤이리예술마을']);
-SPOTS.forEach(s=>{s.api=API_SET.has(s.apiName||s.n);s.s=s.api?'집계중':'관측 준비';s.pop=null;s.diff=null;s.age=null;s.sex=null;s.t=null;s.peak=null;s.nowIdx=null;s.spotId=null;s.loaded=false;s.loading=false;});
+// 이름 비교는 공백·괄호를 뺀 채로 한다 — 경기도가 '운정중앙역 GTX-A'를 '운정중앙역(GTX-A)'로 바꿔
+//   운정중앙역만 '집계중'에 멈춰 있던 문제(2026-09-15). 표기만 바뀌어도 다시 끊기지 않게.
+const nz=x=>(x||'').replace(/[\s()]/g,'');
+const API_SET=new Set(['임진각 평화누리공원','롯데프리미엄아울렛 파주','소리천로(야당역)','운정역(스타필드빌리지 운정)','운정중앙공원(파주가든)','운정중앙역 GTX-A','운정호수공원','파주 신세계 프리미엄아울렛','헤이리예술마을'].map(nz));
+SPOTS.forEach(s=>{s.api=API_SET.has(nz(s.apiName||s.n));s.s=s.api?'집계중':'관측 준비';s.pop=null;s.diff=null;s.age=null;s.sex=null;s.t=null;s.peak=null;s.nowIdx=null;s.spotId=null;s.loaded=false;s.loading=false;});
 let mode='I', sel=null;
 // 카메라 아이콘 — 날씨·닫기와 같은 선 아이콘 계열(굵기 1.6, 채움 없음)
 const CAMSVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" '
@@ -412,9 +474,10 @@ const FEATURE_ITS=true;    // CCTV·도로 소통 스위치 (2026-08-06) — fal
 
 // ── 지도
 const map=L.map('map',{zoomControl:true,zoomSnap:.25,attributionControl:false});
-// 배경지도 — OSM(CARTO). 브이월드는 Cloudflare에서 나가는 요청을 막아(502) 사용 불가,
-// 워커의 /tiles 프록시는 남겨둠(다른 타일 소스로 되살릴 때 재사용).
-L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{maxZoom:18,subdomains:'abcd'}).addTo(map);
+// 배경지도 — OpenStreetMap 기본 타일(키 없음). CARTO는 2026-08-28부터 키 없는 요청에 'API KEY REQUIRED'를
+//   박아 보내고, 키는 타일 주소에 실어야 해 '지도에 키 노출 금지' 원칙과 맞지 않아 바꿨다. 브이월드는 워커에서 막힘(502).
+//   색이 진한 편이라 타일 층만 채도를 낮춰 기존 톤에 맞춘다(.leaflet-tile-pane).
+L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18}).addTo(map);
 const WORLD=[[85,-180],[85,180],[-85,180],[-85,-180]];
 const maskLayer=L.polygon([WORLD,PAJU_RING],{stroke:false,fillColor:'#f7f5ef',fillOpacity:.62,interactive:false}).addTo(map);
 const boundaryLayer=L.polyline(PAJU_RING.concat([PAJU_RING[0]]),{color:'#23272f',weight:2,dashArray:'6 5',opacity:.55,interactive:false}).addTo(map);
@@ -745,8 +808,7 @@ function renderTraffic(){
   box.innerHTML=`<div class="tb-title">도로 상황<span class="num">${itsAsof?itsAsof+' 기준':''}</span></div>`
     + rows.map(r=>`<div class="tr-row num"><i style="background:${LVC[r.level]||'#b5afa3'}"></i>${r.road}<span class="sp">${r.speed}<small>km/h</small></span></div>`).join('');
   box.classList.toggle('on',showTraffic);
-  const chip=document.getElementById('statchip');           // 도로 상황 카드가 뜨면 개수 칩이 위로 비켜난다
-  if(chip) chip.style.bottom = (showTraffic && window.innerWidth>600) ? (box.offsetHeight+20)+'px' : '';
+  stackBottomLeft();                                         // 도로 상황 카드가 뜨면 범례·개수 칩이 위로 비켜난다
   if(showTraffic){ loadLinks().then(()=>drawLinks(LINK_SPD)); }
   else { linkLayer.clearLayers(); }
 }
@@ -754,6 +816,135 @@ const tgTr=document.getElementById('tg-traffic');
 function trafficReady(){ if(tgTr.disabled){ tgTr.disabled=false; tgTr.title='실시간 도로 상황 켜기/끄기'; } }
 tgTr.onclick=()=>{ if(tgTr.disabled) return; showTraffic=!showTraffic; tgTr.classList.toggle('on',showTraffic); renderTraffic(); };
 if(!FEATURE_ITS){ tgCam.style.display='none'; tgTr.style.display='none'; }
+
+// 왼쪽 아래 카드들을 겹치지 않게 아래부터 쌓는다 — 도로 상황(넓은 화면만) → 주차 범례 → 지점 개수 칩
+function stackBottomLeft(){
+  const wide=innerWidth>600, base=wide?12:36;
+  const box=document.getElementById('trafficbox'), leg=document.getElementById('pkleg'), chip=document.getElementById('statchip');
+  let y=base;
+  if(wide&&box&&box.classList.contains('on')) y+=box.offsetHeight+8;
+  if(leg){ leg.style.bottom=leg.hidden?'':y+'px'; if(!leg.hidden) y+=leg.offsetHeight+8; }
+  if(chip) chip.style.bottom=y===base?'':y+'px';
+}
+
+// ── 공영주차장 — 실시간 잔여 34곳(경기도교통정보센터 /api/parking) + 실시간 없는 시청 현황(paju_parking.json).
+//   상세창엔 1.5km 안 가까운 순 2곳(지점 이름이 붙은 곳은 포함), 지도 P는 버튼을 켜거나 상세의 줄을 누를 때만.
+let PK_LIVE=[], PK_STATIC=[], PK_ASOF='', showPark=false, pkMax=2, pkMarkers={};
+const pkLayer=L.layerGroup();
+const PK_TXT={ok:'여유',mid:'보통',low:'혼잡',na:'잔여 정보 없음',st:'실시간 없음'};
+const PK_COL={ok:'var(--s1)',mid:'var(--s2)',low:'var(--s4)',na:'#a39d91'};
+const escH=t=>String(t??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function distM(a,b,c,d){ const r=Math.PI/180, p1=a*r, p2=c*r;
+  return 2*6371000*Math.asin(Math.sqrt(Math.sin((p2-p1)/2)**2+Math.cos(p1)*Math.cos(p2)*Math.sin((d-b)*r/2)**2)); }
+const fmtDist=m=>m<1000?(Math.round(m/10)*10)+'m':(m/1000).toFixed(1)+'km';
+const pkShort=n=>n.replace(/\s*주차장$/,'');              // 목록 줄에선 '주차장' 생략 — 팝업은 전체 이름
+function pkState(p){ if(p.st) return 'st'; if(!p.avail) return 'na'; const r=p.avail/p.total; return r>=.3?'ok':(r>=.1?'mid':'low'); }
+const pkFee=p=>p.st?p.fee:((p.bf||p.af||p.dd)?'유료':'무료');
+function nearLots(s){
+  const key=s.short.replace(/\s/g,'');
+  const live=PK_LIVE.map(p=>({p,d:distM(s.lat,s.lng,p.lat,p.lng)})).filter(x=>x.d<=1500).sort((a,b)=>a.d-b.d);
+  let pick=live.slice(0,2);
+  const named=live.find(x=>x.p.n.replace(/\s/g,'').includes(key));
+  if(named&&!pick.includes(named)) pick=[pick[0],named].sort((a,b)=>a.d-b.d);
+  if(pick.length<2){                                        // 실시간이 모자라면 시청 현황으로 채운다
+    const st=PK_STATIC.map(p=>({p,d:distM(s.lat,s.lng,p.lat,p.lng)})).filter(x=>x.d<=1500).sort((a,b)=>a.d-b.d);
+    pick=pick.concat(st.slice(0,2-pick.length));
+  }
+  return pick.slice(0,pkMax);
+}
+function pkSec(s){
+  const list=nearLots(s); if(!list.length) return '';     // 1.5km 안에 없으면 줄 자체를 숨긴다
+  const rows=list.map(({p,d})=>{
+    const st=pkState(p);
+    const val= st==='st' ? `<span class="av st num">${p.sp.toLocaleString()}면</span>`
+             : st==='na' ? `<span class="av na">정보 없음</span>`
+             : `<span class="av ${st} num"><b>${p.avail}</b>/${p.total}</span>`;
+    return `<button class="pkrow" data-pk="${p.key}"><span class="tag">${pkFee(p)}</span><span class="nm">${escH(pkShort(p.n))}</span><span class="d num">${fmtDist(d)}</span>${val}</button>`;
+  }).join('');
+  const live=list.some(x=>!x.p.st);
+  return `<div class="p-sec">주변 주차장<span class="hint num">${live&&PK_ASOF?PK_ASOF+' 기준':'파주시 현황'}</span></div><div class="pks">${rows}</div>`;
+}
+function pkIcon(p,hl){
+  const st=pkState(p);
+  const html=st==='st'
+    ?`<div class="pk st${hl?' hl':''}" title="${escH(p.n)}"><b>P</b></div>`
+    :`<div class="pk ${st}${hl?' hl':''}" style="--c:${PK_COL[st]}" title="${escH(p.n)}"><b>P</b><span>${st==='na'?'–':p.avail}</span></div>`;
+  return L.divIcon({className:'',iconSize:[0,0],html});
+}
+function pkPopup(p){
+  const st=pkState(p), q=encodeURIComponent(p.n), fee=pkFee(p);
+  const nav=`<div class="navs"><a class="navbtn kakao" target="_blank" rel="noopener" href="https://map.kakao.com/link/to/${q},${p.lat},${p.lng}">카카오맵</a>`
+    +`<a class="navbtn naver" target="_blank" rel="noopener" href="https://map.naver.com/p/directions/-/${p.lng},${p.lat},${q}/-/car">네이버</a>`
+    +`<a class="navbtn tmap" target="_blank" rel="noopener" href="tmap://route?goalname=${q}&goalx=${p.lng}&goaly=${p.lat}">티맵</a></div>`;
+  const head=`<div class="pp-h"><span class="tag">${fee}</span>${escH(p.n)}</div>`;
+  if(st==='st') return `<div class="pp">${head}<div class="pp-av"><b class="num">${p.sp.toLocaleString()}</b>면<em>${p.cat==='임시'?'임시공영':'공영'}</em></div>
+    <div class="pp-note">실시간 잔여 정보가 없는 주차장입니다</div>${nav}<div class="pp-src">파주시 공영주차장 현황</div></div>`;
+  const av=st==='na'
+    ?`<div class="pp-av na">잔여 정보 없음<em class="num">총 ${p.total.toLocaleString()}면</em></div>`
+    :`<div class="pp-av ${st}"><b class="num">${p.avail}</b><span class="num">/ ${p.total.toLocaleString()}면 남음</span><em>${PK_TXT[st]}</em></div>
+      <div class="pp-bar" style="--c:${PK_COL[st]}"><i style="width:${Math.min(100,Math.round(p.avail/p.total*100))}%"></i></div>`;
+  const fees=[p.bt&&p.bf?`기본 ${p.bt}분 ${p.bf.toLocaleString()}원`:'', p.at&&p.af?`추가 ${p.at}분 ${p.af.toLocaleString()}원`:'',
+    p.dd?`1일 ${p.dd.toLocaleString()}원`:''].filter(Boolean);
+  const hours=!(p.ws&&p.we)?'-':((p.ws==='00:00'&&['23:59','24:00','00:00'].includes(p.we))?'24시간':`평일 ${p.ws}–${p.we}`);
+  return `<div class="pp">${head}${av}<dl class="pp-kv"><dt>요금</dt><dd>${(fees.length?fees:[fee]).map(x=>`<span class="nw">${x}</span>`).join('')}</dd>
+    <dt>운영</dt><dd>${hours}</dd></dl>${nav}<div class="pp-src">경기도교통정보센터 · ${PK_ASOF} 기준</div></div>`;
+}
+function renderPkLegend(){
+  const el=document.getElementById('pkleg');
+  el.innerHTML=`<b>주차</b>${['ok','mid','low'].map(k=>`<span><i class="c-${k}"></i>${PK_TXT[k]}</span>`).join('')}`
+    +`<span><i class="c-na"></i>정보 없음</span><span><i class="c-st"></i>실시간 없음</span>${PK_ASOF?`<em class="num">${PK_ASOF} 기준</em>`:''}`;
+  el.hidden=!showPark;
+  stackBottomLeft();
+}
+function renderPark(){                                      // 상세에 뜬 주차장은 지도에서 테두리로 짚어 준다
+  pkLayer.clearLayers(); pkMarkers={};
+  const s=sel?SPOTS.find(x=>x.id===sel):null;
+  const hl=new Set(s?nearLots(s).map(x=>x.p.key):[]);
+  PK_LIVE.concat(PK_STATIC).forEach(p=>{
+    pkMarkers[p.key]=L.marker([p.lat,p.lng],{icon:pkIcon(p,hl.has(p.key)),zIndexOffset:hl.has(p.key)?500:(p.st?-1100:-1000)})
+      .bindPopup(()=>pkPopup(p),{autoPanPaddingTopLeft:[40,112],autoPanPaddingBottomRight:[40,40]}).addTo(pkLayer);   // 위쪽 버튼 두 줄에 가리지 않게
+  });
+  renderPkLegend();
+}
+const tgPark=document.getElementById('tg-park');
+function setPark(on){
+  showPark=on; tgPark.classList.toggle('on',on);
+  if(on){ if(!map.hasLayer(pkLayer)) pkLayer.addTo(map); }
+  else { map.closePopup(); map.removeLayer(pkLayer); }
+  renderPkLegend();
+}
+tgPark.onclick=()=>setPark(!showPark);
+function openPark(key){                                     // 상세의 주차장 줄 → 지도에 켜고 그 주차장으로 이동
+  const mk=pkMarkers[key]; if(!mk) return;
+  if(!showPark) setPark(true);
+  map.flyTo(mk.getLatLng(),Math.max(map.getZoom(),16),{duration:.6});
+  setTimeout(()=>mk.openPopup(),700);
+}
+async function loadParking(){
+  try{
+    if(!PK_STATIC.length){
+      const r=await fetch('/paju_parking.json');
+      if(r.ok) PK_STATIC=(await r.json()).map((p,i)=>({...p,st:true,key:'S'+i}));
+    }
+    const r=await fetch('/api/parking');
+    if(r.ok){
+      const j=await r.json();
+      PK_LIVE=(j.lots||[]).map(p=>({...p,key:'L'+p.id}));
+      if(j.asof){ const d=new Date(j.asof); PK_ASOF=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); }
+    }
+  }catch(e){}
+  renderPark(); renderList();
+}
+// 정보창이 목록 높이를 넘으면(작은 창) 주차 줄을 1곳으로 줄여 길찾기 버튼이 가려지지 않게 한다
+function fitDetail(){
+  if(!sel||innerWidth<=640||pkMax<2) return;
+  const list=document.getElementById('list'), row=list&&list.querySelector('.row.sel'), det=row&&row.nextElementSibling;
+  if(!det||det.querySelectorAll('.pkrow').length<2) return;
+  const head=list.querySelector('.list-head');
+  if(row.offsetHeight+det.offsetHeight>list.clientHeight-(head?head.offsetHeight:0)){ pkMax=1; renderList(); renderPark(); }
+}
+let pkResize=null;
+addEventListener('resize',()=>{ clearTimeout(pkResize); pkResize=setTimeout(()=>{ stackBottomLeft(); if(pkMax<2){ pkMax=2; renderList(); renderPark(); } },200); });
 
 // 목록이 상태창 바로 위에서 딱 떨어지도록 행 높이를 창에 맞춰 계산한다(넓은 화면만)
 const ROWS_VISIBLE=10;
@@ -832,6 +1023,8 @@ function zoomClass(){
   el.classList.toggle('z-lo',lo);
   el.classList.toggle('z-hi',!lo);
   el.classList.toggle('cam-hidden', map.getZoom()<11.9);   // CCTV는 지점 확대 수준에서만
+  el.classList.toggle('pk-lo', map.getZoom()<13.5);         // 주차 P 숫자는 동네 수준부터
+  el.classList.toggle('pk-far', map.getZoom()<12);
 }
 map.on('zoomend',()=>{ zoomClass(); if(showTraffic) drawLinks(LINK_SPD); });
 let moveTimer=null;                                        // 지도를 움직이면 보이는 영역만 다시 그린다
@@ -896,6 +1089,7 @@ function renderList(){
     } else {
       camSec=`<div class="p-sec">주변 도로 CCTV</div><div style="font-size:13px;color:var(--sub)">연동 대기 중</div>`;
     }
+    const pkS=pkSec(s);
     const wx=WX[s.id];
     const feel=wx&&wx.w?(wx.w.feel??feelsLike(wx.w.t,wx.w.hum,wx.w.wind)):null;
     const wxRow=(wx&&wx.w)?`<div class="wx">
@@ -908,11 +1102,11 @@ function renderList(){
     let det;
     if(!s.api){
       det=`<div class="headline" style="color:var(--sub)"><span>${MSG[mode][s.s]}</span></div>
-      <div style="font-size:13px;color:var(--ink);line-height:20px">경기도 관측망에 아직 없는 지점이라 혼잡도는 제공되지 않습니다. 날씨·위치·주변 CCTV만 표시합니다.</div>
-      ${wxRow}${camSec}${navSec}`;
+      <div style="font-size:13px;color:var(--ink);line-height:20px">경기도 관측망에 아직 없는 지점이라 혼잡도는 제공되지 않습니다. 날씨·위치·주변 CCTV${pkS?'·주차장':''}만 표시합니다.</div>
+      ${wxRow}${pkS}${camSec}${navSec}`;
     } else if(!s.loaded){
       det=`<div class="headline" style="color:${TXTC[s.s]}"><span>${MSG[mode][s.s]}</span></div>
-      <div style="font-size:13px;color:var(--ink)">상세 데이터를 불러오는 중입니다…</div>${camSec}${navSec}`;
+      <div style="font-size:13px;color:var(--ink)">상세 데이터를 불러오는 중입니다…</div>${pkS}${camSec}${navSec}`;
     } else {
       // E는 피크 시각을, I는 남은 시간 중 가장 한산한 시각을 막대에 직접 표시한다
       const hi=s.t.reduce((b,v,j)=>v>s.t[b]?j:b,0);
@@ -943,7 +1137,7 @@ function renderList(){
       <div class="bars">${bars}</div>
       <div class="bar-x num"><span>0시</span><span>6시</span><span>12시</span><span>18시</span><span>23시</span></div>
       <div class="kv">주 방문층 <b>${ageBand}</b>${agePct?` <span class="num">${agePct}</span>`:''}${s.sex?` · <b>${s.sex}</b>`:''}</div>
-      ${camSec}${navSec}`;
+      ${pkS}${camSec}${navSec}`;
     }
     const diffCell = s.diff ? `<span class="dv ${s.diff.startsWith('-')?'dd':'du'} num">${s.diff}</span>` : `<span class="dv num" style="font-weight:600">—</span>`;
     return `
@@ -957,6 +1151,8 @@ function renderList(){
   }).join('');
   document.querySelectorAll('.row').forEach(r=>r.addEventListener('click',()=>select(r.dataset.id,{fly:true})));
   document.querySelectorAll('.cambtn').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();openCam(CAMS[+b.dataset.ci],b.dataset.spot);}));
+  document.querySelectorAll('.pkrow').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();openPark(b.dataset.pk);}));
+  fitDetail();
 }
 
 function renderStatChip(){
@@ -1013,8 +1209,9 @@ function revealDetail(id){
 }
 function select(id,{fly}){
   const js=document.getElementById('spot-jump');
-  if(sel===id){ sel=null; renderNodes(); renderList(); if(js) js.value='__all'; return; }
-  sel=id; renderNodes(); renderList();
+  pkMax=2;                                                  // 지점마다 정보창 높이가 달라 다시 재 본다
+  if(sel===id){ sel=null; renderNodes(); renderList(); renderPark(); if(js) js.value='__all'; return; }
+  sel=id; renderNodes(); renderList(); renderPark();
   if(js) js.value=id;
   const sp=SPOTS.find(x=>x.id===id);
   if(sp&&sp.api&&sp.spotId&&!sp.loaded&&!sp.loading) fetchDetail(sp);
@@ -1102,7 +1299,7 @@ async function loadSummary(){
     const r=await fetch('/api/summary'); if(!r.ok) throw 0;
     const j=await r.json();
     (j.spots||[]).forEach(u=>{
-      const s=SPOTS.find(x=>(x.apiName||x.n)===u.name);
+      const s=SPOTS.find(x=>nz(x.apiName||x.n)===nz(u.name));
       if(s){ if(u.label) s.s=u.label; s.spotId=u.id; if(u.lat!=null){s.lat=u.lat;s.lng=u.lng;} }
     });
     const d=new Date(j.asof);
@@ -1163,6 +1360,7 @@ async function loadIts(){
 }
 setInterval(loadSummary, 300000);
 setInterval(loadIts, 300000);
+setInterval(loadParking, 300000);
 
 // ── 초기화
 document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.dataset.m===mode));
@@ -1171,6 +1369,7 @@ zoomClass();
 renderBanner(); renderNodes(); renderCams(); renderList();
 loadSummary();
 loadIts();
+loadParking();
 fitRows();
 loadVisits();
 </script>
