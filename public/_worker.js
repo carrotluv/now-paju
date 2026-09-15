@@ -284,11 +284,40 @@ const parkName = n => (n || '').replace('(주기장)', '').replace('(환승_월�
   .replace('(환승)', ' 환승').replace('(월정기)', '').replace(/\s+/g, ' ').trim();
 const toNum = v => { const n = parseFloat(v); return isFinite(n) ? n : 0; };
 
+// 빈자리가 마지막으로 있었던 시각(시 단위)을 KV에 적어 둔다 — 잔여 0이 '만차'인지 '빈자리 안내를 안 하는 곳'인지 가르는 근거.
+//   시 단위라 하루 24번 남짓만 쓴다(KV 쓰기 한도는 도로 소통·방문자 몫이 먼저).
+const PK_SEEN_KEY = 'pkseen';
+const kstHour = (d = new Date()) => new Date(d.getTime() + 9 * 3600 * 1000).toISOString().slice(0, 13);
+
+async function pkSeenRead(env) {
+  if (!env.STATS) return {};
+  try { return JSON.parse((await env.STATS.get(PK_SEEN_KEY)) || '{}'); } catch (e) { return {}; }
+}
+
+async function pkSeenUpdate(env, ctx) {
+  if (!env.GITS_KEY || !env.STATS) return;
+  const avail = await ggParkItems(env, 'getParkingPlaceAvailabilityInfoList', 180, ctx);
+  const seen = await pkSeenRead(env);
+  const h = kstHour();
+  let changed = false;
+  for (const a of avail) {
+    if (toNum(a.avblPklotCnt) > 0 && seen[a.pkplcId] !== h) { seen[a.pkplcId] = h; changed = true; }
+  }
+  if (changed) await env.STATS.put(PK_SEEN_KEY, JSON.stringify(seen));
+}
+
+function seenWithin24h(v) {
+  if (!v) return false;
+  const t = Date.parse(v + ':00:00+09:00');
+  return isFinite(t) && Date.now() - t <= 25 * 3600 * 1000;      // 시 단위 기록이라 한 시간 여유를 둔다
+}
+
 async function ggParking(env, ctx) {
   const [info, avail] = await Promise.all([
     ggParkItems(env, 'getParkingPlaceInfoList', 86400, ctx),
     ggParkItems(env, 'getParkingPlaceAvailabilityInfoList', 180, ctx)
   ]);
+  const seen = await pkSeenRead(env);
   const av = {};
   let asof = null;
   for (const a of avail) {
@@ -300,6 +329,7 @@ async function ggParking(env, ctx) {
     return {
       id: p.pkplcId, n: parkName(p.pkplcNm), lat: toNum(p.latCrdn), lng: toNum(p.lonCrdn),
       total: toNum(p.pklotCnt), avail: a ? toNum(a.avblPklotCnt) : null,
+      seen24: seenWithin24h(seen[p.pkplcId]),              // 최근 하루 안에 빈자리가 있었나 — 0일 때 만차 판정에 쓴다
       bt: toNum(p.parkingBscTime), bf: toNum(p.parkingBscFare), at: toNum(p.addUnitTime),
       af: toNum(p.addUnitFare), dd: toNum(p.ddPktckFare),
       ws: (p.wkdayOprtStartTime || '').slice(0, 5), we: (p.wkdayOprtEndTime || '').slice(0, 5)
@@ -309,8 +339,9 @@ async function ggParking(env, ctx) {
 }
 
 export default {
-  async scheduled(event, env, ctx) {            // 5분마다: 경기도 전체 소통을 추려 KV에 저장
+  async scheduled(event, env, ctx) {            // 5분마다: 경기도 전체 소통을 추려 KV에 저장 + 주차장 빈자리 기록
     ctx.waitUntil(ggRefresh(env).catch(() => {}));
+    ctx.waitUntil(pkSeenUpdate(env, ctx).catch(() => {}));
   },
 
   async fetch(request, env, ctx) {

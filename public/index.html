@@ -119,7 +119,6 @@
     box-shadow:0 1px 4px rgba(0,0,0,.32);cursor:pointer;transform:translate(-11px,-11px);font-variant-numeric:tabular-nums}
   .pk b{flex:0 0 19px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff;background:var(--c)}
   .pk span{display:flex;align-items:center;padding:0 6px 0 5px;background:#fff;color:var(--ink);font-size:12px;font-weight:700;line-height:1}
-  .pk.na span{color:var(--sub)}
   .pk.st{height:18px;border:1.5px solid #a39d91;box-shadow:0 1px 2px rgba(0,0,0,.18);transform:translate(-9px,-9px)}
   .pk.st b{flex-basis:15px;background:#fff;color:#7d776b;font-size:11px}
   .pk.hl{box-shadow:0 0 0 2px #fff,0 0 0 4px var(--ink)}
@@ -133,7 +132,7 @@
   .pkleg span{display:flex;align-items:center;gap:5px}
   .pkleg i{width:10px;height:10px;border-radius:3px;flex:none}
   .pkleg em{font-style:normal;color:var(--sub);padding-left:10px;border-left:1px solid var(--hair)}
-  .c-ok{background:var(--s1)} .c-mid{background:var(--s2)} .c-low{background:var(--s4)} .c-na{background:#a39d91} .c-st{background:#fff;border:1.5px solid #a39d91}
+  .c-ok{background:var(--s1)} .c-mid{background:var(--s2)} .c-low{background:var(--s4)} .c-full{background:#b3271b} .c-st{background:#fff;border:1.5px solid #a39d91}
   .leaflet-container{font-family:inherit}
   .leaflet-popup-content-wrapper{border-radius:var(--radius);box-shadow:var(--shadow-2);padding:0}
   .leaflet-popup-content{margin:0;width:236px!important;line-height:normal}
@@ -143,7 +142,7 @@
   .pp .tag{flex:none;font-size:11px;line-height:15px;font-weight:600;border:1px solid var(--hair);border-radius:3px;padding:0 4px}
   .pp-av{display:flex;align-items:baseline;gap:5px;margin-top:7px;font-size:12px;font-weight:600}
   .pp-av b{font-size:21px;font-weight:800;letter-spacing:-.4px;line-height:24px}
-  .pp-av.ok b{color:var(--t1)} .pp-av.mid b{color:var(--t2)} .pp-av.low b{color:var(--t4)}
+  .pp-av.ok b{color:var(--t1)} .pp-av.mid b{color:var(--t2)} .pp-av.low b{color:var(--t4)} .pp-av.full b{color:#b3271b}
   .pp-av.na{color:var(--sub);font-size:13px}
   .pp-av em{margin-left:auto;font-style:normal}
   .pp-bar{height:5px;border-radius:3px;background:var(--hair2);margin:6px 0 9px;overflow:hidden}
@@ -252,7 +251,7 @@
   .pkrow .d{flex:0 0 40px;text-align:right;font-size:12px;color:var(--ink-2)}
   .pkrow .av{flex:0 0 60px;text-align:right;font-size:12px;white-space:nowrap}
   .pkrow .av b{font-size:14px;font-weight:800}
-  .av.ok{color:var(--t1)} .av.mid{color:var(--t2)} .av.low{color:var(--t4)} .av.na,.av.st{color:var(--sub)}
+  .av.ok{color:var(--t1)} .av.mid{color:var(--t2)} .av.low{color:var(--t4)} .av.full{color:var(--t4);font-weight:700} .av.na,.av.st{color:var(--sub)}
   .navs{display:flex;gap:6px;margin-top:0}
   .navbtn{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;font-size:13px;line-height:19px;font-weight:600;
     padding:7px 6px;border:1px solid var(--hair);border-radius:var(--radius);background:var(--card);color:var(--ink);
@@ -831,14 +830,20 @@ function stackBottomLeft(){
 //   상세창엔 1.5km 안 가까운 순 2곳(지점 이름이 붙은 곳은 포함), 지도 P는 버튼을 켜거나 상세의 줄을 누를 때만.
 let PK_LIVE=[], PK_STATIC=[], PK_ASOF='', showPark=false, pkMax=2, pkMarkers={};
 const pkLayer=L.layerGroup();
-const PK_TXT={ok:'여유',mid:'보통',low:'혼잡',na:'잔여 정보 없음',st:'실시간 없음'};
-const PK_COL={ok:'var(--s1)',mid:'var(--s2)',low:'var(--s4)',na:'#a39d91'};
+const PK_TXT={ok:'여유',mid:'보통',low:'혼잡',full:'만차',na:'빈자리 안내 없음',st:'빈자리 안내 없음'};
+const PK_COL={ok:'var(--s1)',mid:'var(--s2)',low:'var(--s4)',full:'#b3271b'};
 const escH=t=>String(t??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 function distM(a,b,c,d){ const r=Math.PI/180, p1=a*r, p2=c*r;
   return 2*6371000*Math.asin(Math.sqrt(Math.sin((p2-p1)/2)**2+Math.cos(p1)*Math.cos(p2)*Math.sin((d-b)*r/2)**2)); }
 const fmtDist=m=>m<1000?(Math.round(m/10)*10)+'m':(m/1000).toFixed(1)+'km';
 const pkShort=n=>n.replace(/\s*주차장$/,'');              // 목록 줄에선 '주차장' 생략 — 팝업은 전체 이름
-function pkState(p){ if(p.st) return 'st'; if(!p.avail) return 'na'; const r=p.avail/p.total; return r>=.3?'ok':(r>=.1?'mid':'low'); }
+// 잔여 0은 두 가지다 — 최근 하루 안에 빈자리가 있었으면 진짜 만차, 그런 적이 없으면 빈자리를 안내하지 않는 곳
+function pkState(p){
+  if(p.st) return 'st';
+  if(p.avail==null) return 'na';
+  if(p.avail>0){ const r=p.avail/p.total; return r>=.3?'ok':(r>=.1?'mid':'low'); }
+  return p.seen24?'full':'na';
+}
 const pkFee=p=>p.st?p.fee:((p.bf||p.af||p.dd)?'유료':'무료');
 function nearLots(s){
   const key=s.short.replace(/\s/g,'');
@@ -857,7 +862,8 @@ function pkSec(s){
   const rows=list.map(({p,d})=>{
     const st=pkState(p);
     const val= st==='st' ? `<span class="av st num">${p.sp.toLocaleString()}면</span>`
-             : st==='na' ? `<span class="av na">정보 없음</span>`
+             : st==='na' ? `<span class="av na">안내 없음</span>`
+             : st==='full' ? `<span class="av full">만차</span>`
              : `<span class="av ${st} num"><b>${p.avail}</b>/${p.total}</span>`;
     return `<button class="pkrow" data-pk="${p.key}"><span class="tag">${pkFee(p)}</span><span class="nm">${escH(pkShort(p.n))}</span><span class="d num">${fmtDist(d)}</span>${val}</button>`;
   }).join('');
@@ -866,9 +872,9 @@ function pkSec(s){
 }
 function pkIcon(p,hl){
   const st=pkState(p);
-  const html=st==='st'
+  const html=(st==='st'||st==='na')                         // 빈자리를 안내하지 않는 곳은 둘 다 같은 흰 P로
     ?`<div class="pk st${hl?' hl':''}" title="${escH(p.n)}"><b>P</b></div>`
-    :`<div class="pk ${st}${hl?' hl':''}" style="--c:${PK_COL[st]}" title="${escH(p.n)}"><b>P</b><span>${st==='na'?'–':p.avail}</span></div>`;
+    :`<div class="pk ${st}${hl?' hl':''}" style="--c:${PK_COL[st]}" title="${escH(p.n)}"><b>P</b><span>${st==='full'?'0':p.avail}</span></div>`;
   return L.divIcon({className:'',iconSize:[0,0],html});
 }
 function pkPopup(p){
@@ -878,9 +884,12 @@ function pkPopup(p){
     +`<a class="navbtn tmap" target="_blank" rel="noopener" href="tmap://route?goalname=${q}&goalx=${p.lng}&goaly=${p.lat}">티맵</a></div>`;
   const head=`<div class="pp-h"><span class="tag">${fee}</span>${escH(p.n)}</div>`;
   if(st==='st') return `<div class="pp">${head}<div class="pp-av"><b class="num">${p.sp.toLocaleString()}</b>면<em>${p.cat==='임시'?'임시공영':'공영'}</em></div>
-    <div class="pp-note">실시간 잔여 정보가 없는 주차장입니다</div>${nav}<div class="pp-src">파주시 공영주차장 현황</div></div>`;
+    <div class="pp-note">빈자리 수는 안내되지 않아요 — 현장에서 확인해 주세요</div>${nav}<div class="pp-src">파주시 공영주차장 현황</div></div>`;
   const av=st==='na'
-    ?`<div class="pp-av na">잔여 정보 없음<em class="num">총 ${p.total.toLocaleString()}면</em></div>`
+    ?`<div class="pp-av na">빈자리 수는 안내되지 않아요<em class="num">총 ${p.total.toLocaleString()}면</em></div>`
+    :st==='full'
+    ?`<div class="pp-av full"><b class="num">0</b><span class="num">/ ${p.total.toLocaleString()}면 남음</span><em>만차</em></div>
+      <div class="pp-bar" style="--c:${PK_COL.full}"><i style="width:2%"></i></div>`
     :`<div class="pp-av ${st}"><b class="num">${p.avail}</b><span class="num">/ ${p.total.toLocaleString()}면 남음</span><em>${PK_TXT[st]}</em></div>
       <div class="pp-bar" style="--c:${PK_COL[st]}"><i style="width:${Math.min(100,Math.round(p.avail/p.total*100))}%"></i></div>`;
   const fees=[p.bt&&p.bf?`기본 ${p.bt}분 ${p.bf.toLocaleString()}원`:'', p.at&&p.af?`추가 ${p.at}분 ${p.af.toLocaleString()}원`:'',
@@ -891,8 +900,8 @@ function pkPopup(p){
 }
 function renderPkLegend(){
   const el=document.getElementById('pkleg');
-  el.innerHTML=`<b>주차</b>${['ok','mid','low'].map(k=>`<span><i class="c-${k}"></i>${PK_TXT[k]}</span>`).join('')}`
-    +`<span><i class="c-na"></i>정보 없음</span><span><i class="c-st"></i>실시간 없음</span>${PK_ASOF?`<em class="num">${PK_ASOF} 기준</em>`:''}`;
+  el.innerHTML=`<b>주차</b>${['ok','mid','low','full'].map(k=>`<span><i class="c-${k}"></i>${PK_TXT[k]}</span>`).join('')}`
+    +`<span><i class="c-st"></i>빈자리 안내 없음</span>${PK_ASOF?`<em class="num">${PK_ASOF} 기준</em>`:''}`;
   el.hidden=!showPark;
   stackBottomLeft();
 }
