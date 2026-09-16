@@ -64,7 +64,7 @@
     background:rgba(47,111,217,.18);animation:mepulse 2s ease-out infinite}
   @keyframes mepulse{0%{transform:scale(.6);opacity:.9}100%{transform:scale(1.5);opacity:0}}
   .mbtn{background:var(--float-bg);border:1px solid var(--hair);border-radius:var(--radius);padding:7px 12px;font-size:13px;font-weight:600;color:var(--ink);cursor:pointer;box-shadow:var(--shadow-1);font-family:inherit;
-    display:flex;align-items:center;justify-content:center;min-width:92px}   /* 폭을 맞춰 두 줄의 열이 떨어지게 */
+    display:flex;align-items:center;justify-content:center;min-width:88px}   /* '도로 상황' 폭에 맞춰 네 버튼을 같게 — 두 줄의 열이 떨어진다 */
   .mbtn:hover{background:#f6f3ea}
   .mbtn.tgl{display:flex;align-items:center;gap:6px}
   .mbtn.tgl::before{content:"";width:8px;height:8px;border-radius:50%;background:#cfc9bb;flex:none}
@@ -314,7 +314,6 @@
     .mapbtns{top:8px;right:8px;gap:5px}
     .mapbtns.row2{top:58px}
     .mbtn,.msel{padding:11px 12px;min-height:42px;font-size:13px}
-    .mbtn{min-width:84px}                            /* 좁은 화면에선 한 칸 줄여 지점 이름이 긴 날도 넘치지 않게 */
     .msel{padding-right:27px}
     .maptag{left:8px;right:auto;bottom:8px;font-size:10px;padding:4px 8px}
     .statchip{left:8px;bottom:36px;gap:9px;padding:6px 10px;font-size:12px}
