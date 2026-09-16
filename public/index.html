@@ -97,6 +97,12 @@
     text-shadow:0 1px 0 var(--halo),0 -1px 0 var(--halo),1px 0 0 var(--halo),-1px 0 0 var(--halo),0 0 6px var(--halo)}
   .nd.east .lb{right:auto;left:calc(50% + var(--r) + 7px);text-align:left}   /* 왼쪽이 막힌 지점만 오른쪽 */
   .nd.up .lb{left:50%;right:auto;top:auto;bottom:calc(50% + var(--r) + 5px);transform:translateX(-50%);text-align:center}
+  /* 이름표 자리 바꾸기(tidyLabels) — 잘리거나 겹치면 반대쪽 → 위 → 아래 순서로 옮겨 본다 */
+  .nd.flip .lb{right:auto;left:calc(50% + var(--r) + 7px);text-align:left}
+  .nd.east.flip .lb{left:auto;right:calc(50% + var(--r) + 7px);text-align:right}
+  .nd.pu .lb{left:50%;right:auto;top:auto;bottom:calc(50% + var(--r) + 5px);transform:translateX(-50%);text-align:center}
+  .nd.pd .lb{left:50%;right:auto;top:calc(50% + var(--r) + 5px);bottom:auto;transform:translateX(-50%);text-align:center}
+  .nd .lb.off,.lpill.off,.llb.off{visibility:hidden}                                  /* 앞 순위 이름과 겹치면 잠시 숨김 — 확대하면 다시 보인다 */
   .nd .chip{display:block;font-size:11px;font-weight:700;margin-top:1px}
   .z-lo .nd.small .lb{display:none}
   .z-lo .lpill span{display:none}
@@ -118,10 +124,12 @@
   /* 공영주차장 P — 색은 남은 비율(여유·보통·혼잡), 회색은 정보 없음, 흰 테두리 P는 실시간 없는 시청 현황 */
   .pk{display:flex;align-items:stretch;height:22px;width:max-content;border:1.5px solid #fff;border-radius:5px;overflow:hidden;
     box-shadow:0 1px 4px rgba(0,0,0,.32);cursor:pointer;transform:translate(-11px,-11px);font-variant-numeric:tabular-nums}
-  .pk b{flex:0 0 19px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff;background:var(--c)}
-  .pk span{display:flex;align-items:center;padding:0 6px 0 5px;background:#fff;color:var(--ink);font-size:12px;font-weight:700;line-height:1}
+  /* P 칸 폭은 flex-basis가 아니라 width로 준다 — 일부 휴대폰 브라우저는 max-content 폭을 잴 때 flex-basis를 빼고
+     글자 폭(약 10px)만 잡아, 높이 22px에 폭 10px인 세로로 긴 타원이 됐다(2026-09-16) */
+  .pk b{flex:none;width:19px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff;background:var(--c)}
+  .pk span{flex:none;display:flex;align-items:center;padding:0 6px 0 5px;background:#fff;color:var(--ink);font-size:12px;font-weight:700;line-height:1}
   .pk.st{height:18px;border:1.5px solid #a39d91;box-shadow:0 1px 2px rgba(0,0,0,.18);transform:translate(-9px,-9px)}
-  .pk.st b{flex-basis:15px;background:#fff;color:#7d776b;font-size:11px}
+  .pk.st b{width:15px;background:#fff;color:#7d776b;font-size:11px}
   .pk.hl{box-shadow:0 0 0 2px #fff,0 0 0 4px var(--ink)}
   .pk-lo .pk span{display:none}                         /* 멀리서 보면 숫자 없이 P만 */
   .pk-far .pk.st{display:none}                          /* 파주 전체 화면에선 실시간 34곳만 */
@@ -133,6 +141,8 @@
   .pkleg span{display:flex;align-items:center;gap:5px}
   .pkleg i{width:10px;height:10px;border-radius:3px;flex:none}
   .pkleg em{font-style:normal;color:var(--sub);padding-left:10px;border-left:1px solid var(--hair)}
+  .pkleg.trleg i{width:14px;height:4px;border-radius:2px}                 /* 도로 색 설명 — 선이라 가로 막대로 */
+  .statchip.on.m-hide{display:none}                                          /* 좁은 화면에서 범례가 뜨면 개수 칩은 비킨다 */
   .c-ok{background:var(--s1)} .c-mid{background:var(--s2)} .c-low{background:var(--s4)} .c-full{background:#b3271b} .c-st{background:#fff;border:1.5px solid #a39d91}
   .leaflet-container{font-family:inherit}
   .leaflet-popup-content-wrapper{border-radius:var(--radius);box-shadow:var(--shadow-2);padding:0}
@@ -311,6 +321,9 @@
     .banner{padding:9px 14px;font-size:13px;line-height:20px}
 
     .mapwrap{height:round(down, 48vh, 1px);min-height:290px;position:sticky;top:0;z-index:400}
+    .leaflet-control-zoom{display:none}          /* 손가락으로 확대한다 — 버튼이 '파주 전체' 선택칸과 겹쳤다 */
+    .z-lo .lpill{display:none}                   /* 파주 전체 배율에선 벨트 설명이 지점 이름을 덮는다 */
+    .list-head{position:static}                  /* 지도가 위에 붙어 있어 머리줄이 지도 밑에 숨었다 — 고정하지 않는다 */
     .mapbtns{top:8px;right:8px;gap:5px}
     .mapbtns.row2{top:58px}
     .mbtn,.msel{padding:11px 12px;min-height:42px;font-size:13px}
@@ -328,8 +341,10 @@
     .navbtn{padding:11px 4px}
     .cambtn{padding:9px 12px;font-size:13px}
     .pkrow{padding:9px 12px}
-    .pkleg{left:8px;gap:8px;padding:6px 10px;font-size:11px;flex-wrap:wrap;row-gap:3px;max-width:calc(100% - 16px)}
+    .pkleg{left:8px;gap:5px;padding:6px 8px;font-size:11px;flex-wrap:wrap;row-gap:3px;max-width:calc(100% - 16px)}
+    .pkleg span{gap:4px}                             /* 360px 폭에서도 한 줄에 들어가게 간격만 줄인다 */
     .pkleg em{border-left:0;padding-left:0}          /* 두 줄로 접히면 시각 앞 구분선이 줄머리에 오지 않게 */
+    .mapwrap.pop .pkleg{visibility:hidden}           /* 팝업을 여는 동안은 범례를 접는다 — 지도가 낮아 P가 범례 밑에 깔렸다 */
     .modal{width:94vw}
     .m-foot{font-size:11px;line-height:17px}
   }
@@ -375,6 +390,7 @@
     <div class="maptag">지도: © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> 기여자</div>
     <div class="trafficbox" id="trafficbox"></div>
     <div class="pkleg" id="pkleg" hidden></div>
+    <div class="pkleg trleg" id="trleg" hidden></div>
   </div>
   <aside class="list" id="list">
     <div class="list-head"><b>지점 리스트</b><span id="sort-note"></span></div>
@@ -497,10 +513,11 @@ const IMJINBELT=[[37.8934,126.7447],[37.8850,126.7900],[37.8700,126.8500],[37.86
 L.polyline(IMJINBELT,{color:'#a49d90',weight:3,dashArray:'8 7',opacity:.85}).addTo(map);
 L.polyline([[37.7597,126.7740],[37.7598,126.7799]],{color:'#c9c2b3',weight:2,opacity:.9}).addTo(map);
 L.polyline([[37.764425,126.7860],[37.764425,126.795971]],{color:'#c9c2b3',weight:2,opacity:.9}).addTo(map);
-const lineLabel=(lat,lng,txt)=>L.marker([lat,lng],{icon:L.divIcon({className:'',html:`<span class="llb">${txt}</span>`,iconSize:[0,0]}),interactive:false}).addTo(map);
+const decoMarkers=[];                                        // 노선·벨트 글자 — 이름표 겹침 정리에서 맨 뒤 순위
+const lineLabel=(lat,lng,txt)=>decoMarkers.push(L.marker([lat,lng],{icon:L.divIcon({className:'',html:`<span class="llb">${txt}</span>`,iconSize:[0,0]}),interactive:false}).addTo(map));
 lineLabel(37.836,126.792,'경의중앙선');
 lineLabel(37.700,126.744,'GTX-A · 서울 20분');
-const beltLabel=(lat,lng,main,sub)=>L.marker([lat,lng],{icon:L.divIcon({className:'',iconSize:[0,0],html:`<div class="lpill" style="transform:translate(-50%,-50%)"><b>${main}</b>${sub?`<span>${sub}</span>`:''}</div>`}),interactive:false}).addTo(map);
+const beltLabel=(lat,lng,main,sub)=>decoMarkers.push(L.marker([lat,lng],{icon:L.divIcon({className:'',iconSize:[0,0],html:`<div class="lpill" style="transform:translate(-50%,-50%)"><b>${main}</b>${sub?`<span>${sub}</span>`:''}</div>`}),interactive:false}).addTo(map));
 beltLabel(37.7441,126.632,'자유로 문화벨트','아울렛·헤이리·임진각을 잇는 도로 축');
 beltLabel(37.935,126.878,'임진강변 벨트','임진각·율곡습지·율곡수목원·감악산');
 
@@ -509,7 +526,7 @@ const clusterBounds=L.latLngBounds(SPOTS.filter(s=>CLUSTER.includes(s.id)).map(s
 const pajuBounds=L.latLngBounds(PAJU_RING).pad(.03);
 
 let nodeMarkers={}, camMarkers=[], badge=null;
-let CAMS=[], CAM_PINS=[], ROADS=[], LINK_SPD={}, ROAD_AVG={}, showTraffic=false, itsAsof=null;
+let CAMS=[], CAM_PINS=[], ROADS=[], LINK_SPD={}, showTraffic=false, itsAsof=null;
 let WX={};                                                   // 지점ID → {w:날씨, air:대기질, from:대체출처}
 // WMO 날씨 코드 → 한글 하늘 상태·아이콘 (Open-Meteo 표준 코드)
 //   선 아이콘 계열은 유지하되 날씨는 색을 준다 — 해는 노랑, 구름은 청회색, 비는 파랑
@@ -567,6 +584,46 @@ function renderNodes(){
     m.on('click',()=>select(s.id,{fly:false}));
     nodeMarkers[s.id]=m;
   });
+  tidyLabels();
+}
+// 이름표 정리 — 지도 끝에 잘리거나 다른 이름·점·버튼에 덮이면 반대쪽 → 위 → 아래로 옮겨 보고, 둘 곳이 없으면 잠시 숨긴다.
+//   휴대폰처럼 좁은 화면은 파주 전체가 들어오는 배율이 낮아 이름끼리 덮이고 왼쪽 끝 이름이 잘렸다(2026-09-16).
+//   순위 = 선택한 지점 → 리스트 순서(모드별) → 노선·벨트 글자. 이동·확대가 끝날 때마다 다시 잰다.
+const LB_POS=['flip','pu','pd'];
+function tidyLabels(){
+  const mapEl=document.getElementById('map'), box=mapEl.getBoundingClientRect();
+  if(!box.width) return;
+  const placed=[];
+  const hit=r=>placed.some(p=>r.left<p.right+2&&r.right>p.left-2&&r.top<p.bottom+1&&r.bottom>p.top-1);
+  const inside=r=>r.left>=box.left+2&&r.right<=box.right-2&&r.top>=box.top+2&&r.bottom<=box.bottom-2;
+  const add=el=>{ if(el&&el.offsetWidth&&!el.hidden) placed.push(el.getBoundingClientRect()); };
+  // 먼저 자리를 차지하는 것 — 버튼·범례·개수 칩, 운정 배지, 모든 지점 점
+  document.querySelectorAll('.mapbtns,.maptag,.statchip.on,.pkleg,.trafficbox.on').forEach(add);
+  add(badge&&badge.getElement()&&badge.getElement().firstElementChild);
+  SPOTS.forEach(s=>{ const el=nodeMarkers[s.id]&&nodeMarkers[s.id].getElement(); add(el&&el.querySelector('.core')); });
+  const order=sorted(), si=order.findIndex(s=>s.id===sel);
+  if(si>0) order.unshift(order.splice(si,1)[0]);
+  order.forEach(s=>{
+    const el=nodeMarkers[s.id]&&nodeMarkers[s.id].getElement(), nd=el&&el.querySelector('.nd'), lb=nd&&nd.querySelector('.lb');
+    if(!lb) return;
+    nd.classList.remove(...LB_POS); lb.classList.remove('off');
+    if(!lb.offsetWidth) return;                              // 축소 배율에서 CSS로 숨긴 작은 지점
+    const tries=nd.classList.contains('up')?['','pd']:['',...LB_POS];
+    for(const p of tries){
+      nd.classList.remove(...LB_POS); if(p) nd.classList.add(p);
+      const r=lb.getBoundingClientRect();
+      if(inside(r)&&!hit(r)){ placed.push(r); return; }
+    }
+    nd.classList.remove(...LB_POS); lb.classList.add('off');
+  });
+  decoMarkers.forEach(m=>{
+    const el=m.getElement()&&m.getElement().firstElementChild;
+    if(!el) return;
+    el.classList.remove('off');
+    if(!el.offsetWidth) return;
+    const r=el.getBoundingClientRect();
+    if(!inside(r)||hit(r)) el.classList.add('off'); else placed.push(r);
+  });
 }
 function renderCams(){
   camMarkers.forEach(m=>map.removeLayer(m)); camMarkers=[];
@@ -623,7 +680,10 @@ const LVC={'원활':'#2f9b74','서행':'#d18f3a','정체':'#cc5647'};   /* 배�
 
 // 도로 선형은 배경지도와 같은 출처(OSM)를 쓰고, ITS 실측 속도는 미리 만든 링크 매핑으로 얹는다
 let ROADGEO=[], LINKMAP={}, ROADSIB={}, linkLayer=L.layerGroup();
-const spdColor=v=>v>=60?LVC['원활']:(v>=35?LVC['서행']:LVC['정체']);
+// 속도 → 색. 경기도 혼잡등급이 붙은 링크 460개와 맞춰 본 기준 — 48/24km/h면 등급과 93% 일치(간선 98%).
+//   예전 60/35는 고속도로 잣대라 72%였고, 등급이 없는 시내 도로(파주 지도 링크의 91%)가 퇴근길에 통째로 빨강이었다(2026-09-16).
+//   등급이 있는 링크는 등급 대표값(원활 75·서행 45·정체 20)으로 들어와 같은 함수로 색이 정해진다.
+const spdColor=v=>v>=48?LVC['원활']:(v>=24?LVC['서행']:LVC['정체']);
 const mixWhite=(hex,t)=>{ const n=parseInt(hex.slice(1),16), m=x=>Math.round(x+(255-x)*t);
   return `rgb(${m((n>>16)&255)},${m((n>>8)&255)},${m(n&255)})`; };   // 추정 구간은 같은 색을 옅게
 async function loadLinks(){
@@ -650,15 +710,26 @@ function trafficStyleForZoom(){
 
 // 도로별 색(속도) 계산 — 화면 이동과 무관하므로 소통 데이터가 바뀔 때만 다시 계산한다
 function computeColors(speeds){
-  const roadAvg=Object.assign({},ROAD_AVG);
-  ROADS.forEach(r=>{ if(roadAvg[r.road]==null) roadAvg[r.road]=r.speed; });
-
   const measured={};                                       // OSM 도로별 실측 속도 평균
   for(const [linkId,ri] of Object.entries(LINKMAP)){
     const v=speeds[linkId];
     if(v==null) continue;
     (measured[ri]=measured[ri]||[]).push(v);
   }
+  // 이름만 같은 먼 구간을 메울 도로별 대표값 — 그 도로 링크들의 색 중 가장 많은 것(같으면 더 막히는 쪽).
+  //   서버가 준 도로 상태는 경기도 등급이 없는 도로면 60/35 속도 기준이라 지도 색과 어긋났다.
+  const roadAvg={}, tally={}, names=new Set(ROADS.map(r=>r.road));
+  for(const [ri,a] of Object.entries(measured)){
+    const n=ROADGEO[ri].n; if(!names.has(n)) continue;
+    const t=tally[n]=tally[n]||{};
+    a.forEach(v=>{ const c=spdColor(v); t[c]=(t[c]||0)+1; });
+  }
+  const REP={[LVC['원활']]:75,[LVC['서행']]:45,[LVC['정체']]:20};
+  ROADS.forEach(r=>{
+    const t=tally[r.road];
+    if(!t){ roadAvg[r.road]=r.speed; return; }
+    roadAvg[r.road]=REP[[LVC['정체'],LVC['서행'],LVC['원활']].reduce((a,b)=>(t[b]||0)>(t[a]||0)?b:a)];
+  });
   const avgOf=a=>Math.round(a.reduce((x,y)=>x+y,0)/a.length);
   Object.keys(measured).slice().forEach(ri=>{              // 왕복 분리도로는 반대편 차로도 같이 칠한다
     (ROADSIB[ri]||[]).forEach(s=>{ if(!measured[s]) measured[s]=measured[ri].slice(); });
@@ -815,22 +886,31 @@ function drawLinks(speeds){
     const g=(own!=null)?real:est, c=spdColor(v);
     (g[c]=g[c]||[]).push(r.p);
   });
-  const paint=(g,w,light)=>Object.keys(g).forEach(c=>                 // 추정 구간을 먼저 깔고 실측을 위에 얹는다
-    L.polyline(g[c],{color:light?mixWhite(c,.42):c,weight:w,opacity:1,
+  // 추정 구간을 먼저 깔고 실측을 위에 얹는다. 추정은 한 단계 가늘게, 옅기는 조금만(.42→.22) —
+  //   많이 옅게 하면 분홍·살구색 선이 실측 색과 섞여 지저분해 보였다(2026-09-16)
+  const paint=(g,w,light)=>Object.keys(g).forEach(c=>
+    L.polyline(g[c],{color:light?mixWhite(c,.22):c,weight:w,opacity:1,
       lineCap:'round',lineJoin:'round',interactive:false}).addTo(linkLayer));
-  paint(est,Math.max(2,st.weight-0.5),true);
+  paint(est,Math.max(2,st.weight-1),true);
   paint(real,st.weight,false);
   if(!map.hasLayer(linkLayer)) linkLayer.addTo(map);
 }
 
 function renderTraffic(){
   const box=document.getElementById('trafficbox');
-  const rows=ROADS.filter(r=>r.road&&r.road!=='-'&&r.road!=='기타').slice(0,8);
-  box.innerHTML=`<div class="tb-title">도로 상황<span class="num">${itsAsof?itsAsof+' 기준':''}</span></div>`
-    + rows.map(r=>`<div class="tr-row num"><i style="background:${LVC[r.level]||'#b5afa3'}"></i>${r.road}<span class="sp">${r.speed}<small>km/h</small></span></div>`).join('');
+  // 카드의 도로 색도 지도와 같은 대표값으로 — 선형을 불러와 색을 계산한 뒤 한 번 더 그린다
+  const lvl=r=>{ const v=ROADGEO._col&&ROADGEO._col.roadAvg[r.road]; return v==null?r.level:(v>=48?'원활':(v>=24?'서행':'정체')); };
+  const paintBox=()=>{
+    const rows=ROADS.filter(r=>r.road&&r.road!=='-'&&r.road!=='기타').slice(0,8);
+    box.innerHTML=`<div class="tb-title">도로 상황<span class="num">${itsAsof?itsAsof+' 기준':''}</span></div>`
+      + rows.map(r=>`<div class="tr-row num"><i style="background:${LVC[lvl(r)]||'#b5afa3'}"></i>${r.road}<span class="sp">${r.speed}<small>km/h</small></span></div>`).join('');
+  };
+  paintBox();
+  document.getElementById('trleg').innerHTML=`<b>도로</b>${['원활','서행','정체'].map(k=>`<span><i style="background:${LVC[k]}"></i>${k}</span>`).join('')}`
+    +(itsAsof?`<em class="num">${itsAsof} 기준</em>`:'');
   box.classList.toggle('on',showTraffic);
   stackBottomLeft();                                         // 도로 상황 카드가 뜨면 범례·개수 칩이 위로 비켜난다
-  if(showTraffic){ loadLinks().then(()=>drawLinks(LINK_SPD)); }
+  if(showTraffic){ loadLinks().then(()=>{ drawLinks(LINK_SPD); paintBox(); stackBottomLeft(); }); }
   else { linkLayer.clearLayers(); }
 }
 const tgTr=document.getElementById('tg-traffic');
@@ -838,14 +918,23 @@ function trafficReady(){ if(tgTr.disabled){ tgTr.disabled=false; tgTr.title='실
 tgTr.onclick=()=>{ if(tgTr.disabled) return; showTraffic=!showTraffic; tgTr.classList.toggle('on',showTraffic); renderTraffic(); };
 if(!FEATURE_ITS){ tgCam.style.display='none'; tgTr.style.display='none'; }
 
-// 왼쪽 아래 카드들을 겹치지 않게 아래부터 쌓는다 — 도로 상황(넓은 화면만) → 주차 범례 → 지점 개수 칩
+// 왼쪽 아래 카드들을 겹치지 않게 아래부터 쌓는다 — 도로 상황 카드(넓은 화면)·도로 색 설명(좁은 화면) → 주차 범례 → 지점 개수 칩
 function stackBottomLeft(){
   const wide=innerWidth>600, base=wide?12:36;
-  const box=document.getElementById('trafficbox'), leg=document.getElementById('pkleg'), chip=document.getElementById('statchip');
+  const box=document.getElementById('trafficbox'), tr=document.getElementById('trleg'),
+        leg=document.getElementById('pkleg'), chip=document.getElementById('statchip');
   let y=base;
   if(wide&&box&&box.classList.contains('on')) y+=box.offsetHeight+8;
+  if(tr){                                                    // 좁은 화면은 도로 상황 카드 대신 한 줄 색 설명
+    tr.hidden=wide||!showTraffic||!tr.innerHTML;
+    tr.style.bottom=tr.hidden?'':y+'px'; if(!tr.hidden) y+=tr.offsetHeight+8;
+  }
   if(leg){ leg.style.bottom=leg.hidden?'':y+'px'; if(!leg.hidden) y+=leg.offsetHeight+8; }
-  if(chip) chip.style.bottom=y===base?'':y+'px';
+  if(chip){
+    chip.classList.toggle('m-hide',!wide&&y>base);           // 좁은 화면에서 범례가 올라오면 개수 칩(배너와 같은 내용)은 접는다
+    chip.style.bottom=(y===base||!wide)?'':y+'px';
+  }
+  tidyLabels();                                              // 범례가 뜨고 지면 이름표 자리도 다시 잡는다
 }
 
 // ── 공영주차장 — 실시간 잔여 34곳(경기도교통정보센터 /api/parking) + 실시간 없는 시청 현황(paju_parking.json).
@@ -945,11 +1034,17 @@ function setPark(on){
   renderPkLegend();
 }
 tgPark.onclick=()=>setPark(!showPark);
+map.on('popupopen popupclose',e=>document.querySelector('.mapwrap').classList.toggle('pop',e.type==='popupopen'));
 function openPark(key){                                     // 상세의 주차장 줄 → 지도에 켜고 그 주차장으로 이동
   const mk=pkMarkers[key]; if(!mk) return;
   if(!showPark) setPark(true);
+  // 이동이 끝난 뒤에 연다 — 시간(0.7초)으로 맞추면 휴대폰에서 이동이 덜 끝난 채 열려
+  //   화면 안으로 끌어오는 계산이 어긋나 팝업 윗부분이 버튼 줄 밑으로 숨었다
+  let opened=false;
+  const open=()=>{ if(opened) return; opened=true; mk.openPopup(); };
   map.flyTo(mk.getLatLng(),Math.max(map.getZoom(),16),{duration:.6});
-  setTimeout(()=>mk.openPopup(),700);
+  map.once('moveend',open);                                 // flyTo 뒤에 건다 — 끌던 지도가 멈추며 내는 이벤트에 먼저 열리지 않게
+  setTimeout(open,1500);                                    // 이동 이벤트가 오지 않는 경우 대비
 }
 async function loadParking(){
   try{
@@ -1058,6 +1153,7 @@ function zoomClass(){
   el.classList.toggle('pk-far', map.getZoom()<12);
 }
 map.on('zoomend',()=>{ zoomClass(); if(showTraffic) drawLinks(LINK_SPD); });
+map.on('moveend resize',tidyLabels);                       // 확대 등급 클래스(zoomClass)가 바뀐 뒤에 잰다
 let moveTimer=null;                                        // 지도를 움직이면 보이는 영역만 다시 그린다
 map.on('moveend',()=>{ if(!showTraffic) return; clearTimeout(moveTimer); moveTimer=setTimeout(()=>drawLinks(LINK_SPD),250); });
 const jumpSel=document.getElementById('spot-jump');
@@ -1233,7 +1329,8 @@ function revealDetail(id){
     }
     const mp=document.querySelector('.mapwrap');               // 좁은 화면: 지도가 위에 고정돼 있다
     const stick=(mp&&getComputedStyle(mp).position==='sticky')?mp.getBoundingClientRect().height:0;
-    const d=row.getBoundingClientRect().top-stick-headH;
+    const headStick=head&&getComputedStyle(head).position==='sticky';   // 머리줄이 고정이 아니면 그 높이만큼 띄우지 않는다
+    const d=row.getBoundingClientRect().top-stick-(headStick?headH:0);
     if(Math.abs(d)>1) window.scrollBy({top:d,behavior:'smooth'});
   };
   requestAnimationFrame(go); setTimeout(go,80);              // 애니메이션이 억제된 환경 대비
@@ -1385,11 +1482,10 @@ async function loadIts(){
       renderCams(); renderList();
     } }
     if(t.ok){ const j=await t.json(); if(j.roads&&j.roads.length){ ROADS=j.roads;
-      // 색은 속도가 아니라 경기도 혼잡등급(1 원활·2 서행·3 정체)으로 정한다 — 시내 도로는 30km/h도 원활이라
-      //   속도 기준(60/35)을 그대로 쓰면 시내가 통째로 빨강이 된다. 등급이 없으면 예전처럼 속도로.
-      const G=j.grades||{}, GCV={1:75,2:45,3:20}, LCV={'원활':75,'서행':45,'정체':20};
+      // 색은 경기도 혼잡등급(1 원활·2 서행·3 정체)이 있으면 등급으로, 없으면 속도(48/24km/h, spdColor)로 정한다.
+      //   등급은 대표 속도로 바꿔 넣어 같은 색 계산을 탄다.
+      const G=j.grades||{}, GCV={1:75,2:45,3:20};
       LINK_SPD=Object.fromEntries(Object.entries(j.links||{}).map(([k,v])=>[k, GCV[G[k]] ?? v]));
-      ROAD_AVG=Object.fromEntries((j.roads||[]).map(r=>[r.road, LCV[r.level] ?? r.speed]));
       const d=new Date(j.asof); itsAsof=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
       trafficReady(); renderTraffic(); } }
   }catch(e){}
