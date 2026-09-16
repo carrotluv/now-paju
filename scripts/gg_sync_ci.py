@@ -41,10 +41,11 @@ def collect(key, wanted, roadname):
        도로 이름은 경기도 routeNm 대신 우리 지도(OSM)의 이름을 쓴다 —
        경기도는 링크의 83%에 노선명이 없어 통일로 같은 주요 도로가 빠지기 때문."""
     xml = fetch_xml(f'{API}?serviceKey={key}')
-    links, by_road, latest = {}, {}, None
+    links, grades, by_road, by_grade, latest = {}, {}, {}, {}, None
     for chunk in xml.split('<itemList>')[1:]:
         lid = tag(chunk, 'linkId')
         spd = tag(chunk, 'spd')
+        cg = tag(chunk, 'congGrade')
         if not lid or spd is None:
             continue
         try:
@@ -59,19 +60,26 @@ def collect(key, wanted, roadname):
         if nm:
             by_road.setdefault(nm, []).append(sp)
         links[lid] = round(sp)
+        if cg in ('1', '2', '3'):                      # 경기도가 매긴 혼잡등급 — 도로 성격을 반영한 값
+            grades[lid] = int(cg)
+            if nm:
+                by_grade.setdefault(nm, []).append(int(cg))
         cd = tag(chunk, 'collDate')
         if cd and (not latest or cd > latest):
             latest = cd
+    LV = {1: '원활', 2: '서행', 3: '정체'}
     roads = []
     for road, arr in by_road.items():
         avg = round(sum(arr) / len(arr))
-        roads.append({'road': road, 'speed': avg, 'links': len(arr),
-                      'level': '원활' if avg >= 60 else ('서행' if avg >= 35 else '정체')})
+        g = by_grade.get(road)
+        lev = LV[max(set(g), key=g.count)] if g else (
+            '원활' if avg >= 60 else ('서행' if avg >= 35 else '정체'))
+        roads.append({'road': road, 'speed': avg, 'links': len(arr), 'level': lev})
     roads.sort(key=lambda x: -x['links'])
     kst = datetime.timezone(datetime.timedelta(hours=9))
     asof = (latest[:19].replace(' ', 'T') + '+09:00') if latest else \
            datetime.datetime.now(kst).isoformat(timespec='seconds')
-    return asof, links, roads
+    return asof, links, grades, roads
 
 
 def main():
@@ -112,7 +120,7 @@ def main():
         return
     t0 = time.time()
     try:
-        asof, links, roads = collect(key, wanted, roadname)
+        asof, links, grades, roads = collect(key, wanted, roadname)
     except Exception as e:
         with open(diag, 'w', encoding='utf-8') as f:
             f.write(f'시각: {stamp}{NL}사유: 수집 실패 {type(e).__name__} {str(e)[:200]}{NL}')
@@ -120,7 +128,7 @@ def main():
         return
 
     data = {'asof': asof, 'cams': cams, 'camsAsof': prev.get('camsAsof'), 'roads': roads[:24],
-            'roadAvg': {r['road']: r['speed'] for r in roads}, 'links': links, 'src': 'gg'}
+            'roadAvg': {r['road']: r['speed'] for r in roads}, 'links': links, 'grades': grades, 'src': 'gg'}
     with open(out, 'w', encoding='utf-8') as f:
         json.dump(data, f, ensure_ascii=False, separators=(',', ':'))
     size = os.path.getsize(out) // 1024

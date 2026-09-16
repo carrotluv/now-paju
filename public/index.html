@@ -619,7 +619,7 @@ tgCam.onclick=()=>{
   document.getElementById('map').classList.toggle('hide-cam',!showCams);
 };
 
-const LVC={'원활':'#2fa876','서행':'#e07b2f','정체':'#d94f3d'};
+const LVC={'원활':'#2f9b74','서행':'#d18f3a','정체':'#cc5647'};   /* 배경지도가 밝아져 한 톤 낮춘 값 */
 
 // 도로 선형은 배경지도와 같은 출처(OSM)를 쓰고, ITS 실측 속도는 미리 만든 링크 매핑으로 얹는다
 let ROADGEO=[], LINKMAP={}, ROADSIB={}, linkLayer=L.layerGroup();
@@ -644,8 +644,8 @@ function trafficStyleForZoom(){
   if(z<12.5) return {maxClass:2, weight:2.8, single:true};   // + 주요 간선
   if(z<13.5) return {maxClass:3, weight:3,   single:true};   // + 보조 간선
   if(z<14.5) return {maxClass:4, weight:3.5, single:true};   // + 지방도
-  if(z<15.5) return {maxClass:5, weight:4.5, single:false};  // 전체
-  return {maxClass:5, weight:5, single:false};
+  if(z<15.5) return {maxClass:5, weight:4, single:false};    // 전체
+  return {maxClass:5, weight:4.5, single:false};
 }
 
 // 도로별 색(속도) 계산 — 화면 이동과 무관하므로 소통 데이터가 바뀔 때만 다시 계산한다
@@ -1363,7 +1363,12 @@ async function loadIts(){
       CAM_PINS=thinByRoute([...nearSet].map(i=>CAMS[i]));     // 같은 노선 연속분은 3개로 솎음
       renderCams(); renderList();
     } }
-    if(t.ok){ const j=await t.json(); if(j.roads&&j.roads.length){ ROADS=j.roads; LINK_SPD=j.links||{}; ROAD_AVG=j.roadAvg||{};
+    if(t.ok){ const j=await t.json(); if(j.roads&&j.roads.length){ ROADS=j.roads;
+      // 색은 속도가 아니라 경기도 혼잡등급(1 원활·2 서행·3 정체)으로 정한다 — 시내 도로는 30km/h도 원활이라
+      //   속도 기준(60/35)을 그대로 쓰면 시내가 통째로 빨강이 된다. 등급이 없으면 예전처럼 속도로.
+      const G=j.grades||{}, GCV={1:75,2:45,3:20}, LCV={'원활':75,'서행':45,'정체':20};
+      LINK_SPD=Object.fromEntries(Object.entries(j.links||{}).map(([k,v])=>[k, GCV[G[k]] ?? v]));
+      ROAD_AVG=Object.fromEntries((j.roads||[]).map(r=>[r.road, LCV[r.level] ?? r.speed]));
       const d=new Date(j.asof); itsAsof=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
       trafficReady(); renderTraffic(); } }
   }catch(e){}

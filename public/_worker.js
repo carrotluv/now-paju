@@ -146,37 +146,42 @@ async function ggTraffic(env, ctx) {
       if (!r.ok) return null;
       const t = await r.text();
       const items = t.split('<itemList>').slice(1);
-      const links = {}; let sum = 0, n = 0, last = null;
+      const links = {}, grades = {}, gc = { 1: 0, 2: 0, 3: 0 }; let sum = 0, n = 0, last = null;
       for (const it of items) {
         const id = (it.match(/<linkId>(\d+)<\/linkId>/) || [])[1];
         const sp = (it.match(/<spd>(\d+)<\/spd>/) || [])[1];
+        const cg = +((it.match(/<congGrade>(\d)<\/congGrade>/) || [])[1] || 0);
         if (!id || sp == null) continue;
         const v = +sp;
         if (!(v >= 0 && v <= 200)) continue;
         links[id] = v; sum += v; n++;
+        if (cg >= 1 && cg <= 3) { grades[id] = cg; gc[cg]++; }
         const cd = (it.match(/<collDate>([^<]+)<\/collDate>/) || [])[1];
         if (cd && (!last || cd > last)) last = cd;
       }
       if (!n) return null;
       const avg = Math.round(sum / n);
-      const g = (it => it >= 60 ? '1' : (it >= 35 ? '2' : '3'))(avg);
-      return { nm, links, avg, level: GG_LEVEL[g], last };
+      // 등급은 도로 성격을 반영한 값이라 속도 기준보다 실제 체감에 가깝다 — 가장 많은 등급으로 도로 상태를 정한다
+      const top = [1, 2, 3].reduce((a, b) => gc[b] > gc[a] ? b : a, 1);
+      const g = gc[top] ? String(top) : (avg >= 60 ? '1' : (avg >= 35 ? '2' : '3'));
+      return { nm, links, grades, avg, level: GG_LEVEL[g], last };
     } catch (e) { return null; }
   };
 
   const got = (await Promise.all(GG_ROUTES.map(one))).filter(Boolean);
   if (!got.length) return null;
-  const links = {}, roadAvg = {}, roads = [];
+  const links = {}, grades = {}, roadAvg = {}, roads = [];
   let asof = null;
   for (const g of got) {
     Object.assign(links, g.links);
+    Object.assign(grades, g.grades);
     roadAvg[g.nm] = g.avg;
     roads.push({ road: g.nm, speed: g.avg, links: Object.keys(g.links).length, level: g.level });
     if (g.last && (!asof || g.last > asof)) asof = g.last;
   }
   const out = {
     asof: asof ? asof.slice(0, 16).replace(' ', 'T') + ':00+09:00' : new Date().toISOString(),
-    roads: roads.sort((a, b) => a.speed - b.speed), roadAvg, links, src: 'gg'
+    roads: roads.sort((a, b) => a.speed - b.speed), roadAvg, links, grades, src: 'gg'
   };
   const body = JSON.stringify(out);
   ctx.waitUntil(cache.put(ck, new Response(body, {
@@ -217,8 +222,8 @@ async function ggRefresh(env) {
   if (!r.ok) throw new Error('gg ' + r.status);
   const reader = r.body.getReader();
   const dec = new TextDecoder('utf-8');
-  const re = /<collDate>([^<]*)<\/collDate>[\s\S]{0,200}?<linkId>(\d+)<\/linkId>[\s\S]{0,200}?<spd>(\d+)<\/spd>/g;
-  const links = {}, sum = {}, cnt = {};
+  const re = /<collDate>([^<]*)<\/collDate>[\s\S]{0,120}?<congGrade>(\d*)<\/congGrade>[\s\S]{0,300}?<linkId>(\d+)<\/linkId>[\s\S]{0,300}?<spd>(\d+)<\/spd>/g;
+  const links = {}, grades = {}, sum = {}, cnt = {}, gcnt = {};
   let carry = '', latest = null;
   for (;;) {
     const { done, value } = await reader.read();
@@ -228,25 +233,34 @@ async function ggRefresh(env) {
     re.lastIndex = 0;
     while ((m = re.exec(chunk)) !== null) {
       last = re.lastIndex;
-      const id = m[2];
+      const id = m[3];
       if (name[id] === undefined) continue;          // 파주 지도에 없는 링크는 버린다
-      const v = +m[3];
+      const v = +m[4];
       if (!(v >= 0 && v <= 200)) continue;
       links[id] = v;
+      const cg = +m[2];
+      if (cg >= 1 && cg <= 3) grades[id] = cg;
       const nm = name[id];
-      if (nm) { sum[nm] = (sum[nm] || 0) + v; cnt[nm] = (cnt[nm] || 0) + 1; }
+      if (nm) {
+        sum[nm] = (sum[nm] || 0) + v; cnt[nm] = (cnt[nm] || 0) + 1;
+        if (cg >= 1 && cg <= 3) { (gcnt[nm] = gcnt[nm] || { 1: 0, 2: 0, 3: 0 })[cg]++; }
+      }
       if (m[1] && (!latest || m[1] > latest)) latest = m[1];
     }
-    carry = chunk.slice(Math.max(last, chunk.length - 600));
+    carry = chunk.slice(Math.max(last, chunk.length - 900));   // 한 항목이 길어져 여유를 둔다
   }
+  const LV = { 1: '원활', 2: '서행', 3: '정체' };
   const roads = Object.keys(sum).map(nm => {
     const avg = Math.round(sum[nm] / cnt[nm]);
-    return { road: nm, speed: avg, links: cnt[nm], level: avg >= 60 ? '원활' : (avg >= 35 ? '서행' : '정체') };
+    const g = gcnt[nm];
+    const top = g ? [1, 2, 3].reduce((a, b) => g[b] > g[a] ? b : a, 1) : null;
+    return { road: nm, speed: avg, links: cnt[nm],
+      level: top ? LV[top] : (avg >= 60 ? '원활' : (avg >= 35 ? '서행' : '정체')) };
   }).sort((a, b) => b.links - a.links);
   const out = {
     asof: latest ? latest.slice(0, 19).replace(' ', 'T') + '+09:00' : new Date().toISOString(),
     roads: roads.slice(0, 24), roadAvg: Object.fromEntries(roads.map(x => [x.road, x.speed])),
-    links, src: 'gg', n: Object.keys(links).length
+    links, grades, src: 'gg', n: Object.keys(links).length
   };
   await env.STATS.put('traffic', JSON.stringify(out), { expirationTtl: 3600 });
   return out;
