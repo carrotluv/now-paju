@@ -644,8 +644,8 @@ function trafficStyleForZoom(){
   if(z<12.5) return {maxClass:2, weight:2.8, single:true};   // + 주요 간선
   if(z<13.5) return {maxClass:3, weight:3,   single:true};   // + 보조 간선
   if(z<14.5) return {maxClass:4, weight:3.5, single:true};   // + 지방도
-  if(z<15.5) return {maxClass:5, weight:4, single:false};    // 전체
-  return {maxClass:5, weight:4.5, single:false};
+  if(z<15.5) return {maxClass:5, weight:4, single:true};     // 전체
+  return {maxClass:5, weight:4.5, single:true};   // 확대해도 왕복은 한 줄 — 두 색이 나란히 가면 두 갈래로 보인다
 }
 
 // 도로별 색(속도) 계산 — 화면 이동과 무관하므로 소통 데이터가 바뀔 때만 다시 계산한다
@@ -659,8 +659,16 @@ function computeColors(speeds){
     if(v==null) continue;
     (measured[ri]=measured[ri]||[]).push(v);
   }
+  const avgOf=a=>Math.round(a.reduce((x,y)=>x+y,0)/a.length);
   Object.keys(measured).slice().forEach(ri=>{              // 왕복 분리도로는 반대편 차로도 같이 칠한다
     (ROADSIB[ri]||[]).forEach(s=>{ if(!measured[s]) measured[s]=measured[ri].slice(); });
+  });
+  Object.keys(measured).slice().forEach(ri=>{              // 두 방향 값이 다르면 더 막히는 쪽으로 맞춘다
+    (ROADSIB[ri]||[]).forEach(s=>{                         //   한 줄로 그리므로 보수적인 쪽을 보여 주는 게 맞다
+      if(!measured[s]||!measured[ri]) return;
+      const a=avgOf(measured[ri]), b=avgOf(measured[s]);
+      if(a!==b){ const w=Math.min(a,b); measured[ri]=[w]; measured[s]=[w]; }
+    });
   });
   // 교차로 조각 메우기: 색이 없는 짧은 구간이라도 양 끝이 색칠 도로에 붙어 있으면 이웃 속도를 물려받는다
   const val=i=>{ const a=measured[i]; return a?Math.round(a.reduce((x,y)=>x+y,0)/a.length):(roadAvg[ROADGEO[i].n]??null); };
@@ -758,7 +766,20 @@ function computeColors(speeds){
       else if(a!=null||b!=null) inherit[i]=(a!=null&&b!=null)?Math.round((a+b)/2):(a??b);
     });
   }
-  return {measured,inherit,roadAvg,split};
+  // 짧은 조각 하나만 색이 튀는 것 다듬기 — 양옆이 같은 색이면 그 색을 따른다.
+  //   교량·교차로 한 칸(17m짜리도 있다)의 측정값 하나가 그대로 색이 되어 선이 얼룩덜룩해 보이던 문제.
+  const smooth={}, SMOOTH_M=120;
+  ROADGEO.forEach((r,i)=>{
+    const v=cur(i);
+    if(v==null||split[i]||roadLen(r.p)>SMOOTH_M) return;
+    const nb=[];
+    [r.p[0],r.p[r.p.length-1]].forEach(p=>(ROADGEO._fill[kf(p)]||[]).forEach(j=>{
+      if(j===i) return; const w=cur(j); if(w!=null) nb.push(w); }));
+    if(nb.length<2) return;
+    const cs=new Set(nb.map(spdColor));
+    if(cs.size===1&&!cs.has(spdColor(v))) smooth[i]=Math.round(nb.reduce((a,b)=>a+b,0)/nb.length);
+  });
+  return {measured,inherit,roadAvg,split,smooth};
 }
 
 function drawLinks(speeds){
@@ -766,7 +787,7 @@ function drawLinks(speeds){
   if(!showTraffic||!ROADGEO.length) return;
   const st=trafficStyleForZoom();
   if(ROADGEO._for!==speeds){ ROADGEO._col=computeColors(speeds); ROADGEO._for=speeds; }
-  const {measured,inherit,roadAvg,split}=ROADGEO._col;
+  const {measured,inherit,roadAvg,split,smooth}=ROADGEO._col;
 
   const vb=map.getBounds().pad(0.25);                      // 화면 밖 도로는 그리지 않는다(성능)
   const vN=vb.getNorth(), vS=vb.getSouth(), vE=vb.getEast(), vW=vb.getWest();
@@ -789,7 +810,7 @@ function drawLinks(speeds){
       (est[cb]=est[cb]||[]).push(r.p.slice(m));
       return;
     }
-    const v=(own!=null)?own:(roadAvg[r.n]??inherit[i]);
+    const v=smooth[i]??((own!=null)?own:(roadAvg[r.n]??inherit[i]));   // 다듬은 값이 있으면 그것부터
     if(v==null) return;
     const g=(own!=null)?real:est, c=spdColor(v);
     (g[c]=g[c]||[]).push(r.p);
