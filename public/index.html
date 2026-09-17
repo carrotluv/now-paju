@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>지금 파주 — 파주 실시간 인파 지도</title>
+<title>지금 파주 · 파주 실시간 인파 지도</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.min.css">
 <style>
@@ -15,8 +15,8 @@
     --bar:#e3ddcf; --demo-bg:#ffffff; --float-bg:#ffffff; --float-bg2:rgba(255,255,255,.88); --pill-bg:rgba(255,255,255,.93);
     --btn-dark:#23272f; --btn-dark-ink:#f2efe6; --btn-dark-hover:#3a404d;
     --tint-hot:#fdf0ec; --tint-cool:#eef7f2; --halo:#ffffff;
-    --radius:6px; --radius-lg:10px;
-    --shadow-1:0 1px 3px rgba(35,39,47,.10); --shadow-2:0 2px 6px rgba(35,39,47,.25); --shadow-3:0 12px 32px rgba(0,0,0,.28);
+    --radius:8px; --radius-lg:12px;      /* 디자인 라이브러리 모서리 2단계 — 컨트롤·안쪽 상자 8, 팝업·창 12 */
+    --shadow-1:0 1px 3px rgba(35,39,47,.10); --shadow-2:0 2px 6px rgba(35,39,47,.22); --shadow-3:0 12px 32px rgba(0,0,0,.22);
   }
   *{margin:0;padding:0;box-sizing:border-box}
   :focus-visible{outline:2px solid var(--ink);outline-offset:2px;border-radius:3px}
@@ -35,18 +35,18 @@
   header .t:hover b{text-decoration:underline;text-underline-offset:4px;text-decoration-thickness:2px}
   header .t svg{flex:none}
   header .t b{font-size:28px;display:block;letter-spacing:.5px;font-weight:800;line-height:32px;white-space:nowrap}
-  header .t span{font-size:13px;line-height:16px;font-weight:600;letter-spacing:6px;color:var(--sub);margin-top:2px;display:block}
-  .tabs{display:flex;padding:3px;border:1.5px solid var(--hair);border-radius:calc(var(--radius) + 3px);background:var(--float-bg)}
-  .tab{display:flex;align-items:center;padding:6px 13px;font-size:13px;line-height:20px;color:var(--sub);cursor:pointer;border:0;border-radius:var(--radius);background:transparent;font-family:inherit}
-  .tab b{font-size:14px;margin-right:5px}
+  header .t span{font-size:13px;line-height:16px;font-weight:500;letter-spacing:6px;color:var(--sub);margin-top:2px;display:block}
+  .tabs{display:flex;padding:3px;border:1.5px solid var(--hair);border-radius:var(--radius-lg);background:var(--float-bg)}
+  .tab{display:flex;align-items:center;padding:6px 13px;font-size:13px;font-weight:500;line-height:20px;color:var(--sub);cursor:pointer;border:0;border-radius:var(--radius);background:transparent;font-family:inherit}
+  .tab b{font-size:14px;font-weight:800;margin-right:5px}
   .tab:hover{color:var(--ink)}
   .tab.on{color:var(--btn-dark-ink);background:var(--btn-dark);font-weight:700}
   .tab.on:hover{color:var(--btn-dark-ink)}
-  .legend{margin-left:auto;display:flex;gap:15px;font-size:14px;line-height:20px;font-weight:500;color:var(--ink);align-items:flex-end;flex-wrap:wrap}
+  .legend{margin-left:auto;display:flex;gap:15px;font-size:13px;line-height:20px;font-weight:500;color:var(--ink);align-items:flex-end;flex-wrap:wrap}
   .legend i{width:12px;height:12px;border-radius:50%;display:inline-block;margin-right:6px;vertical-align:-1px}
-  .asof{font-weight:600;font-size:13px;color:var(--ink);border-left:1px solid var(--hair);padding-left:15px}
+  .asof{font-weight:500;font-size:13px;color:var(--ink);border-left:1px solid var(--hair);padding-left:15px}
 
-  .banner{padding:7px 24px;font-size:14px;line-height:20px;font-weight:600;border-bottom:1px solid var(--hair);background:var(--banner)}
+  .banner{padding:7px 24px;font-size:14px;line-height:20px;font-weight:400;border-bottom:1px solid var(--hair);background:var(--banner)}
   .banner b{font-weight:700}
 
   .wrap{display:grid;grid-template-columns:352px 1fr}
@@ -63,7 +63,7 @@
   .me b{position:absolute;left:50%;top:50%;width:34px;height:34px;margin:-17px 0 0 -17px;border-radius:50%;
     background:rgba(47,111,217,.18);animation:mepulse 2s ease-out infinite}
   @keyframes mepulse{0%{transform:scale(.6);opacity:.9}100%{transform:scale(1.5);opacity:0}}
-  .mbtn{background:var(--float-bg);border:1px solid var(--hair);border-radius:var(--radius);padding:7px 12px;font-size:13px;font-weight:600;color:var(--ink);cursor:pointer;box-shadow:var(--shadow-1);font-family:inherit;
+  .mbtn{background:var(--float-bg);border:1px solid var(--hair);border-radius:var(--radius);padding:7px 12px;font-size:13px;font-weight:500;color:var(--ink);cursor:pointer;box-shadow:var(--shadow-1);font-family:inherit;
     display:flex;align-items:center;justify-content:center;min-width:88px}   /* '도로 상황' 폭에 맞춰 네 버튼을 같게 — 두 줄의 열이 떨어진다 */
   .mbtn:hover{background:#f6f3ea}
   .mbtn.tgl{display:flex;align-items:center;gap:6px}
@@ -73,17 +73,20 @@
   .mbtn.tgl.on::before{background:var(--s1)}
   .mbtn[disabled]{opacity:.5;cursor:not-allowed}
   .mbtn[disabled]:hover{background:var(--float-bg)}
-  .msel{appearance:none;-webkit-appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6'><path d='M1 1l4 4 4-4' stroke='%2323272f' stroke-width='1.6' fill='none'/></svg>") no-repeat right 10px center;background-color:var(--float-bg);border:1px solid var(--hair);border-radius:var(--radius);padding:7px 28px 7px 12px;font-size:13px;font-weight:600;color:var(--ink);cursor:pointer;box-shadow:var(--shadow-1);font-family:inherit}
+  .msel{appearance:none;-webkit-appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6'><path d='M1 1l4 4 4-4' stroke='%2323272f' stroke-width='1.8' fill='none'/></svg>") no-repeat right 10px center;background-color:var(--float-bg);border:1px solid var(--hair);border-radius:var(--radius);padding:7px 28px 7px 12px;font-size:13px;font-weight:500;color:var(--ink);cursor:pointer;box-shadow:var(--shadow-1);font-family:inherit}
   .statchip{position:absolute;left:12px;bottom:12px;z-index:1000;display:none;align-items:center;gap:11px;
     background:var(--float-bg);border:1px solid var(--hair);border-radius:var(--radius);padding:7px 12px;
-    font-size:13px;color:var(--ink);box-shadow:var(--shadow-1);font-variant-numeric:tabular-nums;white-space:nowrap}
+    font-size:13px;font-weight:500;color:var(--ink);box-shadow:var(--shadow-1);font-variant-numeric:tabular-nums;white-space:nowrap}
   .statchip.on{display:flex}
   .statchip span{display:flex;align-items:center;gap:5px}
   .statchip i{width:8px;height:8px;border-radius:50%;flex:none}
   .statchip b{font-weight:700}
-  .leaflet-tile-pane{filter:saturate(.4) contrast(.8) brightness(1.1)}     /* OSM 기본 타일을 한 톤 물려 지점·P가 먼저 보이게 */
+  .leaflet-tile-pane{filter:saturate(.4) contrast(.8) brightness(1.1)}
+  .leaflet-bar,.leaflet-touch .leaflet-bar{border-radius:var(--radius)}
+  .leaflet-bar a:first-child,.leaflet-touch .leaflet-bar a:first-child{border-top-left-radius:var(--radius);border-top-right-radius:var(--radius)}
+  .leaflet-bar a:last-child,.leaflet-touch .leaflet-bar a:last-child{border-bottom-left-radius:var(--radius);border-bottom-right-radius:var(--radius)}     /* OSM 기본 타일을 한 톤 물려 지점·P가 먼저 보이게 */
   .maptag a{color:inherit;text-decoration:none}
-  .maptag{position:absolute;right:12px;bottom:12px;z-index:1000;background:var(--float-bg2);border:1px solid var(--hair);border-radius:var(--radius);padding:5px 10px;font-size:11px;color:var(--sub)}
+  .maptag{position:absolute;right:12px;bottom:12px;z-index:1000;background:var(--float-bg2);border:1px solid var(--hair);border-radius:var(--radius);padding:5px 10px;font-size:12px;font-weight:500;color:var(--sub)}
 
   /* 지도 노드 */
   .nd{position:relative}
@@ -103,18 +106,18 @@
   .nd.pu .lb{left:50%;right:auto;top:auto;bottom:calc(50% + var(--r) + 5px);transform:translateX(-50%);text-align:center}
   .nd.pd .lb{left:50%;right:auto;top:calc(50% + var(--r) + 5px);bottom:auto;transform:translateX(-50%);text-align:center}
   .nd .lb.off,.lpill.off,.llb.off{visibility:hidden}                                  /* 앞 순위 이름과 겹치면 잠시 숨김 — 확대하면 다시 보인다 */
-  .nd .chip{display:block;font-size:11px;font-weight:700;margin-top:1px}
+  .nd .chip{display:block;font-size:12px;font-weight:700;margin-top:1px}
   .z-lo .nd.small .lb{display:none}
   .z-lo .lpill span{display:none}
   .z-lo .lpill{padding:4px 9px}
   .z-lo .lpill b{font-size:12px}
-  .llb{font-size:12px;font-weight:600;color:var(--sub);white-space:nowrap;letter-spacing:.6px;pointer-events:none;
+  .llb{font-size:12px;font-weight:500;color:var(--sub);white-space:nowrap;pointer-events:none;
     text-shadow:0 1px 0 var(--halo),0 -1px 0 var(--halo),1px 0 0 var(--halo),-1px 0 0 var(--halo)}
   .lpill{width:max-content;background:var(--pill-bg);border:1.5px dashed #a49d90;border-radius:var(--radius);padding:5px 10px;white-space:nowrap;box-shadow:var(--shadow-1);text-align:center;pointer-events:none}
-  .lpill b{display:block;font-size:13px;font-weight:800;color:var(--ink-2);letter-spacing:.3px}
-  .lpill span{display:block;font-weight:500;font-size:11px;margin-top:2px;color:var(--sub)}
-  .clusterbadge{width:max-content;background:var(--btn-dark);color:var(--btn-dark-ink);border-radius:var(--radius);padding:7px 12px;font-size:13px;font-weight:600;white-space:nowrap;box-shadow:var(--shadow-2);cursor:pointer}
-  .clusterbadge span{opacity:.65;font-weight:400;margin-left:5px}
+  .lpill b{display:block;font-size:13px;font-weight:800;color:var(--ink-2)}
+  .lpill span{display:block;font-weight:500;font-size:12px;margin-top:2px;color:var(--sub)}
+  .clusterbadge{width:max-content;background:var(--btn-dark);color:var(--btn-dark-ink);border-radius:var(--radius);padding:7px 12px;font-size:13px;font-weight:500;white-space:nowrap;box-shadow:var(--shadow-2);cursor:pointer}
+  .clusterbadge span{opacity:.65;font-weight:500;margin-left:5px}
   .z-hi .clusterbadge{display:none}
   .cam{width:20px;height:20px;background:var(--btn-dark);border-radius:var(--radius);border:1.5px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;cursor:pointer}
   .cam:hover{background:#3a404d}
@@ -129,52 +132,50 @@
   .pk b{flex:none;width:19px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff;background:var(--c)}
   .pk span{flex:none;display:flex;align-items:center;padding:0 6px 0 5px;background:#fff;color:var(--ink);font-size:12px;font-weight:700;line-height:1}
   .pk.st{height:18px;border:1.5px solid #a39d91;box-shadow:0 1px 2px rgba(0,0,0,.18);transform:translate(-9px,-9px)}
-  .pk.st b{width:15px;background:#fff;color:#7d776b;font-size:11px}
+  .pk.st b{width:15px;background:#fff;color:#6b665b;font-size:12px}     /* #7d776b는 흰 바탕 4.45:1로 미달 → 5.6:1 */
+  .pk.mid b{color:var(--ink)}                                         /* 노랑 바탕 흰 P는 2.2:1 — 검정 P로 6.9:1(노란 표지판과 같은 방식) */
   .pk.hl{box-shadow:0 0 0 2px #fff,0 0 0 4px var(--ink)}
   .pk-lo .pk span{display:none}                         /* 멀리서 보면 숫자 없이 P만 */
   .pk-far .pk.st{display:none}                          /* 파주 전체 화면에선 실시간 34곳만 */
   .pkleg{position:absolute;left:12px;bottom:12px;z-index:1000;display:flex;align-items:center;gap:11px;background:var(--float-bg);
-    border:1px solid var(--hair);border-radius:var(--radius);padding:7px 12px;font-size:12px;font-weight:600;color:var(--ink);
+    border:1px solid var(--hair);border-radius:var(--radius);padding:7px 12px;font-size:12px;font-weight:500;color:var(--ink);
     box-shadow:var(--shadow-1);white-space:nowrap}
   .pkleg[hidden]{display:none}
   .pkleg b{font-weight:700}
-  .pkleg span{display:flex;align-items:center;gap:5px}
+  .pkleg>span{display:flex;align-items:center;gap:5px}
   .pkleg i{width:10px;height:10px;border-radius:3px;flex:none}
   .pkleg em{font-style:normal;color:var(--sub);padding-left:10px;border-left:1px solid var(--hair)}
   .pkleg.trleg i{width:14px;height:4px;border-radius:2px}                 /* 도로 색 설명 — 선이라 가로 막대로 */
   .statchip.on.m-hide{display:none}                                          /* 좁은 화면에서 범례가 뜨면 개수 칩은 비킨다 */
   .c-ok{background:var(--s1)} .c-mid{background:var(--s2)} .c-low{background:var(--s4)} .c-full{background:#b3271b} .c-st{background:#fff;border:1.5px solid #a39d91}
   .leaflet-container{font-family:inherit}
-  .leaflet-popup-content-wrapper{border-radius:var(--radius);box-shadow:var(--shadow-2);padding:0}
+  .leaflet-popup-content-wrapper{border-radius:var(--radius-lg);box-shadow:var(--shadow-2);padding:0}
   .leaflet-popup-content{margin:0;width:236px!important;line-height:normal}
   .leaflet-container a.leaflet-popup-close-button{top:6px;right:6px}
   .pp{padding:11px 13px 10px;color:var(--ink)}
   .pp-h{display:flex;align-items:center;gap:7px;font-size:14px;font-weight:700;line-height:20px;padding-right:16px}
-  .pp .tag{flex:none;font-size:11px;line-height:15px;font-weight:600;border:1px solid var(--hair);border-radius:3px;padding:0 4px}
-  .pp-av{display:flex;align-items:baseline;gap:5px;margin-top:7px;font-size:12px;font-weight:600}
+  .pp .tag{flex:none;font-size:12px;line-height:16px;font-weight:500;border:1px solid var(--hair);border-radius:var(--radius);padding:0 6px}
+  .pp-av{display:flex;align-items:baseline;gap:5px;margin-top:7px;font-size:12px;font-weight:500}
   .pp-av b{font-size:21px;font-weight:800;letter-spacing:-.4px;line-height:24px}
   .pp-av.ok b{color:var(--t1)} .pp-av.mid b{color:var(--t2)} .pp-av.low b{color:var(--t4)} .pp-av.full b{color:#b3271b}
   .pp-av.na{color:var(--sub);font-size:13px}
   .pp-av em{margin-left:auto;font-style:normal}
   .pp-bar{height:5px;border-radius:3px;background:var(--hair2);margin:6px 0 9px;overflow:hidden}
   .pp-bar i{display:block;height:100%;background:var(--c)}
-  .pp-kv{display:grid;grid-template-columns:auto 1fr;gap:3px 10px;font-size:12px;font-weight:600;line-height:17px;margin:8px 0 9px}
+  .pp-kv{display:grid;grid-template-columns:auto 1fr;gap:3px 10px;font-size:12px;font-weight:500;line-height:17px;margin:8px 0 9px}
   .pp-kv dt{color:var(--sub)} .pp-kv dd{margin:0}
   .pp-kv .nw{display:block;white-space:nowrap}          /* '500원'이 홀로 줄바꿈되지 않게 항목별 한 줄 */
-  .pp-note{font-size:12px;font-weight:600;color:var(--sub);margin:6px 0 9px}
+  .pp-note{font-size:12px;font-weight:500;color:var(--sub);margin:6px 0 9px}
   .pp .navs{gap:5px} .pp .navbtn{padding:5px 3px;font-size:12px;line-height:17px}
-  .pp-src{margin-top:8px;font-size:11px;font-weight:600;color:var(--sub)}
+  .pp-src{margin-top:8px;font-size:12px;font-weight:500;color:var(--sub)}
   .trafficbox{position:absolute;left:12px;bottom:12px;z-index:1000;background:var(--float-bg2);border:1px solid var(--hair);border-radius:var(--radius);padding:10px 13px;min-width:195px;display:none;box-shadow:var(--shadow-1)}
   .trafficbox.on{display:block}
   .tb-title{font-size:13px;font-weight:700;color:var(--ink);margin-bottom:6px;display:flex;gap:10px;align-items:baseline}
-  .tb-title span{font-weight:400;color:var(--sub);font-size:11px;margin-left:auto}
-  .tr-row{display:flex;align-items:center;gap:7px;font-size:13px;padding:2.5px 0;color:var(--ink)}
+  .tb-title span{font-weight:500;color:var(--sub);font-size:12px;margin-left:auto}
+  .tr-row{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:500;padding:2.5px 0;color:var(--ink)}
   .tr-row i{width:8px;height:8px;border-radius:50%;flex:none}
-  .tr-row .sp{margin-left:auto;font-weight:600}
-  .tr-row small{font-weight:400;color:var(--sub);margin-left:2px}
-  .spdchip{transform:translate(-50%,-50%);width:max-content;background:var(--float-bg);border:2px solid;border-radius:var(--radius);padding:3px 10px;font-size:12px;font-weight:600;white-space:nowrap;box-shadow:var(--shadow-1);font-variant-numeric:tabular-nums}
-  .spdchip b{font-weight:800;margin-right:4px}
-  .spdchip small{font-weight:400;opacity:.75;margin-left:1px}
+  .tr-row .sp{margin-left:auto}
+  .tr-row small{font-size:12px;color:var(--sub);margin-left:2px}
 
   /* 우측 리스트 */
   .list{order:-1;border-right:1px solid var(--hair);background:var(--card);overflow-y:auto;display:flex;flex-direction:column}
@@ -182,40 +183,40 @@
   @media (max-width:640px){ #rows{padding-top:0!important} }
   .list-head{padding:10px 18px 9px;border-bottom:1px solid var(--hair);display:flex;align-items:baseline;gap:8px;position:sticky;top:0;background:var(--card);z-index:5}
   .list-head b{font-size:14px;line-height:20px}
-  .list-head span{font-size:12px;line-height:18px;font-weight:600;color:var(--ink);margin-left:auto}
+  .list-head span{font-size:12px;line-height:18px;font-weight:500;color:var(--ink);margin-left:auto}
   .row{display:flex;align-items:center;gap:10px;padding:8px 18px;border-bottom:1px solid var(--hair2);cursor:pointer;
     height:var(--rowh,60px);box-sizing:border-box}
   .row:hover{background:var(--hover)}
   .row.sel{background:var(--sel-bg)}
   .row.tint-hot{background:var(--tint-hot)}
   .row.tint-cool{background:var(--tint-cool)}
-  .rk{font-size:12px;line-height:19px;font-weight:600;color:var(--ink);width:20px;flex:none}
+  .rk{font-size:12px;line-height:19px;font-weight:500;color:var(--ink);width:20px;flex:none}
   .info{flex:1;min-width:0}
-  .info b{font-size:14px;font-weight:600;display:block;line-height:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .info span{font-size:12px;line-height:16px;display:block;font-weight:600;color:var(--ink)}
-  .pill{display:inline-flex;align-items:center;gap:6px;font-size:13px;line-height:19px;font-weight:600;white-space:nowrap;flex:none;color:var(--ink)}
+  .info b{font-size:14px;font-weight:700;display:block;line-height:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .info span{font-size:12px;line-height:16px;display:block;font-weight:500;color:var(--ink)}
+  .pill{display:inline-flex;align-items:center;gap:6px;font-size:13px;line-height:19px;font-weight:500;white-space:nowrap;flex:none;color:var(--ink)}
   .pill::before{content:"";width:8px;height:8px;border-radius:50%;flex:none}
   .p1::before{background:var(--s1)} .p2::before{background:var(--s2)}
   .p3::before{background:var(--s3)} .p4::before{background:var(--s4)}
   .p3{color:var(--t3)} .p4{color:var(--t4);font-weight:700}
   .p0{color:var(--sub)} .p0::before{background:#b5afa3}
-  .dv{font-size:13px;line-height:19px;font-weight:600;width:48px;text-align:right;flex:none}
+  .dv{font-size:13px;line-height:19px;font-weight:500;width:48px;text-align:right;flex:none}
   .du{color:var(--t4)} .dd{color:var(--dd)}
 
-  .det{display:none;font-weight:600;padding:10px 18px 8px;border-bottom:1px solid var(--hair2);background:var(--panel)}
+  .det{display:none;font-weight:500;padding:10px 18px 8px;border-bottom:1px solid var(--hair2);background:var(--panel)}
   .row.sel + .det{display:block}
   .headline{font-size:15px;font-weight:700;line-height:22px;display:flex;gap:9px;align-items:stretch;margin-bottom:10px}
   .headline::before{content:'';width:3px;border-radius:2px;background:currentColor;flex:0 0 3px}
-  .p-sec{display:flex;align-items:center;gap:8px;font-size:12px;line-height:18px;letter-spacing:.6px;color:var(--ink);font-weight:600;margin:9px 0 5px}
+  .p-sec{display:flex;align-items:center;gap:8px;font-size:12px;line-height:18px;color:var(--ink);font-weight:700;margin:9px 0 5px}
   .p-sec::after{content:'';height:1px;background:var(--hair2);flex:1;order:1}
-  .p-sec .hint{order:2;font-weight:600;letter-spacing:0}
+  .p-sec .hint{order:2;font-weight:500}
   /* 핵심 지표 4개 — 값의 자리와 크기를 맞춰 훑기 좋게(추정 인구만 강조) */
   .grid2{display:grid;grid-template-columns:1fr 1fr;gap:6px}
   .mcard{background:var(--card);border:1px solid var(--hair);border-radius:var(--radius);padding:7px 10px;min-width:0;text-align:center}
-  .mcard .lb{font-size:12px;line-height:16px;font-weight:600;color:var(--ink);margin-bottom:2px}
+  .mcard .lb{font-size:12px;line-height:16px;font-weight:500;color:var(--ink);margin-bottom:2px}
   .mcard .v{font-size:19px;font-weight:800;letter-spacing:-.4px;line-height:22px;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .mcard .v small{font-size:12px;font-weight:600;color:var(--ink);margin-left:2px}
+  .mcard .v small{font-size:12px;font-weight:500;color:var(--ink);margin-left:2px}
   .mcard.acc{background:color-mix(in srgb, var(--c) 7%, var(--card));
     border-color:color-mix(in srgb, var(--c) 32%, var(--hair))}
   .mcard.acc .v{color:var(--c)}                   /* 등급색과 같은 색 — 강조색은 하나만 */
@@ -224,47 +225,48 @@
   .bars i.now::after{content:'';position:absolute;left:50%;top:-7px;width:5px;height:5px;border-radius:50%;
     background:currentColor;transform:translateX(-50%)}
   .bars i.mark{background:#c9c1ae}
-  .bars i b{position:absolute;bottom:100%;left:50%;transform:translateX(-50%);margin-bottom:5px;font-size:11px;line-height:14px;
+  .bars i b{position:absolute;bottom:100%;left:50%;transform:translateX(-50%);margin-bottom:5px;font-size:12px;line-height:14px;
     font-style:normal;font-weight:700;color:var(--ink);white-space:nowrap}
   .bars i.s b{left:0;transform:none} .bars i.e b{left:auto;right:0;transform:none}
-  .bar-x{display:flex;justify-content:space-between;font-size:12px;line-height:16px;font-weight:600;color:var(--ink);margin-top:4px}
-  .kv{font-size:13px;line-height:19px;font-weight:600;color:var(--ink);margin-top:6px;text-align:right}
+  .bar-x{display:flex;justify-content:space-between;font-size:12px;line-height:16px;font-weight:500;color:var(--ink);margin-top:4px}
+  .kv{font-size:13px;line-height:19px;font-weight:500;color:var(--ink);margin-top:6px;text-align:right}
   .kv b{font-weight:700}
   .wx{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--hair);
     border-radius:var(--radius);padding:7px 12px;margin-top:9px}
   .wx .ic{display:flex;align-items:center;flex:0 0 auto}
   .wx .main{min-width:0}
   .wx .t{display:block;font-size:22px;font-weight:800;letter-spacing:-.5px;line-height:26px}
-  .wx .cond{font-size:12px;line-height:18px;font-weight:600;color:var(--ink)}
+  .wx .cond{font-size:12px;line-height:18px;font-weight:500;color:var(--ink)}
   .wx .r{margin-left:auto;display:grid;grid-template-columns:repeat(7,auto);row-gap:2px;
-    font-size:12px;font-weight:600;color:var(--ink);line-height:19px;white-space:nowrap}
-  .wx .r b{font-weight:600;padding-right:5px}     /* 항목 이름 — 왼쪽 맞춤 */
+    font-size:12px;font-weight:500;color:var(--ink);line-height:19px;white-space:nowrap}
+  .wx .r b{font-weight:500;padding-right:5px}     /* 항목 이름 — 왼쪽 맞춤 */
   .wx .r span{text-align:right}                   /* 숫자만 오른쪽 맞춤(단위는 별도 칸) */
   .wx .r em{font-style:normal;text-align:left;padding-right:5px}
+  .wx .r em.g{padding-left:4px}                  /* 미세먼지 등급 — 마우스 올림에만 있던 것을 글자로(데이터 정직성 5조) */
   .wx .r i{font-style:normal;padding:0 3px}       /* 가운데 구분자 */
   .wx .near{color:var(--ink)}
   .cams{display:flex;flex-direction:column;border:1px solid var(--hair);border-radius:var(--radius);background:var(--card);overflow:hidden}
-  .cambtn{display:flex;align-items:center;gap:8px;width:100%;line-height:19px;font-weight:600;text-align:left;background:transparent;color:var(--ink);
+  .cambtn{display:flex;align-items:center;gap:8px;width:100%;line-height:19px;font-weight:500;text-align:left;background:transparent;color:var(--ink);
     border:0;border-bottom:1px solid var(--hair2);padding:6px 11px;font-size:13px;cursor:pointer;font-family:inherit}
   .cambtn:last-child{border-bottom:0}
   .cambtn:hover{background:var(--hover)}
-  .cambtn .tag{flex:0 0 90px;text-align:center;font-size:12px;line-height:15px;font-weight:600;color:var(--ink);border:1px solid var(--hair);border-radius:3px;padding:1px 4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .cambtn .tag{flex:0 0 90px;text-align:center;font-size:12px;line-height:15px;font-weight:500;color:var(--ink);border:1px solid var(--hair);border-radius:var(--radius);padding:1px 4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .cambtn .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .cambtn .go{margin-left:auto;color:var(--ink);font-size:12px;font-weight:600}
+  .cambtn .go{margin-left:auto;color:var(--ink);font-size:12px;font-weight:500}
   /* 주변 주차장 — CCTV 목록과 같은 틀 */
   .pks{display:flex;flex-direction:column;border:1px solid var(--hair);border-radius:var(--radius);background:var(--card);overflow:hidden}
-  .pkrow{display:flex;align-items:center;gap:8px;width:100%;line-height:19px;font-weight:600;text-align:left;background:transparent;color:var(--ink);
+  .pkrow{display:flex;align-items:center;gap:8px;width:100%;line-height:19px;font-weight:500;text-align:left;background:transparent;color:var(--ink);
     border:0;border-bottom:1px solid var(--hair2);padding:6px 11px;font-size:13px;cursor:pointer;font-family:inherit}
   .pkrow:last-child{border-bottom:0}
   .pkrow:hover{background:var(--hover)}
-  .pkrow .tag{flex:0 0 36px;text-align:center;font-size:12px;line-height:15px;font-weight:600;color:var(--ink);border:1px solid var(--hair);border-radius:3px;padding:1px 0}
+  .pkrow .tag{flex:0 0 36px;text-align:center;font-size:12px;line-height:15px;font-weight:500;color:var(--ink);border:1px solid var(--hair);border-radius:var(--radius);padding:1px 0}
   .pkrow .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .pkrow .d{flex:0 0 40px;text-align:right;font-size:12px;color:var(--ink-2)}
   .pkrow .av{flex:0 0 60px;text-align:right;font-size:12px;white-space:nowrap}
   .pkrow .av b{font-size:14px;font-weight:800}
   .av.ok{color:var(--t1)} .av.mid{color:var(--t2)} .av.low{color:var(--t4)} .av.full{color:var(--t4);font-weight:700} .av.na,.av.st{color:var(--sub)}
   .navs{display:flex;gap:6px;margin-top:0}
-  .navbtn{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;font-size:13px;line-height:19px;font-weight:600;
+  .navbtn{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;font-size:13px;line-height:19px;font-weight:500;
     padding:7px 6px;border:1px solid var(--hair);border-radius:var(--radius);background:var(--card);color:var(--ink);
     text-decoration:none;white-space:nowrap}
   .navbtn:hover{background:var(--hover)}
@@ -277,25 +279,34 @@
   .modal{width:min(520px,92vw);background:var(--card);border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--shadow-3)}
   .m-head{display:flex;align-items:center;padding:12px 16px;border-bottom:1px solid var(--hair)}
   .m-head b{font-size:14px}
-  .m-head span{font-size:12px;color:var(--sub);margin-left:8px}
+  .m-head span{font-size:12px;font-weight:500;color:var(--sub);margin-left:8px}
   .m-x{margin-left:auto;display:flex;align-items:center;border:0;background:transparent;cursor:pointer;color:var(--ink);padding:4px}
   .m-x:hover{color:var(--ink)}
   .m-body{position:relative;aspect-ratio:16/10;background:linear-gradient(135deg,#191d26 0%,#232937 55%,#1a1f2b 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px}
-  .m-src{position:absolute;left:14px;bottom:12px;color:#fff;font-size:11px;font-weight:600;letter-spacing:.2px;
+  .m-src{position:absolute;left:14px;bottom:12px;color:#fff;font-size:12px;font-weight:500;
     text-shadow:0 1px 3px rgba(0,0,0,.9);pointer-events:none}
-  .m-live{position:absolute;top:12px;left:14px;display:flex;align-items:center;gap:6px;color:#fff;font-size:11px;letter-spacing:1.5px}
+  .m-live{position:absolute;top:12px;left:14px;display:flex;align-items:center;gap:6px;color:#fff;font-size:12px;font-weight:500;letter-spacing:1.5px}
   .m-live i{width:8px;height:8px;border-radius:50%;background:#ff4d4d;animation:blink 1.4s infinite}
   @keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
-  .m-camname{position:absolute;bottom:12px;right:14px;color:rgba(255,255,255,.75);font-size:12px}
+  .m-camname{position:absolute;bottom:12px;right:14px;color:rgba(255,255,255,.75);font-size:12px;font-weight:500}
   .m-body svg{width:44px;height:44px;fill:#4a5468}
-  .m-note{color:#9aa5bd;font-size:12px}
-  .m-foot{padding:10px 16px;font-size:11px;color:var(--sub);background:var(--banner)}
+  .m-note{color:#9aa5bd;font-size:12px;font-weight:500}
+  .m-foot{padding:10px 16px;font-size:12px;font-weight:500;color:var(--sub);background:var(--banner)}
 
-  footer{padding:7px 12px 7px 24px;font-size:12px;font-weight:600;color:var(--sub);display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;border-top:1px solid var(--hair)}
-  #visits{font-size:12px;font-weight:600}                        /* 지도 출처 표기 오른쪽 끝과 맞춘다 */
+  footer{padding:7px 12px 7px 24px;font-size:12px;font-weight:500;color:var(--sub);display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;border-top:1px solid var(--hair)}
+  #visits{font-size:12px;font-weight:500}                        /* 지도 출처 표기 오른쪽 끝과 맞춘다 */
   @media (prefers-reduced-motion: reduce){
     .nd .pulse,.m-live i,.me b{animation:none}
     .nd .core{transition:none}
+  }
+  @media (prefers-contrast: more){                 /* 고대비 설정 — 보조 글자·테두리를 진하게, 반투명 판은 불투명으로 */
+    :root{--sub:#23272f;--ink-2:#23272f;--hair:#8c877c;--hair2:#b5afa3;--float-bg2:#ffffff;--pill-bg:#ffffff}
+    .pk.st{border-color:#55514a} .pk.st b{color:var(--ink)}
+    .leaflet-tile-pane{filter:saturate(.4)}
+  }
+  @media (prefers-reduced-transparency: reduce){   /* 투명도 줄이기 — 반투명 판을 불투명 카드색으로 */
+    :root{--float-bg2:#ffffff;--pill-bg:#ffffff}
+    .modal-bg{background:rgba(20,20,24,.72)}
   }
 
   @media(max-width:900px){
@@ -312,23 +323,24 @@
     header .t{gap:9px}
     header .t svg{width:33px;height:33px}
     header .t b{font-size:21px}
-    header .t span{font-size:10px;letter-spacing:4px}
+    header .t span{font-size:12px;letter-spacing:3px}
     .legend{margin-left:auto;gap:0}
     .legend>span:not(.asof){display:none}       /* 색 설명은 리스트 배지로 충분 */
     .asof{border-left:0;padding-left:0;font-size:12px}
     .tabs{order:3;width:100%}
     .tab{flex:1;justify-content:center;padding:12px 6px;min-height:44px;font-size:13px}
-    .banner{padding:9px 14px;font-size:13px;line-height:20px}
+    .banner{padding:9px 14px;font-size:13px;line-height:20px;font-weight:500}
 
     .mapwrap{height:round(down, 48vh, 1px);min-height:290px;position:sticky;top:0;z-index:400}
     .leaflet-control-zoom{display:none}          /* 손가락으로 확대한다 — 버튼이 '파주 전체' 선택칸과 겹쳤다 */
     .z-lo .lpill{display:none}                   /* 파주 전체 배율에선 벨트 설명이 지점 이름을 덮는다 */
     .list-head{position:static}                  /* 지도가 위에 붙어 있어 머리줄이 지도 밑에 숨었다 — 고정하지 않는다 */
     .mapbtns{top:8px;right:8px;gap:5px}
-    .mapbtns.row2{top:58px}
-    .mbtn,.msel{padding:11px 12px;min-height:42px;font-size:13px}
+    .mapbtns.row2{top:60px}
+    .mbtn,.msel{padding:11px 12px;min-height:44px;font-size:13px}     /* 손가락 대상 44px */
     .msel{padding-right:27px}
-    .maptag{left:8px;right:auto;bottom:8px;font-size:10px;padding:4px 8px}
+    .maptag{left:8px;right:auto;bottom:8px;font-size:12px;padding:3px 8px}
+    .maptag .mt-x{display:none}                     /* 12px로 키운 만큼 '© OpenStreetMap'만 — 팝업의 P를 덮지 않게 */
     .statchip{left:8px;bottom:36px;gap:9px;padding:6px 10px;font-size:12px}
     .trafficbox,.trafficbox.on{display:none}     /* 모바일에선 지도를 가려서 표 숨김 — 도로 색만 표시 */
 
@@ -338,16 +350,20 @@
     .det{padding:14px 16px 18px}
     .row{padding:12px 16px;height:auto}
     .info b{line-height:19px} .info span{line-height:18px}
-    .navbtn{padding:11px 4px}
-    .cambtn{padding:9px 12px;font-size:13px}
-    .pkrow{padding:9px 12px}
-    .pkleg{left:8px;gap:5px;padding:6px 8px;font-size:11px;flex-wrap:wrap;row-gap:3px;max-width:calc(100% - 16px)}
-    .pkleg span{gap:4px}                             /* 360px 폭에서도 한 줄에 들어가게 간격만 줄인다 */
-    .pkleg em{border-left:0;padding-left:0}          /* 두 줄로 접히면 시각 앞 구분선이 줄머리에 오지 않게 */
+    .navbtn{padding:11px 4px;min-height:44px}
+    .cambtn{padding:12px;font-size:13px}
+    .pkrow{padding:12px}
+    .pkleg{left:8px;gap:5px;padding:6px 8px;font-size:12px;flex-wrap:wrap;row-gap:3px;max-width:calc(100% - 16px)}
+    .pkleg>span{gap:4px}                             /* 360px 폭에서도 한 줄에 들어가게 간격만 줄인다 */
+    .pkleg em{padding-left:5px}
     .mapwrap.pop .pkleg{visibility:hidden}           /* 팝업을 여는 동안은 범례를 접는다 — 지도가 낮아 P가 범례 밑에 깔렸다 */
     .modal{width:94vw}
-    .m-foot{font-size:11px;line-height:17px}
+    .m-foot{font-size:12px;line-height:18px}
+    .pp .navbtn{min-height:40px}                     /* 팝업 길찾기 — 지도 높이 안에 들어가게 40px */
+    .leaflet-container a.leaflet-popup-close-button{top:0;right:0;width:40px;height:40px;font-size:22px;line-height:40px}
+    .pp-h{padding-right:30px}
   }
+  @media(max-width:389px){ .pkleg .std{display:none} }   /* 글자 12px에서 한 줄로 — 360px 폭은 '기준'을 떼야 들어간다(357→334px) */
 </style>
 </head>
 <body>
@@ -381,13 +397,13 @@
     <div class="mapbtns row2">
       <button class="mbtn tgl" id="tg-park" title="공영주차장 표시 켜기/끄기">주차</button>
       <button class="mbtn geo" id="tg-geo" title="현재 위치로 지도 이동">
-        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.6"
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"
           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <circle cx="12" cy="12" r="3.4"/><circle cx="12" cy="12" r="8"/>
           <path d="M12 1.5v2.6M12 19.9v2.6M22.5 12h-2.6M4.1 12H1.5"/></svg>내 위치</button>
     </div>
     <div class="statchip" id="statchip"></div>
-    <div class="maptag">지도: © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> 기여자</div>
+    <div class="maptag"><span class="mt-x">지도: </span>© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a><span class="mt-x"> 기여자</span></div>
     <div class="trafficbox" id="trafficbox"></div>
     <div class="pkleg" id="pkleg" hidden></div>
     <div class="pkleg trleg" id="trleg" hidden></div>
@@ -405,14 +421,14 @@
 
 <div class="modal-bg" id="modal-bg">
   <div class="modal">
-    <div class="m-head"><b id="m-title"></b><span id="m-sub"></span><button class="m-x" id="m-x" aria-label="닫기" title="닫기"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+    <div class="m-head"><b id="m-title"></b><span id="m-sub"></span><button class="m-x" id="m-x" aria-label="닫기" title="닫기"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
     <div class="m-body" id="m-body">
       <div class="m-live"><i></i>LIVE</div>
       <svg viewBox="0 0 24 24"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>
       <div class="m-note">영상을 불러오는 중입니다</div>
       <div class="m-camname" id="m-cam"></div>
     </div>
-    <div class="m-foot">국가교통정보센터(ITS) 실시간 도로 CCTV — 영상이 안 나오면 잠시 후 다시 열어보세요</div>
+    <div class="m-foot">국가교통정보센터(ITS) 실시간 도로 CCTV. 영상이 안 나오면 잠시 후 다시 열어보세요</div>
   </div>
 </div>
 
@@ -482,8 +498,8 @@ const nz=x=>(x||'').replace(/[\s()]/g,'');
 const API_SET=new Set(['임진각 평화누리공원','롯데프리미엄아울렛 파주','소리천로(야당역)','운정역(스타필드빌리지 운정)','운정중앙공원(파주가든)','운정중앙역 GTX-A','운정호수공원','파주 신세계 프리미엄아울렛','헤이리예술마을'].map(nz));
 SPOTS.forEach(s=>{s.api=API_SET.has(nz(s.apiName||s.n));s.s=s.api?'집계중':'관측 준비';s.pop=null;s.diff=null;s.age=null;s.sex=null;s.t=null;s.peak=null;s.nowIdx=null;s.spotId=null;s.loaded=false;s.loading=false;});
 let mode='I', sel=null;
-// 카메라 아이콘 — 날씨·닫기와 같은 선 아이콘 계열(굵기 1.6, 채움 없음)
-const CAMSVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" '
+// 카메라 아이콘 — 날씨·닫기와 같은 선 아이콘 계열(굵기 1.8 — 디자인 라이브러리, 채움 없음)
+const CAMSVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" '
   +'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
   +'<rect x="2.5" y="6.5" width="13" height="11" rx="1.6"/><path d="M15.5 10.5l6-3.5v10l-6-3.5z"/></svg>';
 const FEATURE_ITS=true;    // CCTV·도로 소통 스위치 (2026-08-06) — false로 바꾸고 스케줄러 삭제하면 보류
@@ -531,7 +547,7 @@ let WX={};                                                   // 지점ID → {w:
 // WMO 날씨 코드 → 한글 하늘 상태·아이콘 (Open-Meteo 표준 코드)
 //   선 아이콘 계열은 유지하되 날씨는 색을 준다 — 해는 노랑, 구름은 청회색, 비는 파랑
 const _SUN='#f2a72c', _CLOUD='#8fa6bd', _RAIN='#4a90d9', _SNOW='#8ec6ea', _FOG='#9aa7b4';
-const _sv=(d)=>`<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke-width="1.6"
+const _sv=(d)=>`<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke-width="1.8"
   stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
 const _sun=`<g stroke="${_SUN}"><circle cx="12" cy="12" r="4.2"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M18.4 5.6L17 7M7 17l-1.4 1.4"/></g>`;
 const _cloud=`<path stroke="${_CLOUD}" d="M7.5 18h9a3.5 3.5 0 0 0 .3-7 5 5 0 0 0-9.6 1.2A3.4 3.4 0 0 0 7.5 18z"/>`;
@@ -907,7 +923,7 @@ function renderTraffic(){
   };
   paintBox();
   document.getElementById('trleg').innerHTML=`<b>도로</b>${['원활','서행','정체'].map(k=>`<span><i style="background:${LVC[k]}"></i>${k}</span>`).join('')}`
-    +(itsAsof?`<em class="num">${itsAsof} 기준</em>`:'');
+    +(itsAsof?`<em class="num">${itsAsof}<span class="std"> 기준</span></em>`:'');
   box.classList.toggle('on',showTraffic);
   stackBottomLeft();                                         // 도로 상황 카드가 뜨면 범례·개수 칩이 위로 비켜난다
   if(showTraffic){ loadLinks().then(()=>{ drawLinks(LINK_SPD); paintBox(); stackBottomLeft(); }); }
@@ -995,7 +1011,7 @@ function pkPopup(p){
     +`<a class="navbtn tmap" target="_blank" rel="noopener" href="tmap://route?goalname=${q}&goalx=${p.lng}&goaly=${p.lat}">티맵</a></div>`;
   const head=`<div class="pp-h"><span class="tag">${fee}</span>${escH(p.n)}</div>`;
   if(st==='st') return `<div class="pp">${head}<div class="pp-av"><b class="num">${p.sp.toLocaleString()}</b>면<em>${p.cat==='임시'?'임시공영':'공영'}</em></div>
-    <div class="pp-note">빈자리 수는 안내되지 않아요 — 현장에서 확인해 주세요</div>${nav}<div class="pp-src">파주시 공영주차장 현황</div></div>`;
+    <div class="pp-note">빈자리 수는 안내되지 않아요. 현장에서 확인해 주세요</div>${nav}<div class="pp-src">파주시 공영주차장 현황</div></div>`;
   const av=st==='na'
     ?`<div class="pp-av na">빈자리 수는 안내되지 않아요<em class="num">총 ${p.total.toLocaleString()}면</em></div>`
     :st==='full'
@@ -1012,7 +1028,7 @@ function pkPopup(p){
 function renderPkLegend(){
   const el=document.getElementById('pkleg');
   el.innerHTML=`<b>주차</b>${['ok','mid','low','full'].map(k=>`<span><i class="c-${k}"></i>${PK_TXT[k]}</span>`).join('')}`
-    +`<span><i class="c-st"></i>빈자리 안내 없음</span>${PK_ASOF?`<em class="num">${PK_ASOF} 기준</em>`:''}`;
+    +`<span><i class="c-st"></i>빈자리 안내 없음</span>${PK_ASOF?`<em class="num">${PK_ASOF}<span class="std"> 기준</span></em>`:''}`;
   el.hidden=!showPark;
   stackBottomLeft();
 }
@@ -1108,8 +1124,8 @@ function showMe(lat,lng,acc){
   const z=rough?11:(acc>500?14:16);
   map.flyTo([lat,lng],rough?z:Math.max(map.getZoom(),z),{duration:.7});
   const km=acc>=1000?Math.round(acc/1000)+'km':Math.round(acc)+'m';
-  if(rough) banner(`대략 위치입니다(오차 약 ${km}) — 유선 PC는 IP로만 추정해요. 휴대폰에서 훨씬 정확합니다`,8000);
-  else if(!inPaju(lat,lng)) banner('현재 위치가 파주 밖입니다 — 지도만 이동했어요',6000);
+  if(rough) banner(`대략 위치입니다(오차 약 ${km}). 유선 PC는 IP로만 추정해요. 휴대폰에서 훨씬 정확합니다`,8000);
+  else if(!inPaju(lat,lng)) banner('현재 위치가 파주 밖입니다. 지도만 이동했어요',6000);
 }
 function banner(msg,ms){
   const b=document.getElementById('banner');
@@ -1137,8 +1153,8 @@ geoBtn.onclick=()=>{
       ()=>{}, {enableHighAccuracy:true,maximumAge:10000,timeout:20000});
   }, err=>{
     geoBtn.disabled=false; geoBtn.innerHTML=GEO_LABEL;
-    banner(err.code===1 ? '위치 권한이 꺼져 있습니다 — 브라우저 설정에서 허용해주세요'
-                        : '현재 위치를 찾지 못했습니다 — 잠시 후 다시 눌러주세요',6000);
+    banner(err.code===1 ? '위치 권한이 꺼져 있습니다. 브라우저 설정에서 허용해주세요'
+                        : '현재 위치를 찾지 못했습니다. 잠시 후 다시 눌러주세요',6000);
   }, {enableHighAccuracy:true,timeout:12000,maximumAge:60000});
 };
 const GEO_LABEL=geoBtn.innerHTML;
@@ -1223,8 +1239,8 @@ function renderList(){
       <i class="ic">${SKY_ICON(wx.w.code)}</i>
       <div class="main"><span class="t num">${wx.w.t}°</span>
         <span class="cond" title="기온·습도·바람을 반영한 체감온도">${skyText(wx.w.code)}${feel!=null?` · 체감 ${feel}°`:''}</span></div>
-      <div class="r num"><b>최저</b><span>${wx.w.lo}</span><em>°</em><i>/</i><b>최고</b><span>${wx.w.hi}</span><em>°</em>
-        <b>습도</b><span>${wx.w.hum}</span><em>%</em>${wx.air?`<i>/</i><b title="미세먼지 ${PM_GRADE(wx.air.pm10)}">미세</b><span>${wx.air.pm10}</span><em></em>`:'<i></i><b></b><span></span><em></em>'}</div>
+      <div class="r num"><b>최저</b><span>${wx.w.lo??'-'}</span><em>°</em><i>/</i><b>최고</b><span>${wx.w.hi??'-'}</span><em>°</em>
+        <b>습도</b><span>${wx.w.hum??'-'}</span><em>%</em>${wx.air?`<i>/</i><b>미세</b><span>${wx.air.pm10??'-'}</span><em class="g">${PM_GRADE(wx.air.pm10)??''}</em>`:'<i></i><b></b><span></span><em></em>'}</div>
     </div>`:'';
     let det;
     if(!s.api){
@@ -1250,13 +1266,13 @@ function renderList(){
       const rec = mode==='E' ? (rk>=4?'지금 바로!':(rk===3?'지금 좋아요':'저녁쯤 다시'))
                              : (rk>=4?'피크 지난 뒤':(rk===3?'한 시간 뒤':'지금'));
       const am=(s.age||'').match(/^(.*?)\s*([\d.]+%)$/);           // '60대 이상 26.1%' → 연령대 + 비율
-      const ageBand=am?am[1]:(s.age||'—'), agePct=am?am[2]:'';
+      const ageBand=am?am[1]:(s.age||'-'), agePct=am?am[2]:'';
       det=`<div class="headline" style="color:${TXTC[s.s]}"><span>${MSG[mode][s.s]}</span></div>
       <div class="grid2">
         <div class="mcard acc" style="--c:${TXTC[s.s]}"><div class="lb">추정 인구</div>
-          <div class="v num">${s.pop!=null?s.pop.toLocaleString():'—'}${s.pop!=null?'<small>명</small>':''}</div></div>
-        <div class="mcard"><div class="lb">평시 대비</div><div class="v num">${s.diff??'—'}</div></div>
-        <div class="mcard"><div class="lb">평시 피크</div><div class="v num">${s.peak??'—'}</div></div>
+          <div class="v num">${s.pop!=null?s.pop.toLocaleString():'-'}${s.pop!=null?'<small>명</small>':''}</div></div>
+        <div class="mcard"><div class="lb">평시 대비</div><div class="v num">${s.diff??'-'}</div></div>
+        <div class="mcard"><div class="lb">평시 피크</div><div class="v num">${s.peak??'-'}</div></div>
         <div class="mcard"><div class="lb">${mode==='E'?'가기 좋은 때':'조용한 방문'}</div><div class="v">${rec}</div></div>
       </div>
       ${wxRow}
@@ -1266,7 +1282,7 @@ function renderList(){
       <div class="kv">주 방문층 <b>${ageBand}</b>${agePct?` <span class="num">${agePct}</span>`:''}${s.sex?` · <b>${s.sex}</b>`:''}</div>
       ${pkS}${camSec}${navSec}`;
     }
-    const diffCell = s.diff ? `<span class="dv ${s.diff.startsWith('-')?'dd':'du'} num">${s.diff}</span>` : `<span class="dv num" style="font-weight:600">—</span>`;
+    const diffCell = s.diff ? `<span class="dv ${s.diff.startsWith('-')?'dd':'du'} num">${s.diff}</span>` : `<span class="dv num">-</span>`;
     return `
     <div class="row ${sel===s.id?'sel':''} ${tint}" data-id="${s.id}">
       <span class="rk num">${String(i+1).padStart(2,'0')}</span>
@@ -1304,13 +1320,13 @@ function renderBanner(){
   const b2=busy[1]||busy[0], c2=calm[1]||calm[0];
   if(RANK[busy[0].s]===RANK[calm[0].s]){
     el.innerHTML = mode==='E'
-      ? `지금 파주 전 지점이 <b style="color:${TXTC[busy[0].s]}">${busy[0].s}</b> 수준 — 줄 서는 곳이 없어요, 어디든 바로 입장`
-      : `지금 파주 전 지점이 <b style="color:${TXTC[calm[0].s]}">${calm[0].s}</b> 수준 — 어디든 한적하게 다닐 수 있어요`;
+      ? `지금 파주 전 지점이 <b style="color:${TXTC[busy[0].s]}">${busy[0].s}</b> 수준: 줄 서는 곳이 없어요, 어디든 바로 입장`
+      : `지금 파주 전 지점이 <b style="color:${TXTC[calm[0].s]}">${calm[0].s}</b> 수준: 어디든 한적하게 다닐 수 있어요`;
     return;
   }
   el.innerHTML = mode==='E'
-    ? `지금 뜨거운 곳 — <b style="color:${TXTC[busy[0].s]}">${busy[0].short}</b>, <b style="color:${TXTC[b2.s]}">${b2.short}</b> · 지도의 큰 원을 따라가세요`
-    : `지금 한적한 곳 — <b style="color:${TXTC[calm[0].s]}">${calm[0].short}</b>, <b style="color:#55514a">${c2.short}</b> · <b style="color:${TXTC[busy[0].s]}">${busy[0].short}</b>${(RANK[busy[0].s]>=3)?'은 피하세요':' 정도가 제일 붐빕니다'}`;
+    ? `지금 뜨거운 곳: <b style="color:${TXTC[busy[0].s]}">${busy[0].short}</b>, <b style="color:${TXTC[b2.s]}">${b2.short}</b> · 지도의 큰 원을 따라가세요`
+    : `지금 한적한 곳: <b style="color:${TXTC[calm[0].s]}">${calm[0].short}</b>, <b style="color:#55514a">${c2.short}</b> · <b style="color:${TXTC[busy[0].s]}">${busy[0].short}</b>${(RANK[busy[0].s]>=3)?'은 피하세요':' 정도가 제일 붐빕니다'}`;
 }
 
 // 정보창이 스크롤에 잘리지 않게 — 선택한 행을 맨 위로 올려 아래 공간을 정보창에 다 준다.
