@@ -42,6 +42,11 @@
   .tab:hover{color:var(--ink)}
   .tab.on{color:var(--btn-dark-ink);background:var(--btn-dark);font-weight:700}
   .tab.on:hover{color:var(--btn-dark-ink)}
+  .ftab{display:flex;align-items:center;gap:6px;padding:9px 14px;border:1.5px solid var(--hair);border-radius:var(--radius-lg);background:var(--float-bg);
+    font-size:13px;font-weight:700;line-height:20px;color:var(--ink);text-decoration:none;white-space:nowrap;align-self:flex-end}
+  .ftab svg{color:var(--s3);flex:none}
+  .ftab:hover{border-color:var(--s3)}
+  .ftab .ft-s{display:none}
   .legend{margin-left:auto;display:flex;gap:15px;font-size:13px;line-height:20px;font-weight:500;color:var(--ink);align-items:flex-end;flex-wrap:wrap}
   .legend i{width:12px;height:12px;border-radius:50%;display:inline-block;margin-right:6px;vertical-align:-1px}
   .asof{font-weight:500;font-size:13px;color:var(--ink);border-left:1px solid var(--hair);padding-left:15px}
@@ -220,7 +225,7 @@
   .mcard.acc{background:color-mix(in srgb, var(--c) 7%, var(--card));
     border-color:color-mix(in srgb, var(--c) 32%, var(--hair))}
   .mcard.acc .v{color:var(--c)}                   /* 등급색과 같은 색 — 강조색은 하나만 */
-  .bars{display:flex;align-items:flex-end;gap:2px;height:46px;margin-top:13px}
+  .bars{display:flex;align-items:flex-end;gap:2px;height:64px;margin-top:22px}
   .bars i{flex:1;border-radius:2px 2px 0 0;background:#ece7db;min-height:2px;position:relative}
   .bars i.now::after{content:'';position:absolute;left:50%;top:-7px;width:5px;height:5px;border-radius:50%;
     background:currentColor;transform:translateX(-50%)}
@@ -327,7 +332,9 @@
     .legend{margin-left:auto;gap:0}
     .legend>span:not(.asof){display:none}       /* 색 설명은 리스트 배지로 충분 */
     .asof{border-left:0;padding-left:0;font-size:12px}
-    .tabs{order:3;width:100%}
+    .tabs{order:3;width:auto;flex:1 1 calc(100% - 96px);min-width:0}   /* 로고 옆엔 못 들어가 둘째 줄로, 축제 탭과 한 줄 */
+    .ftab{order:3;flex:0 0 auto;min-height:44px;padding:0 12px;align-self:stretch}
+    .ftab .ft-l{display:none} .ftab .ft-s{display:inline}
     .tab{flex:1;justify-content:center;padding:12px 6px;min-height:44px;font-size:13px}
     .banner{padding:9px 14px;font-size:13px;line-height:20px;font-weight:500}
 
@@ -376,6 +383,11 @@
     <button class="tab" data-m="I"><b>I</b>피해서 다닐래요</button>
     <button class="tab" data-m="E"><b>E</b>북적여야 신나요</button>
   </div>
+  <!-- 장단콩축제 상황판(축제팀 전용, 비밀번호) — 축제 끝나고 7일 뒤 자동으로 숨김 -->
+  <a class="ftab" id="ftab" href="/festival/" title="축제 운영팀 전용 · 비밀번호 필요">
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+    <span class="ft-l">장단콩축제</span><span class="ft-s">축제</span>
+  </a>
   <div class="legend">
     <span><i style="background:var(--s1)"></i>여유</span>
     <span><i style="background:var(--s2)"></i>보통</span>
@@ -1260,7 +1272,7 @@ function renderList(){
       const bars=s.t.map((v,j)=>{
         const isNow=j===s.nowIdx, isMk=j===mk;
         const cls=(isNow?'now ':'')+(isMk&&!isNow?'mark ':'')+(isMk?(j<=1?'s':(j>=22?'e':'')):'');
-        const st=`height:${Math.max(3,Math.round(v*0.46))}px`+(isNow?`;color:${HEXC[s.s]};background:${HEXC[s.s]}`:'');
+        const st=`height:${Math.max(3,Math.round(v*0.64))}px`+(isNow?`;color:${HEXC[s.s]};background:${HEXC[s.s]}`:'');
         return `<i class="${cls.trim()}" style="${st}">${isMk?`<b>${mkTxt}</b>`:''}</i>`;
       }).join('');
       const rec = mode==='E' ? (rk>=4?'지금 바로!':(rk===3?'지금 좋아요':'저녁쯤 다시'))
@@ -1419,7 +1431,7 @@ async function fetchDetail(s, rerender=true){
     const tr=j.trend||[];
     if(tr.length){
       const byH=new Array(24).fill(0);
-      const max=Math.max(1,...tr.map(x=>Math.max(x.sum,x.avgSum)));
+      const max=Math.max(1,...tr.map(x=>x.sum));   // 그 지점의 24시간 중 가장 많은 실제 인원 = 칸 꽉 채움(지점마다 가변)
       tr.forEach(x=>{byH[x.h]=Math.round(x.sum/max*100);});
       s.t=byH;
       const last=tr[tr.length-1];
@@ -1512,6 +1524,8 @@ setInterval(loadParking, 300000);
 
 // ── 초기화
 document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.dataset.m===mode));
+// 장단콩축제 탭: 2026-11-29 축제 끝나고 7일 뒤(12-06)부터 숨김(한국 시각 기준)
+if(new Date(Date.now()+9*3600e3).toISOString().slice(0,10) > '2026-12-06') document.getElementById('ftab').style.display='none';
 map.fitBounds(pajuBounds);
 zoomClass();
 renderBanner(); renderNodes(); renderCams(); renderList();
