@@ -24,7 +24,7 @@ const Cars = (() => {
     dirty = false;                                                       // 크기를 바꾸면 캔버스가 저절로 비워진다
   }
   function init(m, isMobile) {
-    map = m; cap = isMobile ? 700 : 1500;                              // 사무실 PC(UHD 770) 실측(색·굵기 묶어 긋기 뒤): 1,500대 59·2,000대 56fps
+    map = m; cap = isMobile ? 420 : 900;                               // 10-14 사용자 '너무 많다 40% 줄여' — 1,500→900(성능 여유: 1,500대 59·2,000대 56fps 실측)
     cv = document.createElement('canvas');
     cv.className = 'carcv';
     cv.style.cssText = 'position:absolute;left:0;top:0;pointer-events:none';
