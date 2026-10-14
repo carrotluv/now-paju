@@ -352,54 +352,14 @@ async function ggParking(env, ctx) {
   return { asof: asof ? asof.slice(0, 19).replace(' ', 'T') + '+09:00' : null, lots };
 }
 
-// 장단콩축제 상황판(/festival) — 축제팀만 보는 비밀번호 화면.
-//   비밀번호는 코드에 두지 않는다(저장소가 공개라 숫자 비밀번호의 해시는 금방 되돌려진다).
-//   클라우드플레어 설정 > 변수 및 비밀 > 비밀(Secret) 'FESTIVAL_PW' 에만 둔다. 없으면 아무도 못 들어온다.
-//   통과하면 쿠키(60일)에 비밀번호로 만든 서명(HMAC)만 넣는다 — 비밀번호를 바꾸면 기존 쿠키는 저절로 무효.
-async function festivalToken(pw) {
-  const k = await crypto.subtle.importKey('raw', new TextEncoder().encode(pw), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
-  const sig = await crypto.subtle.sign('HMAC', k, new TextEncoder().encode('jangdan-festival-ok'));
-  return [...new Uint8Array(sig)].map((x) => x.toString(16).padStart(2, '0')).join('');
-}
-function festivalLoginPage(msg, status, f) {
-  const fn = f === 'ginseng' ? '개성인삼축제' : '장단콩축제';
-  const html = `<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>${fn} 상황판</title>
-<link rel="stylesheet" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
-<style>*{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;background:#e9ece8;font-family:'Pretendard Variable','Pretendard','Malgun Gothic',system-ui,sans-serif;color:#111;padding:16px}
-.c{width:min(360px,100%);background:#fff;border:1px solid #e6e9ed;border-radius:12px;padding:24px;box-shadow:0 4px 14px rgba(20,30,40,.10);text-align:center}
-.e{font-size:.78rem;font-weight:700;letter-spacing:.18em;color:#ff7a1a}h1{margin:6px 0 4px;font-size:1.3rem;font-weight:800;letter-spacing:-.02em}
-p{margin:0 0 16px;font-size:.82rem;font-weight:500;color:#4a5568}input{width:100%;font:inherit;font-size:1.1rem;font-weight:700;text-align:center;letter-spacing:.2em;padding:12px;border:1px solid #c9d0d8;border-radius:8px;outline:none}
-input:focus{border-color:#ff7a1a;box-shadow:0 0 0 3px rgba(255,122,26,.18)}button{width:100%;margin-top:10px;font:inherit;font-size:.95rem;font-weight:700;padding:12px;border:0;border-radius:8px;background:#ff7a1a;color:#fff;cursor:pointer}
-.m{min-height:1.4em;margin-top:10px;font-size:.82rem;font-weight:700;color:#d94f3d}</style></head><body>
-<form class="c" method="post" action="/festival/login"><div class="e">PAJU · ${fn}</div><h1>축제 교통 상황판</h1><p>축제 운영팀 전용입니다. 비밀번호를 입력하세요.</p>
-<input type="hidden" name="f" value="${f === 'ginseng' ? 'ginseng' : ''}"><input name="pw" type="password" inputmode="numeric" autocomplete="current-password" autofocus required aria-label="비밀번호"><button type="submit">들어가기</button><div class="m">${msg || ''}</div><a href="/" style="display:inline-block;margin-top:6px;font-size:.78rem;font-weight:700;color:#4a5568;text-decoration:none">← 지금 파주로</a></form></body></html>`;
-  return new Response(html, { status: status || 200, headers: { 'Content-Type': 'text/html; charset=utf-8', 'X-Robots-Tag': 'noindex', 'Cache-Control': 'no-store' } });
-}
+// 축제 상황판(/festival) — 2026-10-14 사용자 결정으로 비밀번호를 없애 누구나 본다(종전: FESTIVAL_PW 비밀 + 서명 쿠키).
+//   검색 노출만 막고(noindex) 파일은 그대로 내준다. 예전 로그인 주소로 오면 상황판으로 돌려보낸다.
 async function festivalGate(request, env, url) {
-  const pw = env.FESTIVAL_PW || '';
-  if (url.pathname === '/festival/login' && request.method === 'POST') {
-    const f = await request.formData().catch(() => null);
-    const given = f ? String(f.get('pw') || '').trim() : '';
-    const fk = f && f.get('f') === 'ginseng' ? 'ginseng' : '';
-    if (!pw || given !== pw) {
-      await new Promise((r) => setTimeout(r, 800));        // 틀리면 잠깐 늦게 — 마구 넣어 보기 늦추기
-      return festivalLoginPage(pw ? '비밀번호가 맞지 않습니다' : '비밀번호가 아직 설정되지 않았습니다', 401, fk);
-    }
-    return new Response(null, { status: 303, headers: {
-      Location: fk ? '/festival/?f=' + fk : '/festival/', 'X-Robots-Tag': 'noindex',
-      'Set-Cookie': `fk=${await festivalToken(pw)}; Path=/festival; Max-Age=5184000; Secure; HttpOnly; SameSite=Lax` } });
-  }
-  const ck = (request.headers.get('Cookie') || '').match(/(?:^|;\s*)fk=([0-9a-f]{64})/);
-  const ok = pw && ck && ck[1] === (await festivalToken(pw));
-  if (!ok) {
-    if (url.pathname === '/festival' || url.pathname === '/festival/' || url.pathname === '/festival/index.html') return festivalLoginPage('', 200, url.searchParams.get('f'));
-    return new Response('Not found', { status: 404, headers: { 'X-Robots-Tag': 'noindex' } });
-  }
-  if (url.pathname === '/festival') return Response.redirect(url.origin + '/festival/', 302);
+  if (url.pathname === '/festival/login') return Response.redirect(url.origin + '/festival/', 303);
+  if (url.pathname === '/festival') return Response.redirect(url.origin + '/festival/' + url.search, 302);
   const r = await env.ASSETS.fetch(request);
   const res = new Response(r.body, r);
   res.headers.set('X-Robots-Tag', 'noindex');
-  res.headers.set('Cache-Control', 'private, no-store');
   return res;
 }
 

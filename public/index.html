@@ -345,7 +345,7 @@
     .ftab .ft-l{display:none} .ftab .ft-s{display:inline}
     .ftab.later{display:none}
     .ftab.multi .ft-v{display:block}
-    .ftab.multi>svg:not(.ft-v){display:none}                 /* 펼침 표시가 붙으면 자물쇠를 빼 I/E 탭과 한 줄 유지(자물쇠는 메뉴 항목에) */
+    .ftab.multi>svg:not(.ft-v){display:none}                 /* 펼침 표시가 붙으면 깃발을 빼 I/E 탭과 한 줄 유지(깃발은 메뉴 항목에) */
     .tab{flex:1;justify-content:center;padding:12px 6px;min-height:44px;font-size:13px}
     .banner{padding:9px 14px;font-size:13px;line-height:20px;font-weight:500}
 
@@ -394,13 +394,13 @@
     <button class="tab" data-m="I"><b>I</b>피해서 다닐래요</button>
     <button class="tab" data-m="E"><b>E</b>북적여야 신나요</button>
   </div>
-  <!-- 축제 상황판(축제팀 전용, 비밀번호) — 각 축제 끝나고 7일 뒤 자동으로 숨김. 좁은 화면은 가까운 축제 하나만 -->
-  <a class="ftab" id="ftab-g" href="/festival/?f=ginseng" title="축제 운영팀 전용 · 비밀번호 필요">
-    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+  <!-- 축제 상황판(누구나, 10-14 비밀번호 없앰) — 각 축제 끝나고 7일 뒤 자동으로 숨김. 좁은 화면은 '축제' 탭 하나 → 고르는 메뉴 -->
+  <a class="ftab" id="ftab-g" href="/festival/?f=ginseng" title="축제 교통 상황판">
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 21V4"/><path d="M5 4h11l-2 4 2 4H5"/></svg>
     <span class="ft-l">개성인삼축제</span><span class="ft-s">축제</span><svg class="ft-v" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
   </a>
-  <a class="ftab" id="ftab" href="/festival/" title="축제 운영팀 전용 · 비밀번호 필요">
-    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+  <a class="ftab" id="ftab" href="/festival/" title="축제 교통 상황판">
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 21V4"/><path d="M5 4h11l-2 4 2 4H5"/></svg>
     <span class="ft-l">장단콩축제</span><span class="ft-s">축제</span><svg class="ft-v" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
   </a>
   <div class="fmenu" id="fmenu" role="menu" hidden></div>
