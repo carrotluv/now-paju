@@ -243,6 +243,12 @@
     .maplibregl-popup-close-button{top:0;right:0;width:40px;height:40px;font-size:22px;line-height:40px}
     .pp-h{padding-right:30px}
     .pp .navbtn{min-height:40px}                                     /* 정보창 길찾기는 지금 파주처럼 40px */
+    /* 확대·축소·나침반: 상황판(아래 52%)에 가려 보이지 않던 것을 상황판 바로 위로 올리고 44px로(10-14 사용자 "44로 키워").
+       그림은 29px 기준이라 칸에 맞춰 함께 키운다. 지도 출처는 상황판 맨 아래 줄에 있어 오른쪽 아래 출처 단추는 감춘다 */
+    .maplibregl-ctrl-bottom-right{bottom:calc(52% + 8px)}
+    .maplibregl-ctrl-bottom-right .maplibregl-ctrl-attrib{display:none}
+    .maplibregl-ctrl-group button{width:44px;height:44px}
+    .maplibregl-ctrl-group button .maplibregl-ctrl-icon{background-size:100%}
     .hbody{padding:12px 10px 14px}
     .mhead{flex-wrap:wrap;row-gap:0}
     .mhead b{white-space:nowrap}
