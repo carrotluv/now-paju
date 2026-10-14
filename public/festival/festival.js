@@ -80,7 +80,7 @@ const hhmm = (iso) => { if (!iso) return ''; const d = new Date(iso); return Str
 const isMobile = () => window.innerWidth <= 760;
 // 지도 오른쪽 위 버튼 상태(TG = 지도 표식·색)와 목록 카드(CARD). 넓은 화면은 둘이 같이 움직이고,
 //   좁은 화면은 카드가 지도를 다 가려서 처음엔 접어 두고 누른 버튼의 카드 하나만 펼친다(지도를 누르면 닫힘)
-const TG = { road: true, cam: true, park: true };
+const TG = { road: true, cam: true, park: true, car: true };
 const CARD = { road: !isMobile(), cam: !isMobile() };
 const cardsOpen = () => CARD.road || CARD.cam;
 const viewPad = () => (isMobile() ? { top: 40, bottom: Math.round(window.innerHeight * 0.52) + 8, left: 0, right: 0 } : { top: 0, bottom: 0, left: 384, right: cardsOpen() ? 324 : 0 });   // 상황판이 왼쪽(지금 파주와 같은 배치), 목록 카드가 오른쪽
@@ -167,7 +167,7 @@ function drawTraffic() {
   const near = (p) => distM(p[1], p[0]) <= R * 1.15;
   let curH = 5;                                                          // 지금 그리는 도로 등급(선 굵기를 바탕 도로와 같게)
   const feats = [], line = (pts, c) => feats.push({ type: 'Feature', properties: { c, k: 'real', r: curH }, geometry: { type: 'LineString', coordinates: pts.map((p) => [p[1], p[0]]) } });
-  const byName = {};                                                     // 반경 안 구간의 실측값을 도로 이름별로 모은다(패널용)
+  const byName = {}, carSegs = [];                                       // 반경 안 구간의 실측값을 도로 이름별로 모은다(패널용) · 차량 연출용 실측 구간
   ROADGEO.forEach((r, i) => {
     if (r.p.length < 2 || !r.p.some(near)) return;
     curH = r.h || 5;
@@ -178,8 +178,10 @@ function drawTraffic() {
       b.v.push(own); b.d = Math.min(b.d, ...r.p.map((q) => distM(q[1], q[0])));
     }
     line(r.p, spdColor(own));                                            // 왕복 분리도로도 각 방향 구간을 제 측정값으로
+    carSegs.push({ p: r.p, v: own });
   });
   map.getSource('traffic').setData({ type: 'FeatureCollection', features: feats });
+  if (typeof Cars !== 'undefined') Cars.setSegments(carSegs);                           // 차량 연출(cars.js) — 실측 구간 위에만
   // 패널: 반경 안 실측 구간의 평균(서버 요약표는 6개 도로뿐이라 축제장 주변 도로가 빠진다), 축제장에서 가까운 순
   const rows = Object.entries(byName).map(([road, b]) => {
     const speed = Math.round(b.v.reduce((x, y) => x + y, 0) / b.v.length);
@@ -412,6 +414,7 @@ function renderCams(cc) {
 // 오른쪽 위 버튼: 진입 도로 = 도로 색·범례·목록 카드, CCTV = 카메라 표식·목록 카드, 주차 = P 표식
 function applyToggles() {
   $('#tg-road').classList.toggle('on', TG.road); $('#tg-cam').classList.toggle('on', TG.cam); $('#tg-park').classList.toggle('on', TG.park);
+  if (typeof Cars !== 'undefined') { $('#tg-car').classList.toggle('on', TG.car); Cars.setVisible(TG.car); }
   $('#card-road').hidden = !CARD.road; $('#card-cam').hidden = !CARD.cam;
   $('#legend').style.visibility = TG.road ? '' : 'hidden';
   if (map && map.getLayer('tr-real')) map.setLayoutProperty('tr-real', 'visibility', TG.road ? 'visible' : 'none');
@@ -490,11 +493,13 @@ async function startFestival() {
     el.onclick = () => homeView(true);
     new maplibregl.Marker({ element: el, anchor: 'bottom', offset: [0, -4] }).setLngLat(VENUE).addTo(map);
     addShuttleMarker();
+    if (typeof Cars !== 'undefined') Cars.init(map, isMobile());
     loadLive();
     setInterval(() => { dayChip(); loadLive(); }, 300000);
   });
   $('#reload').onclick = loadLive;
   applyToggles();
+  if (typeof Cars !== 'undefined') $('#tg-car').onclick = () => { TG.car = !TG.car; applyToggles(); };
   [['road', '#tg-road'], ['cam', '#tg-cam'], ['park', '#tg-park']].forEach(([k, id]) => {
     $(id).onclick = () => {
       const hasCard = k in CARD, mob = isMobile();
