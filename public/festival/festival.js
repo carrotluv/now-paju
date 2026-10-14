@@ -14,8 +14,9 @@ const FESTS = {
       { y: 2024, s: '11. 22.', e: '24.', d: [139576, 193816, 184104] },
       { y: 2025, s: '11. 21.', e: '23.', d: [152271, 204099, 184264] },
     ],
-    // 임시주차장·셔틀: 올해 안내가 나오기 전이라 작년(2025, 제29회) 파주시 안내 기준 — 올해 안내가 나오면 바꾸고 basis를 지운다
-    notHeld: [2019, 2020, 2021], basis: '작년(2025) 안내 기준',
+    // 셔틀·임시주차장: 사용자가 준 파주시 안내·축제 교통 안내도(2026-10-14). 안내도의 '평화누리 주차장'은 OSM·브이월드에 없어
+    //   안내도의 다섯 지점(행사장·평화누리·임진강역·평화주차장·임시주차장)으로 맞춘 좌표(오차 약 50m) — approx로 표시
+    notHeld: [2019, 2020, 2021],
     // 작년 축제 날 임진각 시간별 인원(경기도 실시간 방문소비 = 지금 칸과 같은 자료, 원본 날짜 조회 24hours-1hour?date=, 2026-10-14 받음)
     //   이 자료는 2025-04-11부터라 지금은 작년 한 번과 비교한다. 내년엔 올해 값을 더해 평균으로
     prev: { y: 2025, days: [
@@ -24,6 +25,7 @@ const FESTS = {
       { d: '2025-11-23', h: [118, 137, 146, 137, 129, 123, 139, 141, 369, 627, 1260, 2219, 3403, 3777, 3997, 3697, 3190, 2124, 1132, 177, 118, 127, 119, 114] },
     ] },
     lots: [
+      { n: '평화누리 주차장', addr: '임진각 평화누리 북동쪽(축제 교통 안내도)', lat: 37.89437, lng: 126.74489, approx: true },
       { n: '임진각 야외 보조주차장', addr: '문산읍 마정리 1177-8', lat: 37.89025, lng: 126.74581 },
       { n: '평화주차장', addr: '문산읍 마정리 989-1', lat: 37.89342, lng: 126.74676 },
     ],
@@ -323,7 +325,7 @@ function renderWx(j) {
 let pkMarkers = [], LOTS = [], pkPop = null;
 function lotPopupHtml(p) {
   const st = pkState(p), q = encodeURIComponent(p.n);
-  if (st === 'tmp') return `<div class="pp"><div class="pp-h">${esc(p.n)}</div><div class="pp-av">축제 임시주차장 · 빈자리 안내 없음${FEST.basis ? ' · ' + FEST.basis : ''}</div><dl class="pp-kv"><dt>요금</dt><dd>무료(축제 기간)</dd><dt>주소</dt><dd>${esc(p.addr)}</dd></dl>`
+  if (st === 'tmp') return `<div class="pp"><div class="pp-h">${esc(p.n)}</div><div class="pp-av">축제 임시주차장 · 빈자리 안내 없음${FEST.basis ? ' · ' + FEST.basis : ''}</div><dl class="pp-kv"><dt>요금</dt><dd>무료(축제 기간)</dd><dt>${p.approx ? '위치' : '주소'}</dt><dd>${esc(p.addr)}${p.approx ? ' · 안내도 기준 대략' : ''}</dd></dl>`
     + `<div class="navs"><a target="_blank" rel="noopener" href="https://map.kakao.com/link/to/${q},${p.lat},${p.lng}">카카오맵</a><a target="_blank" rel="noopener" href="https://map.naver.com/p/directions/-/${p.lng},${p.lat},${q}/-/car">네이버</a><a href="tmap://route?goalname=${q}&goalx=${p.lng}&goaly=${p.lat}">티맵</a></div></div>`;
   const fees = [p.bt && p.bf ? `기본 ${p.bt}분 ${fmt(p.bf)}원` : '', p.at && p.af ? `추가 ${p.at}분 ${fmt(p.af)}원` : '', p.dd ? `1일 ${fmt(p.dd)}원` : ''].filter(Boolean);
   const fee = fees.length ? fees.join(' · ') : ((p.bf || p.af || p.dd) ? '유료' : '무료');
@@ -350,7 +352,7 @@ function pkState(p) {
 const PK_COL = { ok: '#2fa876', mid: '#d9a62e', low: '#d94f3d', full: '#b3271b', na: '#a39d91', tmp: '#6b665b' };
 const PK_TXT = { ok: '여유', mid: '보통', low: '혼잡', full: '만차', na: '빈자리 안내 없음', tmp: '축제 임시' };
 function renderParking(pk) {
-  const tmp = FEST.lots.map((p) => ({ ...p, tmp: true, d: distM(p.lng, p.lat) }));    // 축제 임시주차장을 맨 위에
+  const tmp = FEST.lots.map((p) => ({ ...p, tmp: true, d: distM(p.lng, p.lat) })).sort((a, b) => a.d - b.d);    // 축제 임시주차장을 맨 위에
   const lots = LOTS = tmp.concat((pk.lots || []).map((p) => ({ ...p, d: distM(p.lng, p.lat) })).filter((p) => p.d <= R).sort((a, b) => a.d - b.d));
   $('#pk-asof').textContent = pk.asof ? hhmm(pk.asof) + ' 기준' : '';
   // 셔틀은 주차장 표 맨 위 한 줄로(두 줄 안내문 대신) — 누르면 승강장으로
@@ -380,7 +382,7 @@ function renderParking(pk) {
 const BUS_SVG = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="3" width="16" height="14" rx="2"/><path d="M4 11h16M8 21v-4M16 21v-4"/><circle cx="8" cy="14" r=".6"/><circle cx="16" cy="14" r=".6"/></svg>';
 function shuttlePopupHtml() {
   const s = FEST.shuttleStop, q = encodeURIComponent('문산역');
-  return `<div class="pp"><div class="pp-h">셔틀 승강장 · ${esc(s.n)}</div><div class="pp-av">행사장까지 무료 순환${FEST.basis ? ' · ' + FEST.basis : ''}</div><dl class="pp-kv"><dt>운행</dt><dd>${esc(FEST.shuttleTime)}</dd><dt>구간</dt><dd>${esc(FEST.shuttle)}</dd></dl>`
+  return `<div class="pp"><div class="pp-h">셔틀 승강장 · ${esc(s.n)}</div><div class="pp-av">행사장까지 무료 순환</div><dl class="pp-kv"><dt>운행</dt><dd>${esc(FEST.shuttleTime)}</dd><dt>구간</dt><dd>${esc(FEST.shuttle)}</dd></dl>`
     + `<div class="navs"><a target="_blank" rel="noopener" href="https://map.kakao.com/link/to/${q},${s.lat},${s.lng}">카카오맵</a><a target="_blank" rel="noopener" href="https://map.naver.com/p/directions/-/${s.lng},${s.lat},${q}/-/walk">네이버</a><a href="tmap://route?goalname=${q}&goalx=${s.lng}&goaly=${s.lat}">티맵</a></div></div>`;
 }
 function flyToShuttle() {
@@ -473,7 +475,7 @@ async function startFestival() {
   $('#brand-name').textContent = FEST.name + ' 상황판';
   $('#brand-sub').textContent = `${FEST.place} · ${md(FEST.start)} ~ ${+FEST.end.slice(8)}일(${wd(FEST.end)})`;
   // 출처는 한 줄로(상황판 세로 스크롤 없게)
-  $('#pk-src').textContent = '경기도교통정보센터 실시간 · ' + (FEST.lots.length ? `임시·셔틀은 파주시 ${FEST.basis ? '작년 안내' : '안내'}` : '축제 임시주차장 미포함');
+  $('#pk-src').textContent = '경기도교통정보센터 실시간 · ' + (FEST.lots.length ? (FEST.basis ? '셔틀 파주시 안내 · 임시는 작년 안내' : '임시·셔틀은 파주시 안내') : '축제 임시주차장 미포함');
   dayChip();
   const [fd, rg] = await Promise.all([getJSON(BASE + 'fdata.json'), getJSON('/paju_roads.json')]);
   FD = fd; CENTER = fd.center; R = fd.radius;
