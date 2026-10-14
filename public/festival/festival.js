@@ -80,7 +80,8 @@ const hhmm = (iso) => { if (!iso) return ''; const d = new Date(iso); return Str
 const isMobile = () => window.innerWidth <= 760;
 // 지도 오른쪽 위 버튼 상태(TG = 지도 표식·색)와 목록 카드(CARD). 넓은 화면은 둘이 같이 움직이고,
 //   좁은 화면은 카드가 지도를 다 가려서 처음엔 접어 두고 누른 버튼의 카드 하나만 펼친다(지도를 누르면 닫힘)
-const TG = { road: true, cam: true, park: true, car: true };
+//   차량 연출은 '움직임 줄이기' 설정이면 처음부터 꺼 둔다(버튼으로 켤 수 있음)
+const TG = { road: true, cam: true, park: true, car: !matchMedia('(prefers-reduced-motion: reduce)').matches };
 const CARD = { road: !isMobile(), cam: !isMobile() };
 const cardsOpen = () => CARD.road || CARD.cam;
 const viewPad = () => (isMobile() ? { top: 40, bottom: Math.round(window.innerHeight * 0.52) + 8, left: 0, right: 0 } : { top: 0, bottom: 0, left: 384, right: cardsOpen() ? 324 : 0 });   // 상황판이 왼쪽(지금 파주와 같은 배치), 목록 카드가 오른쪽
@@ -311,18 +312,25 @@ function renderWx(j) {
   $('#wx').hidden = false;
 }
 
-let pkMarkers = [], LOTS = [], pkPop = null;
+let pkMarkers = [], LOTS = [], pkPop = null, PK_ASOF = '';
+// 정보창은 지금 파주 pkPopup과 같은 틀: 요금 꼬리표+이름, 남은 자리(상태 글자색)+막대, 요금·운영, 길찾기, 출처
+const navHtml = (q, lat, lng, how) => `<div class="navs"><a class="navbtn kakao" target="_blank" rel="noopener" href="https://map.kakao.com/link/to/${q},${lat},${lng}">카카오맵</a>`
+  + `<a class="navbtn naver" target="_blank" rel="noopener" href="https://map.naver.com/p/directions/-/${lng},${lat},${q}/-/${how}">네이버</a>`
+  + `<a class="navbtn tmap" href="tmap://route?goalname=${q}&goalx=${lng}&goaly=${lat}">티맵</a></div>`;
+const lotTag = (p) => (p.tmp ? '임시' : ((p.bf || p.af || p.dd) ? '유료' : '무료'));   // 상황판 주차장 줄의 꼬리표와 같은 글자
 function lotPopupHtml(p) {
-  const st = pkState(p), q = encodeURIComponent(p.n);
-  if (st === 'tmp') return `<div class="pp"><div class="pp-h">${esc(p.n)}</div><div class="pp-av">축제 임시주차장 · 빈자리 안내 없음${FEST.basis ? ' · ' + FEST.basis : ''}</div><dl class="pp-kv"><dt>요금</dt><dd>무료(축제 기간)</dd><dt>${p.approx ? '위치' : '주소'}</dt><dd>${esc(p.addr)}${p.approx ? ' · 안내도 기준 대략' : ''}</dd></dl>`
-    + `<div class="navs"><a target="_blank" rel="noopener" href="https://map.kakao.com/link/to/${q},${p.lat},${p.lng}">카카오맵</a><a target="_blank" rel="noopener" href="https://map.naver.com/p/directions/-/${p.lng},${p.lat},${q}/-/car">네이버</a><a href="tmap://route?goalname=${q}&goalx=${p.lng}&goaly=${p.lat}">티맵</a></div></div>`;
+  const st = pkState(p), q = encodeURIComponent(p.n), nav = navHtml(q, p.lat, p.lng, 'car');
+  const head = `<div class="pp-h"><span class="tag">${lotTag(p)}</span>${esc(p.n)}</div>`;
+  if (st === 'tmp') return `<div class="pp">${head}<div class="pp-av na">빈자리 수는 안내되지 않아요<em>축제 임시</em></div>`
+    + `<dl class="pp-kv"><dt>요금</dt><dd>무료(축제 기간)</dd><dt>${p.approx ? '위치' : '주소'}</dt><dd>${esc(p.addr)}${p.approx ? ' · 안내도 기준 대략' : ''}</dd></dl>${nav}<div class="pp-src">파주시 축제 안내</div></div>`;
   const fees = [p.bt && p.bf ? `기본 ${p.bt}분 ${fmt(p.bf)}원` : '', p.at && p.af ? `추가 ${p.at}분 ${fmt(p.af)}원` : '', p.dd ? `1일 ${fmt(p.dd)}원` : ''].filter(Boolean);
-  const fee = fees.length ? fees.join(' · ') : ((p.bf || p.af || p.dd) ? '유료' : '무료');
-  const hours = !(p.ws && p.we) ? '-' : ((p.ws === '00:00' && ['23:59', '24:00', '00:00'].includes(p.we)) ? '24시간' : `평일 ${p.ws}–${p.we}`);
-  const av = st === 'na' ? `<div class="pp-av">빈자리 안내 없음 <span>총 ${fmt(p.total)}면</span></div>`
-    : `<div class="pp-av"><b style="color:${PK_COL[st]}">${fmt(p.avail)}</b><span>/ ${fmt(p.total)}면 남음 · ${PK_TXT[st]}</span></div><div class="meter"><i style="width:${p.total ? Math.round(p.avail / p.total * 100) : 0}%;background:${PK_COL[st]}"></i></div>`;
-  return `<div class="pp"><div class="pp-h">${esc(p.n)}</div>${av}<dl class="pp-kv"><dt>요금</dt><dd>${fee}</dd><dt>운영</dt><dd>${hours}</dd></dl>`
-    + `<div class="navs"><a target="_blank" rel="noopener" href="https://map.kakao.com/link/to/${q},${p.lat},${p.lng}">카카오맵</a><a target="_blank" rel="noopener" href="https://map.naver.com/p/directions/-/${p.lng},${p.lat},${q}/-/car">네이버</a><a href="tmap://route?goalname=${q}&goalx=${p.lng}&goaly=${p.lat}">티맵</a></div></div>`;
+  const hours = !(p.ws && p.we) ? '-' : ((p.ws === '00:00' && ['23:59', '24:00', '00:00'].includes(p.we)) ? '24시간' : `평일 ${p.ws}~${p.we}`);
+  const pct = p.total ? Math.min(100, Math.round(p.avail / p.total * 100)) : 0;
+  const av = st === 'na' ? `<div class="pp-av na">빈자리 수는 안내되지 않아요<em class="num">총 ${fmt(p.total)}면</em></div>`
+    : st === 'full' ? `<div class="pp-av full"><b class="num">0</b><span class="num">/ ${fmt(p.total)}면 남음</span><em>만차</em></div><div class="pp-bar" style="--c:${PK_COL.full}"><i style="width:2%"></i></div>`
+    : `<div class="pp-av ${st}"><b class="num">${fmt(p.avail)}</b><span class="num">/ ${fmt(p.total)}면 남음</span><em>${PK_TXT[st]}</em></div><div class="pp-bar" style="--c:${PK_COL[st]}"><i style="width:${pct}%"></i></div>`;
+  return `<div class="pp">${head}${av}<dl class="pp-kv"><dt>요금</dt><dd>${(fees.length ? fees : [lotTag(p)]).map((x) => `<span class="nw">${x}</span>`).join('')}</dd><dt>운영</dt><dd>${hours}</dd></dl>`
+    + `${nav}<div class="pp-src">경기도교통정보센터${PK_ASOF ? ' · ' + PK_ASOF + ' 기준' : ''}</div></div>`;
 }
 // 상황판의 주차장 줄·지도 P를 누르면 그 주차장으로 날아가 확대하고 정보창을 연다(지금 파주와 같은 동작)
 function flyToLot(p) {
@@ -345,7 +353,8 @@ function renderParking(pk) {
   const tmp = FEST.lots.map((p) => ({ ...p, tmp: true, d: distV(p.lng, p.lat) }));
   const real = (pk.lots || []).filter((p) => distM(p.lng, p.lat) <= R).map((p) => ({ ...p, d: distV(p.lng, p.lat) }));
   const lots = LOTS = tmp.concat(real).sort((a, b) => a.d - b.d);
-  $('#pk-asof').textContent = pk.asof ? hhmm(pk.asof) + ' 기준' : '';
+  PK_ASOF = pk.asof ? hhmm(pk.asof) : '';
+  $('#pk-asof').textContent = PK_ASOF ? PK_ASOF + ' 기준' : '';
   // 셔틀은 주차장 표 맨 위 한 줄로(두 줄 안내문 대신) — 누르면 승강장으로
   const bus = FEST.shuttleStop ? `<button class="pkrow" data-bus="1" title="지도에서 승강장 보기"><span class="tag">셔틀</span><span class="nm">${esc(FEST.shuttleStop.n)}</span><span class="d sh num">${esc(FEST.shuttleShort)}</span><span class="av st">무료</span></button>` : '';
   $('#lots').innerHTML = bus + (lots.length ? lots.map((p, i) => {
@@ -360,7 +369,7 @@ function renderParking(pk) {
   pkMarkers.forEach((m) => m.remove());
   pkMarkers = lots.map((p) => {
     const st = pkState(p), el = document.createElement('div');
-    el.className = 'mk pk'; el.style.setProperty('--c', PK_COL[st]);
+    el.className = 'mk pk ' + st; el.style.setProperty('--c', PK_COL[st]);   // 상태 이름은 노랑 P의 글자색(.mk.pk.mid)에 쓴다
     el.innerHTML = `<b>P</b>${st === 'tmp' ? '임시' : (st === 'na' ? '' : fmt(p.avail))}`;
     el.title = p.n;
     el.onclick = (e) => { e.stopPropagation(); flyToLot(p); };
@@ -373,8 +382,8 @@ function renderParking(pk) {
 const BUS_SVG = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="3" width="16" height="14" rx="2"/><path d="M4 11h16M8 21v-4M16 21v-4"/><circle cx="8" cy="14" r=".6"/><circle cx="16" cy="14" r=".6"/></svg>';
 function shuttlePopupHtml() {
   const s = FEST.shuttleStop, q = encodeURIComponent('문산역');
-  return `<div class="pp"><div class="pp-h">셔틀 승강장 · ${esc(s.n)}</div><div class="pp-av">행사장까지 무료 순환</div><dl class="pp-kv"><dt>운행</dt><dd>${esc(FEST.shuttleTime)}</dd><dt>구간</dt><dd>${esc(FEST.shuttle)}</dd></dl>`
-    + `<div class="navs"><a target="_blank" rel="noopener" href="https://map.kakao.com/link/to/${q},${s.lat},${s.lng}">카카오맵</a><a target="_blank" rel="noopener" href="https://map.naver.com/p/directions/-/${s.lng},${s.lat},${q}/-/walk">네이버</a><a href="tmap://route?goalname=${q}&goalx=${s.lng}&goaly=${s.lat}">티맵</a></div></div>`;
+  return `<div class="pp"><div class="pp-h"><span class="tag">셔틀</span>${esc(s.n)} 승강장</div><div class="pp-note">행사장까지 무료 순환</div>`
+    + `<dl class="pp-kv"><dt>운행</dt><dd>${esc(FEST.shuttleTime)}</dd><dt>구간</dt><dd>${esc(FEST.shuttle)}</dd></dl>${navHtml(q, s.lat, s.lng, 'walk')}<div class="pp-src">파주시 축제 안내</div></div>`;
 }
 function flyToShuttle() {
   const s = FEST.shuttleStop; if (!s) return;

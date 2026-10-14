@@ -25,6 +25,7 @@
   button{font-family:inherit;cursor:pointer}
   .num{font-variant-numeric:tabular-nums}
   #map{position:absolute;inset:0}
+  .maplibregl-map{font-family:inherit}   /* 지도 라이브러리 기본 글꼴(Helvetica Neue)이 표식·정보창에 물려 한글은 맑은 고딕, 숫자는 Arial로 섞였다. 지금 파주 .leaflet-container와 같게 */
 
   /* 왼쪽 상황판 — 지금 파주 왼쪽 목록과 같은 바탕·선 */
   #panel{position:absolute;top:12px;left:12px;bottom:12px;width:360px;overflow-y:auto;z-index:5;background:var(--panel);
@@ -32,7 +33,7 @@
   .sec{padding:10px 18px;border-bottom:1px solid var(--hair2)}
   /* 머리 — 지금 파주 header .t(좁은 화면 크기)와 같은 크기 체계 */
   .top{background:var(--bg);border-bottom:1px solid var(--hair)}
-  .back{display:inline-block;font-size:14px;line-height:20px;font-weight:600;color:var(--ink-2);text-decoration:none}
+  .back{display:inline-block;font-size:14px;line-height:20px;font-weight:500;color:var(--ink-2);text-decoration:none}
   .back:hover{color:var(--ink);text-decoration:underline;text-underline-offset:3px}
   /* 축제 바꾸기 — 지금 파주 I/E 탭(.tabs·.tab)과 같은 모양을 작게, 맨 위 줄 오른쪽(높이 늘지 않게) */
   .toprow{display:flex;align-items:center;gap:8px}
@@ -131,6 +132,7 @@
   .mk.venue{background:var(--btn-dark);color:var(--btn-dark-ink);border-radius:var(--radius);padding:4px 10px;font-size:13px;line-height:18px;font-weight:700;box-shadow:var(--shadow-2)}
   .mk.pk{display:flex;align-items:center;gap:4px;background:#fff;border:2px solid var(--c);border-radius:6px;padding:2px 6px 2px 2px;font-size:12px;font-weight:800;color:var(--ink);box-shadow:var(--shadow-1)}
   .mk.pk b{background:var(--c);color:#fff;border-radius:4px;padding:0 5px;font-size:12px}
+  .mk.pk.mid b{color:var(--ink)}                                      /* 노랑 바탕 흰 P는 2.2:1, 검정 P로 6.9:1(지금 파주 .pk.mid와 같은 방식) */
   .mk.cam{width:22px;height:22px;background:var(--btn-dark);border-radius:var(--radius);border:1.5px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center}
   .mk.cam svg{width:13px;height:13px;fill:#fff}
   .legend{position:absolute;right:58px;bottom:28px;z-index:4;background:var(--card);border:1px solid var(--hair);border-radius:var(--radius);padding:6px 11px;display:flex;gap:10px;align-items:center;font-size:12px;line-height:18px;font-weight:500;color:var(--ink);box-shadow:var(--shadow-1)}
@@ -152,18 +154,32 @@
   .fcards{position:absolute;top:94px;right:12px;z-index:6;width:300px;max-height:calc(100% - 140px);overflow-y:auto;display:flex;flex-direction:column;gap:8px;scrollbar-width:thin}
   .fcard{background:var(--float-bg2);border:1px solid var(--hair);border-radius:var(--radius);padding:10px 13px;box-shadow:var(--shadow-1)}
   .fcard[hidden]{display:none}
-  /* 주차장 정보창 — 지금 파주 pkPopup 과 같은 항목 */
-  .maplibregl-popup-content{font-family:inherit;color:var(--ink);border-radius:var(--radius-lg);padding:12px 14px;box-shadow:var(--shadow-3)}
-  .pp-h{font-size:15px;line-height:22px;font-weight:700;margin-bottom:6px;padding-right:14px}
-  .pp-av{display:flex;align-items:baseline;gap:6px;font-size:12px;font-weight:500;color:var(--ink)}
-  .pp-av b{font-size:22px;font-weight:800;letter-spacing:-.5px}
-  .meter{height:6px;border-radius:3px;background:#ece7db;overflow:hidden;margin-top:6px}
-  .meter i{display:block;height:100%}
-  .pp-kv{display:grid;grid-template-columns:auto 1fr;gap:3px 10px;margin:10px 0 0;font-size:12px;line-height:18px;font-weight:500}
+  /* 주차장·셔틀 정보창: 지금 파주 pkPopup 원문(.pp·.navbtn). 10-14 디자인 라이브러리 대조로 제목 14·숫자 21·길찾기 모양을 맞춤 */
+  .maplibregl-popup-content{font-family:inherit;color:var(--ink);border-radius:var(--radius-lg);padding:0;box-shadow:var(--shadow-2)}
+  .maplibregl-popup-close-button{top:6px;right:6px;width:24px;height:24px;font-size:16px;line-height:24px;color:var(--sub)}
+  .pp{width:236px;padding:11px 13px 10px;color:var(--ink)}
+  .pp-h{display:flex;align-items:center;gap:7px;font-size:14px;font-weight:700;line-height:20px;padding-right:16px}
+  .pp .tag{flex:none;font-size:12px;line-height:16px;font-weight:500;border:1px solid var(--hair);border-radius:var(--radius);padding:0 6px}
+  .pp-av{display:flex;align-items:baseline;gap:5px;margin-top:7px;font-size:12px;font-weight:500}
+  .pp-av b{font-size:21px;font-weight:800;letter-spacing:-.4px;line-height:24px}
+  .pp-av.ok b{color:var(--t1)} .pp-av.mid b{color:var(--t2)} .pp-av.low b{color:var(--t4)} .pp-av.full b{color:#b3271b}
+  .pp-av.na{color:var(--sub);font-size:13px}
+  .pp-av em{margin-left:auto;font-style:normal}
+  .pp-bar{height:5px;border-radius:3px;background:var(--hair2);margin:6px 0 9px;overflow:hidden}
+  .pp-bar i{display:block;height:100%;background:var(--c)}
+  .pp-kv{display:grid;grid-template-columns:auto 1fr;gap:3px 10px;font-size:12px;font-weight:500;line-height:17px;margin:8px 0 9px}
   .pp-kv dt{color:var(--sub)} .pp-kv dd{margin:0}
-  .navs{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:10px}
-  .navs a{display:block;text-align:center;padding:7px 4px;border-radius:var(--radius);border:1px solid var(--hair);background:var(--card);color:var(--ink);font-size:12px;font-weight:700;text-decoration:none}
-  .navs a:hover{background:var(--hover)}
+  .pp-kv .nw{display:block;white-space:nowrap}          /* '500원'이 홀로 줄바꿈되지 않게 항목별 한 줄 */
+  .pp-note{font-size:12px;font-weight:500;color:var(--sub);margin:6px 0 9px}
+  .navs{display:flex;gap:6px;margin-top:0}
+  .navbtn{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;font-size:13px;line-height:19px;font-weight:500;
+    padding:7px 6px;border:1px solid var(--hair);border-radius:var(--radius);background:var(--card);color:var(--ink);
+    text-decoration:none;white-space:nowrap}
+  .navbtn:hover{background:var(--hover)}
+  .navbtn::before{content:'';width:6px;height:6px;border-radius:50%;flex:0 0 6px}   /* 브랜드 색은 점으로만 */
+  .navbtn.kakao::before{background:#f2c200} .navbtn.naver::before{background:#2fa876} .navbtn.tmap::before{background:#8a7fd6}
+  .pp .navs{gap:5px} .pp .navbtn{padding:5px 3px;font-size:12px;line-height:17px}
+  .pp-src{margin-top:8px;font-size:12px;font-weight:500;color:var(--sub)}
   /* CCTV 창 */
   #modal,#hist{position:fixed;inset:0;background:rgba(20,20,24,.45);z-index:50;display:none;align-items:center;justify-content:center;padding:16px}
   #modal.open,#hist.open{display:flex}
@@ -201,13 +217,32 @@
   .mhead button{margin-left:auto;border:1px solid var(--hair);background:var(--card);border-radius:var(--radius);padding:5px 12px;font-size:13px;font-weight:700;color:var(--ink)}
   .mvid{aspect-ratio:16/9;background:#000}
   .mvid video{width:100%;height:100%;object-fit:contain}
+  /* 접근성 설정 3가지: 지금 파주와 같은 값 */
+  @media (prefers-reduced-motion: reduce){         /* 움직임 줄이기: 화면 전환 효과를 끄고, 차량 연출은 처음부터 꺼 둔다(festival.js TG.car) */
+    *,*::before,*::after{animation:none!important;transition:none!important}
+  }
+  @media (prefers-contrast: more){                 /* 고대비: 보조 글자·테두리를 진하게, 반투명 판은 불투명으로 */
+    :root{--sub:#23272f;--ink-2:#23272f;--hair:#8c877c;--hair2:#b5afa3;--float-bg2:#ffffff}
+  }
+  @media (prefers-reduced-transparency: reduce){   /* 투명도 줄이기: 반투명 판을 불투명 카드색으로 */
+    :root{--float-bg2:#ffffff}
+    #modal,#hist{background:rgba(20,20,24,.72)}
+  }
   @media (max-width:760px){
     #panel{top:auto;left:8px;right:8px;bottom:8px;width:auto;max-height:52%}
     .legend{display:none}                                            /* 좁은 화면은 도로 카드의 점·상태 글자가 범례를 대신한다 */
     .mapbtns{top:8px;right:8px;width:auto}
-    .mapbtns .mbtn{min-width:0;padding:7px 11px}
-    .mapbtns.row2{top:48px}
-    .fcards{top:88px;right:8px;left:8px;width:auto;max-height:calc(48% - 60px)}
+    .mapbtns .mbtn{min-width:0;padding:11px 12px;min-height:44px}   /* 손가락 대상 44px(지금 파주 .mbtn과 같은 값) */
+    .mapbtns.row2{top:60px}
+    .fcards{top:112px;right:8px;left:8px;width:auto;max-height:calc(48% - 84px)}   /* 버튼이 커진 24px만큼 내리고 아래 끝은 그대로 */
+    .back{display:inline-flex;align-items:center;min-height:44px}
+    .fsw a{display:flex;align-items:center;min-height:44px}
+    .meta button{min-height:44px;padding:0 14px}
+    .pks .pkrow{padding:12px}                                        /* 지금 파주 휴대폰 .pkrow·.cambtn과 같은 44px 줄 */
+    .cambtn{padding:12px}
+    .maplibregl-popup-close-button{top:0;right:0;width:40px;height:40px;font-size:22px;line-height:40px}
+    .pp-h{padding-right:30px}
+    .pp .navbtn{min-height:40px}                                     /* 정보창 길찾기는 지금 파주처럼 40px */
     .hbody{padding:12px 10px 14px}
     .mhead{flex-wrap:wrap;row-gap:0}
     .mhead b{white-space:nowrap}
@@ -220,7 +255,7 @@
 <body>
 <div id="map"></div>
 <div class="mapbtns"><button class="mbtn tgl on" id="tg-road" title="진입 도로 색·목록 켜기/끄기">진입 도로</button><button class="mbtn tgl on" id="tg-cam" title="주변 도로 CCTV 위치·목록 켜기/끄기">CCTV</button><button class="mbtn tgl on" id="tg-park" title="주차장 표시 켜기/끄기">주차</button></div>
-<div class="mapbtns row2"><button class="mbtn tgl on" id="tg-car" title="차량 연출 켜기/끄기 — 실측 도로 색·속도에 맞춰 움직이는 그림, 실제 대수 아님">차량</button></div>
+<div class="mapbtns row2"><button class="mbtn tgl on" id="tg-car" title="차량 연출 켜기/끄기. 실측 도로 색·속도에 맞춰 움직이는 그림이며 실제 대수는 아님">차량</button></div>
 <div class="fcards">
   <section class="fcard" id="card-road">
     <div class="tb-title">진입 도로<span class="num" id="tr-asof"></span></div>

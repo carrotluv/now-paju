@@ -916,7 +916,7 @@ function pkPopup(p){
       <div class="pp-bar" style="--c:${PK_COL[st]}"><i style="width:${Math.min(100,Math.round(p.avail/p.total*100))}%"></i></div>`;
   const fees=[p.bt&&p.bf?`기본 ${p.bt}분 ${p.bf.toLocaleString()}원`:'', p.at&&p.af?`추가 ${p.at}분 ${p.af.toLocaleString()}원`:'',
     p.dd?`1일 ${p.dd.toLocaleString()}원`:''].filter(Boolean);
-  const hours=!(p.ws&&p.we)?'-':((p.ws==='00:00'&&['23:59','24:00','00:00'].includes(p.we))?'24시간':`평일 ${p.ws}–${p.we}`);
+  const hours=!(p.ws&&p.we)?'-':((p.ws==='00:00'&&['23:59','24:00','00:00'].includes(p.we))?'24시간':`평일 ${p.ws}~${p.we}`);
   return `<div class="pp">${head}${av}<dl class="pp-kv"><dt>요금</dt><dd>${(fees.length?fees:[fee]).map(x=>`<span class="nw">${x}</span>`).join('')}</dd>
     <dt>운영</dt><dd>${hours}</dd></dl>${nav}<div class="pp-src">경기도교통정보센터 · ${PK_ASOF} 기준</div></div>`;
 }
