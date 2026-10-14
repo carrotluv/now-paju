@@ -29,8 +29,6 @@
   /* 왼쪽 상황판 — 지금 파주 왼쪽 목록과 같은 바탕·선 */
   #panel{position:absolute;top:12px;left:12px;bottom:12px;width:360px;overflow-y:auto;z-index:5;background:var(--panel);
     border:1px solid var(--hair);border-radius:var(--radius-lg);box-shadow:var(--shadow-2);scrollbar-width:thin}
-  /* 아래에 더 있으면 끝을 흐리게 — 줄이 경계에서 칼로 자른 듯 걸치지 않게. 끝까지 내리면 풀린다 */
-  #panel.more{-webkit-mask-image:linear-gradient(to bottom,#000 calc(100% - 36px),transparent);mask-image:linear-gradient(to bottom,#000 calc(100% - 36px),transparent)}
   .sec{padding:12px 18px;border-bottom:1px solid var(--hair2)}
   /* 머리 — 지금 파주 header .t(좁은 화면 크기)와 같은 크기 체계 */
   .top{background:var(--bg);border-bottom:1px solid var(--hair)}
@@ -118,6 +116,10 @@
   .pks .empty,.cams .empty{padding:6px 11px}
   .shuttle{font-size:13px;line-height:19px;font-weight:500;color:var(--ink);margin-top:6px}
   .shuttle b{font-weight:700}
+  .shuttle .nw{white-space:nowrap}
+  .shuttle{cursor:pointer}
+  .shuttle:hover b{text-decoration:underline;text-underline-offset:3px}
+  .mk.bus{display:flex;align-items:center;gap:4px;background:#fff;border:2px solid var(--ink);border-radius:var(--radius);padding:2px 8px 2px 6px;font-size:12px;line-height:18px;font-weight:800;color:var(--ink);box-shadow:var(--shadow-2)}
   .foot{padding:10px 18px 14px;font-size:12px;line-height:18px;font-weight:500;color:var(--sub);text-align:center}
 
   /* 지도 위 표식·범례 */

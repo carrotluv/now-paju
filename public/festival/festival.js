@@ -14,10 +14,17 @@ const FESTS = {
       { y: 2024, s: '11. 22.', e: '24.', d: [139576, 193816, 184104] },
       { y: 2025, s: '11. 21.', e: '23.', d: [152271, 204099, 184264] },
     ],
-    notHeld: [2019, 2020, 2021], lots: [], shuttle: '',
+    // 임시주차장·셔틀: 올해 안내가 나오기 전이라 작년(2025, 제29회) 파주시 안내 기준 — 올해 안내가 나오면 바꾸고 basis를 지운다
+    notHeld: [2019, 2020, 2021], basis: '작년(2025) 안내 기준',
+    lots: [
+      { n: '임진각 야외 보조주차장', addr: '문산읍 마정리 1177-8', lat: 37.89025, lng: 126.74581 },
+      { n: '평화주차장', addr: '문산읍 마정리 989-1', lat: 37.89342, lng: 126.74676 },
+    ],
+    shuttle: '문산역 1번 출구 앞 ↔ 행사장', shuttleTime: '09:00~17:00 수시',
+    shuttleStop: { n: '문산역 1번 출구 앞', lat: 37.85449, lng: 126.78740 },   // 승강장 좌표: OSM 문산역 1번 출구
   },
   ginseng: {
-    // 셔틀·임시주차장: 파주시 보도자료(2026-10-12). 주차장 좌표는 브이월드 지번 검색
+    // 셔틀·임시주차장: 파주시 관광 누리집 축제 안내(2026)·보도자료(10-12). 주차장 좌표는 브이월드 지번 검색
     name: '개성인삼축제', place: '임진각관광지', start: '2026-10-17', end: '2026-10-18', venue: '축제장 · 임진각관광지', ready: '11월 말 제공',
     hist: [
       { y: 2018, s: '10. 20.', e: '21.', d: [195562, 188668] },
@@ -31,7 +38,8 @@ const FESTS = {
       { n: '임진각 야외 보조주차장', addr: '문산읍 마정리 1177-8', lat: 37.89025, lng: 126.74581 },
       { n: '평화주차장', addr: '문산읍 마정리 989-1', lat: 37.89342, lng: 126.74676 },
     ],
-    shuttle: '문산역 1번 출구 ↔ 행사장',
+    shuttle: '문산역 1번 출구 앞 ↔ 행사장', shuttleTime: '09:00~17:00 수시',
+    shuttleStop: { n: '문산역 1번 출구 앞', lat: 37.85449, lng: 126.78740 },   // 승강장 좌표: OSM 문산역 1번 출구
   },
 };
 const FKEY = new URLSearchParams(location.search).get('f') === 'ginseng' ? 'ginseng' : 'jangdan';
@@ -272,7 +280,7 @@ function renderWx(j) {
 let pkMarkers = [], LOTS = [], pkPop = null;
 function lotPopupHtml(p) {
   const st = pkState(p), q = encodeURIComponent(p.n);
-  if (st === 'tmp') return `<div class="pp"><div class="pp-h">${esc(p.n)}</div><div class="pp-av">축제 임시주차장 · 빈자리 안내 없음</div><dl class="pp-kv"><dt>요금</dt><dd>무료(축제 기간)</dd><dt>주소</dt><dd>${esc(p.addr)}</dd></dl>`
+  if (st === 'tmp') return `<div class="pp"><div class="pp-h">${esc(p.n)}</div><div class="pp-av">축제 임시주차장 · 빈자리 안내 없음${FEST.basis ? ' · ' + FEST.basis : ''}</div><dl class="pp-kv"><dt>요금</dt><dd>무료(축제 기간)</dd><dt>주소</dt><dd>${esc(p.addr)}</dd></dl>`
     + `<div class="navs"><a target="_blank" rel="noopener" href="https://map.kakao.com/link/to/${q},${p.lat},${p.lng}">카카오맵</a><a target="_blank" rel="noopener" href="https://map.naver.com/p/directions/-/${p.lng},${p.lat},${q}/-/car">네이버</a><a href="tmap://route?goalname=${q}&goalx=${p.lng}&goaly=${p.lat}">티맵</a></div></div>`;
   const fees = [p.bt && p.bf ? `기본 ${p.bt}분 ${fmt(p.bf)}원` : '', p.at && p.af ? `추가 ${p.at}분 ${fmt(p.af)}원` : '', p.dd ? `1일 ${fmt(p.dd)}원` : ''].filter(Boolean);
   const fee = fees.length ? fees.join(' · ') : ((p.bf || p.af || p.dd) ? '유료' : '무료');
@@ -321,6 +329,27 @@ function renderParking(pk) {
     if (!TG.park) el.style.display = 'none';
     return new maplibregl.Marker({ element: el, anchor: 'top', offset: [0, 6] }).setLngLat([p.lng, p.lat]).addTo(map);   // 축제장 표시(위)와 겹치지 않게 아래로
   });
+}
+
+// 셔틀 승강장 — 버스 실시간 위치는 공개 자료가 없어 승강장만 표시한다
+const BUS_SVG = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="3" width="16" height="14" rx="2"/><path d="M4 11h16M8 21v-4M16 21v-4"/><circle cx="8" cy="14" r=".6"/><circle cx="16" cy="14" r=".6"/></svg>';
+function shuttlePopupHtml() {
+  const s = FEST.shuttleStop, q = encodeURIComponent('문산역');
+  return `<div class="pp"><div class="pp-h">셔틀 승강장 · ${esc(s.n)}</div><div class="pp-av">행사장까지 무료 순환${FEST.basis ? ' · ' + FEST.basis : ''}</div><dl class="pp-kv"><dt>운행</dt><dd>${esc(FEST.shuttleTime)}</dd><dt>구간</dt><dd>${esc(FEST.shuttle)}</dd></dl>`
+    + `<div class="navs"><a target="_blank" rel="noopener" href="https://map.kakao.com/link/to/${q},${s.lat},${s.lng}">카카오맵</a><a target="_blank" rel="noopener" href="https://map.naver.com/p/directions/-/${s.lng},${s.lat},${q}/-/walk">네이버</a><a href="tmap://route?goalname=${q}&goalx=${s.lng}&goaly=${s.lat}">티맵</a></div></div>`;
+}
+function flyToShuttle() {
+  const s = FEST.shuttleStop; if (!s) return;
+  if (pkPop) pkPop.remove();
+  map.flyTo({ center: [s.lng, s.lat], zoom: 16.5, pitch: 55, bearing: map.getBearing(), padding: viewPad(), duration: 1800, essential: true });
+  map.once('moveend', () => { pkPop = new maplibregl.Popup({ offset: [0, -30], maxWidth: '280px' }).setLngLat([s.lng, s.lat]).setHTML(shuttlePopupHtml()).addTo(map); });
+}
+function addShuttleMarker() {
+  const s = FEST.shuttleStop; if (!s) return;
+  const el = document.createElement('div');
+  el.className = 'mk bus'; el.innerHTML = BUS_SVG + '셔틀 승강장'; el.title = '셔틀 승강장 · ' + s.n;
+  el.onclick = (e) => { e.stopPropagation(); flyToShuttle(); };
+  new maplibregl.Marker({ element: el, anchor: 'bottom' }).setLngLat([s.lng, s.lat]).addTo(map);
 }
 
 let camMarkers = [], CAMS = [];
@@ -398,8 +427,8 @@ async function startFestival() {
   document.title = FEST.name + ' 상황판 · 지금 파주';
   $('#brand-name').textContent = FEST.name + ' 상황판';
   $('#brand-sub').textContent = `${FEST.place} · ${md(FEST.start)} ~ ${+FEST.end.slice(8)}일(${wd(FEST.end)})`;
-  if (FEST.shuttle) { $('#shuttle').innerHTML = `셔틀 <b>${esc(FEST.shuttle)}</b> 무료 순환`; $('#shuttle').hidden = false; }
-  $('#pk-src').textContent = FEST.lots.length ? '경기도교통정보센터 실시간 잔여 · 임시주차장은 파주시 안내(빈자리 정보 없음)' : '경기도교통정보센터 실시간 잔여 · 축제 임시주차장은 미포함';
+  if (FEST.shuttle) { $('#shuttle').innerHTML = `셔틀 <b>${esc(FEST.shuttle)}</b> <span class="nw">무료 · ${esc(FEST.shuttleTime)}</span>`; $('#shuttle').hidden = false; $('#shuttle').onclick = flyToShuttle; }   // 시간은 한 덩어리로('수시'만 떨어지지 않게), 누르면 승강장으로
+  $('#pk-src').textContent = '경기도교통정보센터 실시간 잔여 · ' + (FEST.lots.length ? `임시주차장·셔틀은 파주시 ${FEST.basis ? FEST.basis : '안내'}(빈자리 정보 없음)` : '축제 임시주차장은 미포함');
   dayChip();
   const [fd, rg] = await Promise.all([getJSON(BASE + 'fdata.json'), getJSON('/paju_roads.json')]);
   FD = fd; CENTER = fd.center; R = fd.radius;
@@ -420,6 +449,7 @@ async function startFestival() {
     el.style.zIndex = '3';                                                // 가까운 임시주차장 P가 이름표를 덮지 않게
     el.onclick = () => homeView(true);
     new maplibregl.Marker({ element: el, anchor: 'bottom', offset: [0, -4] }).setLngLat(VENUE).addTo(map);
+    addShuttleMarker();
     loadLive();
     setInterval(() => { dayChip(); loadLive(); }, 300000);
   });
@@ -435,11 +465,6 @@ async function startFestival() {
     };
   });
   map.on('click', () => { if (isMobile() && cardsOpen()) { CARD.road = CARD.cam = false; applyToggles(); } });
-  const pn = $('#panel'), moreFade = () => pn.classList.toggle('more', pn.scrollTop + pn.clientHeight < pn.scrollHeight - 4);
-  pn.addEventListener('scroll', moreFade, { passive: true });
-  window.addEventListener('resize', moreFade);
-  const ro = new ResizeObserver(moreFade);                               // 자료가 들어와 길이가 바뀌어도 다시 판단
-  [...pn.children].forEach((c) => ro.observe(c));
   $('#m-x').onclick = closeCam;
   $('#mc-diff').onclick = openHist;
   $('#h-x').onclick = closeHist;
