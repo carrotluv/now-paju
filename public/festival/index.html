@@ -29,7 +29,7 @@
   /* 왼쪽 상황판 — 지금 파주 왼쪽 목록과 같은 바탕·선 */
   #panel{position:absolute;top:12px;left:12px;bottom:12px;width:360px;overflow-y:auto;z-index:5;background:var(--panel);
     border:1px solid var(--hair);border-radius:var(--radius-lg);box-shadow:var(--shadow-2);scrollbar-width:thin}
-  .sec{padding:12px 18px;border-bottom:1px solid var(--hair2)}
+  .sec{padding:10px 18px;border-bottom:1px solid var(--hair2)}
   /* 머리 — 지금 파주 header .t(좁은 화면 크기)와 같은 크기 체계 */
   .top{background:var(--bg);border-bottom:1px solid var(--hair)}
   .back{display:inline-block;font-size:14px;line-height:20px;font-weight:600;color:var(--ink-2);text-decoration:none}
@@ -114,13 +114,9 @@
   .src{font-size:12px;line-height:18px;font-weight:500;color:var(--sub);margin-top:6px}
   .empty{font-size:13px;line-height:19px;font-weight:500;color:var(--sub)}
   .pks .empty,.cams .empty{padding:6px 11px}
-  .shuttle{font-size:13px;line-height:19px;font-weight:500;color:var(--ink);margin-top:6px}
-  .shuttle b{font-weight:700}
-  .shuttle .nw{white-space:nowrap}
-  .shuttle{cursor:pointer}
-  .shuttle:hover b{text-decoration:underline;text-underline-offset:3px}
+  .pkrow .d.sh{flex:0 0 auto}                                       /* 셔틀 줄은 거리 대신 운행 시간 */
   .mk.bus{display:flex;align-items:center;gap:4px;background:#fff;border:2px solid var(--ink);border-radius:var(--radius);padding:2px 8px 2px 6px;font-size:12px;line-height:18px;font-weight:800;color:var(--ink);box-shadow:var(--shadow-2)}
-  .foot{padding:10px 18px 14px;font-size:12px;line-height:18px;font-weight:500;color:var(--sub);text-align:center}
+  .foot{padding:8px 18px 10px;font-size:12px;line-height:18px;font-weight:500;color:var(--sub);text-align:center}
 
   /* 지도 위 표식·범례 */
   .mk{font-family:inherit;white-space:nowrap;cursor:pointer}
@@ -243,11 +239,10 @@
   <section class="sec">
     <div class="p-sec" style="margin-top:0">주변 주차장<span class="hint num" id="pk-asof"></span></div>
     <div class="pks" id="lots"><div class="empty">불러오는 중</div></div>
-    <div class="shuttle" id="shuttle" hidden></div>
     <div class="src" id="pk-src">경기도교통정보센터 실시간 잔여</div>
   </section>
 
-  <p class="foot">국토교통부 VWorld · OpenStreetMap · Mapterhorn<br>만든이 이대희</p>
+  <p class="foot">VWorld · OpenStreetMap · Mapterhorn · 만든이 이대희</p>
 </aside>
 
 <div id="hist"><div class="mbox"><div class="mhead"><b id="h-title">방문객 추이</b><span id="h-sub"></span><button id="h-x">닫기</button></div><div class="hbody" id="h-body"></div></div></div>

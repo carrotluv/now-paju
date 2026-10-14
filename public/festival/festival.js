@@ -20,7 +20,7 @@ const FESTS = {
       { n: '임진각 야외 보조주차장', addr: '문산읍 마정리 1177-8', lat: 37.89025, lng: 126.74581 },
       { n: '평화주차장', addr: '문산읍 마정리 989-1', lat: 37.89342, lng: 126.74676 },
     ],
-    shuttle: '문산역 1번 출구 앞 ↔ 행사장', shuttleTime: '09:00~17:00 수시',
+    shuttle: '문산역 1번 출구 앞 ↔ 행사장', shuttleTime: '09:00~17:00 수시', shuttleShort: '09~17시 수시',
     shuttleStop: { n: '문산역 1번 출구 앞', lat: 37.85449, lng: 126.78740 },   // 승강장 좌표: OSM 문산역 1번 출구
   },
   ginseng: {
@@ -38,7 +38,7 @@ const FESTS = {
       { n: '임진각 야외 보조주차장', addr: '문산읍 마정리 1177-8', lat: 37.89025, lng: 126.74581 },
       { n: '평화주차장', addr: '문산읍 마정리 989-1', lat: 37.89342, lng: 126.74676 },
     ],
-    shuttle: '문산역 1번 출구 앞 ↔ 행사장', shuttleTime: '09:00~17:00 수시',
+    shuttle: '문산역 1번 출구 앞 ↔ 행사장', shuttleTime: '09:00~17:00 수시', shuttleShort: '09~17시 수시',
     shuttleStop: { n: '문산역 1번 출구 앞', lat: 37.85449, lng: 126.78740 },   // 승강장 좌표: OSM 문산역 1번 출구
   },
 };
@@ -310,15 +310,17 @@ function renderParking(pk) {
   const tmp = FEST.lots.map((p) => ({ ...p, tmp: true, d: distM(p.lng, p.lat) }));    // 축제 임시주차장을 맨 위에
   const lots = LOTS = tmp.concat((pk.lots || []).map((p) => ({ ...p, d: distM(p.lng, p.lat) })).filter((p) => p.d <= R).sort((a, b) => a.d - b.d));
   $('#pk-asof').textContent = pk.asof ? hhmm(pk.asof) + ' 기준' : '';
-  $('#lots').innerHTML = lots.length ? lots.map((p, i) => {
+  // 셔틀은 주차장 표 맨 위 한 줄로(두 줄 안내문 대신) — 누르면 승강장으로
+  const bus = FEST.shuttleStop ? `<button class="pkrow" data-bus="1" title="지도에서 승강장 보기"><span class="tag">셔틀</span><span class="nm">${esc(FEST.shuttleStop.n)}</span><span class="d sh num">${esc(FEST.shuttleShort)}</span><span class="av st">무료</span></button>` : '';
+  $('#lots').innerHTML = bus + (lots.length ? lots.map((p, i) => {
     const st = pkState(p);
     const val = st === 'tmp' ? '<span class="av st">무료</span>'
       : st === 'na' ? '<span class="av na">안내 없음</span>'
       : st === 'full' ? '<span class="av full">만차</span>'
         : `<span class="av ${st} num"><b>${fmt(p.avail)}</b>/${fmt(p.total)}</span>`;
     return `<button class="pkrow" data-i="${i}" title="지도에서 보기"><span class="tag">${p.tmp ? '임시' : ((p.bf || p.af || p.dd) ? '유료' : '무료')}</span><span class="nm">${esc(p.tmp ? p.n : p.n.replace(/\s*주차장$/, ''))}</span><span class="d num">${fmtDist(p.d)}</span>${val}</button>`;
-  }).join('') : '<div class="empty">반경 안 실시간 주차장 없음</div>';
-  $('#lots').querySelectorAll('.pkrow').forEach((el) => { el.onclick = () => flyToLot(LOTS[+el.dataset.i]); });
+  }).join('') : '<div class="empty">반경 안 실시간 주차장 없음</div>');
+  $('#lots').querySelectorAll('.pkrow').forEach((el) => { el.onclick = () => (el.dataset.bus ? flyToShuttle() : flyToLot(LOTS[+el.dataset.i])); });
   pkMarkers.forEach((m) => m.remove());
   pkMarkers = lots.map((p) => {
     const st = pkState(p), el = document.createElement('div');
@@ -427,8 +429,8 @@ async function startFestival() {
   document.title = FEST.name + ' 상황판 · 지금 파주';
   $('#brand-name').textContent = FEST.name + ' 상황판';
   $('#brand-sub').textContent = `${FEST.place} · ${md(FEST.start)} ~ ${+FEST.end.slice(8)}일(${wd(FEST.end)})`;
-  if (FEST.shuttle) { $('#shuttle').innerHTML = `셔틀 <b>${esc(FEST.shuttle)}</b> <span class="nw">무료 · ${esc(FEST.shuttleTime)}</span>`; $('#shuttle').hidden = false; $('#shuttle').onclick = flyToShuttle; }   // 시간은 한 덩어리로('수시'만 떨어지지 않게), 누르면 승강장으로
-  $('#pk-src').textContent = '경기도교통정보센터 실시간 잔여 · ' + (FEST.lots.length ? `임시주차장·셔틀은 파주시 ${FEST.basis ? FEST.basis : '안내'}(빈자리 정보 없음)` : '축제 임시주차장은 미포함');
+  // 출처는 한 줄로(상황판 세로 스크롤 없게)
+  $('#pk-src').textContent = '경기도교통정보센터 실시간 · ' + (FEST.lots.length ? `임시·셔틀은 파주시 ${FEST.basis ? '작년 안내' : '안내'}` : '축제 임시주차장 미포함');
   dayChip();
   const [fd, rg] = await Promise.all([getJSON(BASE + 'fdata.json'), getJSON('/paju_roads.json')]);
   FD = fd; CENTER = fd.center; R = fd.radius;
