@@ -134,9 +134,8 @@ function buildStyle() {
       { id: 'road-case', type: 'line', source: 'roads', layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': '#d3d1ca', 'line-width': roadW(1.25) } },
       { id: 'road', type: 'line', source: 'roads', layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': '#ffffff', 'line-width': roadW(1) } },
       { id: 'rail', type: 'line', source: 'rail', filter: ['==', ['get', 't'], 0], paint: { 'line-color': '#6AC2B3', 'line-width': ['interpolate', ['linear'], ['zoom'], 10, 1.4, 17, 5] } },
-      // 실시간 도로 색: 추정 구간(옅고 가늘게) 아래, 실측 구간 위
+      // 실시간 도로 색: 실측 구간만(추정 메우기 없음, 10-14)
       // 굵기는 바탕 도로(같은 등급)와 같게 — 더 가늘면 흰 바탕 도로가 가장자리로 비쳐 '빈 곳'처럼 보였다. 멀리선 최소 굵기 보장
-      { id: 'tr-est', type: 'line', source: 'traffic', filter: ['==', ['get', 'k'], 'est'], layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': ['get', 'c'], 'line-width': ['interpolate', ['exponential', 1.6], ['zoom'], 11, ['match', ['get', 'r'], 1, 2.6, 2, 2.4, 2.0], 14, ['match', ['get', 'r'], 1, 5, 2, 4.4, 3.4], 17, ['match', ['get', 'r'], 1, 22, 2, 19, 3, 16, 4, 12, 8]] } },
       { id: 'tr-real', type: 'line', source: 'traffic', filter: ['==', ['get', 'k'], 'real'], layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': ['get', 'c'], 'line-width': ['interpolate', ['exponential', 1.6], ['zoom'], 11, ['match', ['get', 'r'], 1, 3.2, 2, 3, 2.6], 14, ['match', ['get', 'r'], 1, 6, 2, 5.4, 4.2], 17, ['match', ['get', 'r'], 1, 22, 2, 19, 3, 16, 4, 12, 8]] } },
       { id: 'mask', type: 'fill', source: 'mask', paint: { 'fill-color': '#f3f4f1', 'fill-opacity': 0.62 } },
       { id: 'bnd', type: 'line', source: 'boundary', paint: { 'line-color': '#e0793a', 'line-width': 1.6, 'line-dasharray': [3, 2] } },
@@ -163,35 +162,23 @@ async function getJSON(u) { const r = await fetch(u, { cache: 'no-store' }); if 
 function drawTraffic() {
   if (!ROADGEO.length || !ROADS.length) return;
   ROADGEO._for = null;
-  const { measured, inherit, roadAvg, split, smooth } = computeColors(LINK_SPD);
-  const hasColor = (i) => measured[i] != null || roadAvg[ROADGEO[i].n] != null || inherit[i] != null || split[i] != null;
+  // 실측 구간만 칠한다(2026-10-14 사용자 "실측 구간만 남겨줘") — 같은 길 이름 평균·나들목 나눔·짧은 조각 색 맞추기 같은
+  //   추정 메우기는 쓰지 않고, 그 구간에 매칭된 경기도·국가교통정보센터 측정값(등급·속도)만 쓴다. 측정값 없는 길은 비워 둔다
+  const { measured } = computeColors(LINK_SPD);
   const near = (p) => distM(p[1], p[0]) <= R * 1.15;
   let curH = 5;                                                          // 지금 그리는 도로 등급(선 굵기를 바탕 도로와 같게)
-  const feats = [], line = (pts, c, k) => feats.push({ type: 'Feature', properties: { c: k === 'est' ? mixWhite(c, 0.22) : c, k, r: curH }, geometry: { type: 'LineString', coordinates: pts.map((p) => [p[1], p[0]]) } });
-  const byName = {}, nameAll = {};
-  ROADGEO.forEach((r, i) => {                                           // 같은 이름 도로의 반경 안 실측 평균(빈 조각 채우기용)
-    const a = measured[i]; if (!a || !r.n || !r.p.some(near)) return;
-    (nameAll[r.n] = nameAll[r.n] || []).push(a.reduce((x, y) => x + y, 0) / a.length);
-  });
-  const nameAvg = (n) => { const a = nameAll[n]; return a ? Math.round(a.reduce((x, y) => x + y, 0) / a.length) : null; };                                                     // 반경 안 구간의 실측값을 도로 이름별로 모은다(패널용)
+  const feats = [], line = (pts, c) => feats.push({ type: 'Feature', properties: { c, k: 'real', r: curH }, geometry: { type: 'LineString', coordinates: pts.map((p) => [p[1], p[0]]) } });
+  const byName = {};                                                     // 반경 안 구간의 실측값을 도로 이름별로 모은다(패널용)
   ROADGEO.forEach((r, i) => {
     if (r.p.length < 2 || !r.p.some(near)) return;
     curH = r.h || 5;
-    // 왕복 분리도로: 지금 파주(2D)는 한 줄만 그리지만, 3D에선 바탕 도로가 보여 반대 차로가 흰 줄로 비었다 → 두 줄 다,
-    //   색은 computeColors가 이미 두 방향 중 더 막히는 쪽으로 맞춰 둔 값이라 규칙(더 막히는 쪽 색)은 그대로
     const arr = measured[i], own = arr ? Math.round(arr.reduce((a, b) => a + b, 0) / arr.length) : null;
-    if (own != null && r.n && (r.h || 5) <= 4 && !/회차로/.test(r.n)) {   // 패널: 간선(지방도까지)만 — 시내 골목은 원래 느려 '정체'로 보인다
+    if (own == null) return;                                             // 측정값 없음 → 칠하지 않음
+    if (r.n && (r.h || 5) <= 4 && !/회차로/.test(r.n)) {                 // 패널: 간선(지방도까지)만 — 시내 골목은 원래 느려 '정체'로 보인다
       const b = byName[r.n] = byName[r.n] || { v: [], d: 1e9 };
       b.v.push(own); b.d = Math.min(b.d, ...r.p.map((q) => distM(q[1], q[0])));
     }
-    if (own == null && split[i]) {                                       // 나들목: 앞뒤 절반을 각 끝 색으로
-      const m = Math.max(1, Math.floor(r.p.length / 2));
-      line(r.p.slice(0, m + 1), spdColor(split[i].a), 'est'); line(r.p.slice(m), spdColor(split[i].b), 'est');
-      return;
-    }
-    const v = smooth[i] ?? (own != null ? own : (roadAvg[r.n] ?? inherit[i] ?? nameAvg(r.n)));   // 마지막: 같은 이름 도로 평균(옅게)
-    if (v == null) return;
-    line(r.p, spdColor(v), own != null ? 'real' : 'est');
+    line(r.p, spdColor(own));                                            // 왕복 분리도로도 각 방향 구간을 제 측정값으로
   });
   map.getSource('traffic').setData({ type: 'FeatureCollection', features: feats });
   // 패널: 반경 안 실측 구간의 평균(서버 요약표는 6개 도로뿐이라 축제장 주변 도로가 빠진다), 축제장에서 가까운 순
@@ -428,7 +415,7 @@ function applyToggles() {
   $('#tg-road').classList.toggle('on', TG.road); $('#tg-cam').classList.toggle('on', TG.cam); $('#tg-park').classList.toggle('on', TG.park);
   $('#card-road').hidden = !CARD.road; $('#card-cam').hidden = !CARD.cam;
   $('#legend').style.visibility = TG.road ? '' : 'hidden';
-  if (map && map.getLayer('tr-est')) ['tr-est', 'tr-real'].forEach((id) => map.setLayoutProperty(id, 'visibility', TG.road ? 'visible' : 'none'));
+  if (map && map.getLayer('tr-real')) map.setLayoutProperty('tr-real', 'visibility', TG.road ? 'visible' : 'none');
   camMarkers.forEach((m) => { m.getElement().style.display = TG.cam ? '' : 'none'; });
   pkMarkers.forEach((m) => { m.getElement().style.display = TG.park ? '' : 'none'; });
 }
