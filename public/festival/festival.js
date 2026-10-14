@@ -81,7 +81,9 @@ const isMobile = () => window.innerWidth <= 760;
 // 지도 오른쪽 위 버튼 상태(TG = 지도 표식·색)와 목록 카드(CARD). 넓은 화면은 둘이 같이 움직이고,
 //   좁은 화면은 카드가 지도를 다 가려서 처음엔 접어 두고 누른 버튼의 카드 하나만 펼친다(지도를 누르면 닫힘)
 //   차량 연출은 '움직임 줄이기' 설정이면 처음부터 꺼 둔다(버튼으로 켤 수 있음)
-const TG = { road: true, cam: true, park: true, car: !matchMedia('(prefers-reduced-motion: reduce)').matches };
+//   단, 사용자가 '차량' 버튼으로 고른 값은 이 브라우저에 기억한다 — 윈도우 애니메이션 효과를 끈 사무실 PC가 많아 매번 꺼진 채 열렸다(10-14)
+const carPref = (() => { try { return localStorage.getItem('festCar'); } catch (e) { return null; } })();
+const TG = { road: true, cam: true, park: true, car: carPref != null ? carPref === '1' : !matchMedia('(prefers-reduced-motion: reduce)').matches };
 const CARD = { road: !isMobile(), cam: !isMobile() };
 const cardsOpen = () => CARD.road || CARD.cam;
 const viewPad = () => (isMobile() ? { top: 40, bottom: Math.round(window.innerHeight * 0.52) + 8, left: 0, right: 0 } : { top: 0, bottom: 0, left: 384, right: cardsOpen() ? 324 : 0 });   // 상황판이 왼쪽(지금 파주와 같은 배치), 목록 카드가 오른쪽
@@ -508,7 +510,7 @@ async function startFestival() {
   });
   $('#reload').onclick = loadLive;
   applyToggles();
-  if (typeof Cars !== 'undefined') $('#tg-car').onclick = () => { TG.car = !TG.car; applyToggles(); };
+  if (typeof Cars !== 'undefined') $('#tg-car').onclick = () => { TG.car = !TG.car; try { localStorage.setItem('festCar', TG.car ? '1' : '0'); } catch (e) { /* 저장 안 되는 브라우저는 그대로 */ } applyToggles(); };
   [['road', '#tg-road'], ['cam', '#tg-cam'], ['park', '#tg-park']].forEach(([k, id]) => {
     $(id).onclick = () => {
       const hasCard = k in CARD, mob = isMobile();
