@@ -75,6 +75,7 @@ const CROWD_HEX = { '여유': '#2fa876', '보통': '#d9a62e', '약간 붐빔': '
 let map, FD, CENTER, R, VENUE;
 const KX = 111320 * Math.cos(37.89 * Math.PI / 180), KY = 110574;
 const distM = (lon, lat) => Math.hypot((lon - CENTER[0]) * KX, (lat - CENTER[1]) * KY);
+const distV = (lon, lat) => Math.hypot((lon - VENUE[0]) * KX, (lat - VENUE[1]) * KY);   // 축제장(행사장 표시)에서의 거리
 const fmtDist = (m) => (m < 1000 ? Math.round(m / 10) * 10 + 'm' : (m / 1000).toFixed(1) + 'km');
 const hhmm = (iso) => { if (!iso) return ''; const d = new Date(iso); return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); };
 const isMobile = () => window.innerWidth <= 760;
@@ -352,8 +353,10 @@ function pkState(p) {
 const PK_COL = { ok: '#2fa876', mid: '#d9a62e', low: '#d94f3d', full: '#b3271b', na: '#a39d91', tmp: '#6b665b' };
 const PK_TXT = { ok: '여유', mid: '보통', low: '혼잡', full: '만차', na: '빈자리 안내 없음', tmp: '축제 임시' };
 function renderParking(pk) {
-  const tmp = FEST.lots.map((p) => ({ ...p, tmp: true, d: distM(p.lng, p.lat) })).sort((a, b) => a.d - b.d);    // 축제 임시주차장을 맨 위에
-  const lots = LOTS = tmp.concat((pk.lots || []).map((p) => ({ ...p, d: distM(p.lng, p.lat) })).filter((p) => p.d <= R).sort((a, b) => a.d - b.d));
+  // 임시·실시간 구분 없이 축제장에서 가까운 순(거리도 축제장 기준). 반경 거르기는 지도 범위(CENTER) 기준 그대로
+  const tmp = FEST.lots.map((p) => ({ ...p, tmp: true, d: distV(p.lng, p.lat) }));
+  const real = (pk.lots || []).filter((p) => distM(p.lng, p.lat) <= R).map((p) => ({ ...p, d: distV(p.lng, p.lat) }));
+  const lots = LOTS = tmp.concat(real).sort((a, b) => a.d - b.d);
   $('#pk-asof').textContent = pk.asof ? hhmm(pk.asof) + ' 기준' : '';
   // 셔틀은 주차장 표 맨 위 한 줄로(두 줄 안내문 대신) — 누르면 승강장으로
   const bus = FEST.shuttleStop ? `<button class="pkrow" data-bus="1" title="지도에서 승강장 보기"><span class="tag">셔틀</span><span class="nm">${esc(FEST.shuttleStop.n)}</span><span class="d sh num">${esc(FEST.shuttleShort)}</span><span class="av st">무료</span></button>` : '';
