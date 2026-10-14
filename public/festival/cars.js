@@ -9,7 +9,7 @@
 const Cars = (() => {
   const KX = 111320 * Math.cos(37.89 * Math.PI / 180), KY = 110574;
   const COLORS = ['#f4f5f6', '#f4f5f6', '#dfe2e6', '#2d3238', '#3a4f6e', '#b23a33', '#e9e6dc', '#8d969f'];
-  const DENS = { '원활': 1, '서행': 2.5, '정체': 4 };   // 같은 길이에 상대 대수(연출)
+  const DENS = { '원활': 0.35, '서행': 1.6, '정체': 3 };   // 같은 길이에 상대 대수(연출) — 10-14 사용자 '녹색인데도 많다'로 원활을 1→0.35
   const SPEEDUP = 5, MINZ = 12.8;
   let map, cv, ctx, dpr = 1, segs = [], ends = new Map(), cars = [], on = true, cap = 450, last = 0, acc = 0, nfr = 0, dirty = false, t0 = 0, movedAt = 0, slowRuns = 0;
   const merc = (lng, lat) => [(lng + 180) / 360, (1 - Math.log(Math.tan(Math.PI / 4 + lat * Math.PI / 360)) / Math.PI) / 2];
@@ -125,5 +125,6 @@ const Cars = (() => {
   }
   function setVisible(v) { on = v; }
   function setCap(n) { cap = n; spawn(); }                             // 대수 바꾸기(시험·조정용)
-  return { init, setSegments, setVisible, setCap, count: () => cars.length };
+  const byLevel = () => cars.reduce((o, c) => { const k = c.g.v / SPEEDUP * 3.6 >= 48 ? '원활' : (c.g.v / SPEEDUP * 3.6 >= 24 ? '서행' : '정체'); o[k] = (o[k] || 0) + 1; return o; }, {});
+  return { init, setSegments, setVisible, setCap, byLevel, count: () => cars.length };
 })();
