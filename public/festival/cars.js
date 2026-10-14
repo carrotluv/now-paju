@@ -24,7 +24,7 @@ const Cars = (() => {
     dirty = false;                                                       // 크기를 바꾸면 캔버스가 저절로 비워진다
   }
   function init(m, isMobile) {
-    map = m; cap = isMobile ? 350 : 700;                               // 사무실 PC(UHD 770) 실측: 700대 가만히 60·900대 52fps
+    map = m; cap = isMobile ? 700 : 1500;                              // 사무실 PC(UHD 770) 실측(색·굵기 묶어 긋기 뒤): 1,500대 59·2,000대 56fps
     cv = document.createElement('canvas');
     cv.className = 'carcv';
     cv.style.cssText = 'position:absolute;left:0;top:0;pointer-events:none';
@@ -84,20 +84,25 @@ const Cars = (() => {
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, cv.width, cv.height); dirty = true;
     const W = cv.width / dpr, H = cv.height / dpr;
+    // 같은 굵기(1px 단위)·같은 색끼리 묶어 한 번에 긋는다 — 차마다 따로 그으면 700대에 1,400번이라 대수를 못 늘렸다
+    const outl = new Map(), body = new Map();
     for (const car of cars) {
       const f = at(car.g, car.s + 2.3 * car.dir), b = at(car.g, car.s - 2.3 * car.dir);
       if ((f.x < -20 && b.x < -20) || (f.x > W + 20 && b.x > W + 20) || (f.y < -20 && b.y < -20) || (f.y > H + 20 && b.y > H + 20)) continue;
       const dx = f.x - b.x, dy = f.y - b.y, len = Math.hypot(dx, dy);
       if (len < 0.3) continue;                                           // 아주 멀어 방향을 못 잡으면 생략
       // 연출이라 실제(4.6m)보다 크게 — 실제 크기면 이 확대에서 2~3px라 안 보였다(10-14 화면 확인)
-      const ux = dx / len, uy = dy / len, hl = Math.max(len * 2.5, 7) / 2, hw = Math.max(len * 1.05, 3.5) / 2;
-      const o = hw * 1.1, cx = (f.x + b.x) / 2 - uy * o, cy = (f.y + b.y) / 2 + ux * o;   // 진행 방향 오른쪽 차로로
-      ctx.lineCap = 'round';
-      ctx.lineWidth = hw * 2 + 1.6; ctx.strokeStyle = 'rgba(35,39,47,.8)';
-      ctx.beginPath(); ctx.moveTo(cx - ux * hl, cy - uy * hl); ctx.lineTo(cx + ux * hl, cy + uy * hl); ctx.stroke();
-      ctx.lineWidth = hw * 2; ctx.strokeStyle = car.c;
-      ctx.beginPath(); ctx.moveTo(cx - ux * hl, cy - uy * hl); ctx.lineTo(cx + ux * hl, cy + uy * hl); ctx.stroke();
+      const ux = dx / len, uy = dy / len, hl = Math.max(len * 2.5, 7) / 2, w = Math.max(3, Math.round(Math.max(len * 1.05, 3.5)));
+      const o = w * 0.55, cx = (f.x + b.x) / 2 - uy * o, cy = (f.y + b.y) / 2 + ux * o;   // 진행 방향 오른쪽 차로로
+      const seg = [cx - ux * hl, cy - uy * hl, cx + ux * hl, cy + uy * hl];
+      (outl.get(w) || outl.set(w, []).get(w)).push(seg);
+      const k = w + car.c;
+      (body.get(k) || body.set(k, [w, car.c]).get(k)).push(seg);
     }
+    const stroke = (list, from) => { ctx.beginPath(); for (let n = from; n < list.length; n++) { const q = list[n]; ctx.moveTo(q[0], q[1]); ctx.lineTo(q[2], q[3]); } ctx.stroke(); };
+    ctx.lineCap = 'round'; ctx.strokeStyle = 'rgba(35,39,47,.8)';
+    outl.forEach((list, w) => { ctx.lineWidth = w + 1.6; stroke(list, 0); });
+    body.forEach((list) => { ctx.lineWidth = list[0]; ctx.strokeStyle = list[1]; stroke(list, 2); });
   }
   function loop(t) {
     const dt = Math.min(0.1, last ? (t - last) / 1000 : 0); last = t;
@@ -119,5 +124,6 @@ const Cars = (() => {
     requestAnimationFrame(loop);
   }
   function setVisible(v) { on = v; }
-  return { init, setSegments, setVisible, count: () => cars.length };
+  function setCap(n) { cap = n; spawn(); }                             // 대수 바꾸기(시험·조정용)
+  return { init, setSegments, setVisible, setCap, count: () => cars.length };
 })();
