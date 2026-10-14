@@ -1,7 +1,41 @@
 'use strict';
-/* 장단콩축제 교통 상황판 — 임진각 반경 3D(파주 3D 맵 자료) + 지금 파주 실시간(도로·인파·주차·CCTV) */
+/* 임진각 축제 교통 상황판 — 임진각 반경 3D(파주 3D 맵 자료) + 지금 파주 실시간(도로·인파·주차·CCTV)
+   한 벌의 화면을 축제마다 설정만 바꿔 쓴다: /festival/ = 장단콩축제, /festival/?f=ginseng = 개성인삼축제 */
 
-const FEST = { start: '2026-11-27', end: '2026-11-29' };
+// 지난 축제 방문객: 한국관광공사 관광빅데이터, 파주시 외지인 일별(2026-10-14 받음). 자료는 약 한 달 늦게 들어와
+//   올해 값은 축제 한 달 뒤에 hist에 더한다. 2019~2021년은 돼지열병·코로나로 두 축제 모두 열리지 않았다.
+const FESTS = {
+  jangdan: {
+    name: '장단콩축제', place: '임진각 평화누리', start: '2026-11-27', end: '2026-11-29', venue: '축제장 · 임진각 평화누리', ready: '12월 말 제공',
+    hist: [
+      { y: 2018, s: '11. 23.', e: '25.', d: [122619, 145512, 167100] },
+      { y: 2022, s: '11. 25.', e: '27.', d: [148964, 205604, 188128] },
+      { y: 2023, s: '11. 24.', e: '26.', d: [135009, 182518, 174909] },
+      { y: 2024, s: '11. 22.', e: '24.', d: [139576, 193816, 184104] },
+      { y: 2025, s: '11. 21.', e: '23.', d: [152271, 204099, 184264] },
+    ],
+    notHeld: [2019, 2020, 2021], lots: [], shuttle: '',
+  },
+  ginseng: {
+    // 셔틀·임시주차장: 파주시 보도자료(2026-10-12). 주차장 좌표는 브이월드 지번 검색
+    name: '개성인삼축제', place: '임진각관광지', start: '2026-10-17', end: '2026-10-18', venue: '축제장 · 임진각관광지', ready: '11월 말 제공',
+    hist: [
+      { y: 2018, s: '10. 20.', e: '21.', d: [195562, 188668] },
+      { y: 2022, s: '10. 22.', e: '23.', d: [230832, 225480] },
+      { y: 2023, s: '10. 21.', e: '22.', d: [220798, 214284] },
+      { y: 2024, s: '10. 19.', e: '20.', d: [201285, 197424] },
+      { y: 2025, s: '10. 18.', e: '19.', d: [189231, 198618] },
+    ],
+    notHeld: [2019, 2020, 2021],
+    lots: [
+      { n: '임진각 야외 보조주차장', addr: '문산읍 마정리 1177-8', lat: 37.89025, lng: 126.74581 },
+      { n: '평화주차장', addr: '문산읍 마정리 989-1', lat: 37.89342, lng: 126.74676 },
+    ],
+    shuttle: '문산역 1번 출구 ↔ 행사장',
+  },
+};
+const FKEY = new URLSearchParams(location.search).get('f') === 'ginseng' ? 'ginseng' : 'jangdan';
+const FEST = FESTS[FKEY];
 const BASE = location.href.replace(/[#?].*$/, '').replace(/[^/]*$/, '');
 const $ = (s) => document.querySelector(s);
 const fmt = (n) => Number(n).toLocaleString('ko-KR');
@@ -21,7 +55,12 @@ const distM = (lon, lat) => Math.hypot((lon - CENTER[0]) * KX, (lat - CENTER[1])
 const fmtDist = (m) => (m < 1000 ? Math.round(m / 10) * 10 + 'm' : (m / 1000).toFixed(1) + 'km');
 const hhmm = (iso) => { if (!iso) return ''; const d = new Date(iso); return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); };
 const isMobile = () => window.innerWidth <= 760;
-const viewPad = () => (isMobile() ? { top: 40, bottom: Math.round(window.innerHeight * 0.52) + 8, left: 0, right: 0 } : { top: 0, bottom: 0, left: 384, right: 0 });   // 상황판이 왼쪽(지금 파주와 같은 배치)
+// 지도 오른쪽 위 버튼 상태(TG = 지도 표식·색)와 목록 카드(CARD). 넓은 화면은 둘이 같이 움직이고,
+//   좁은 화면은 카드가 지도를 다 가려서 처음엔 접어 두고 누른 버튼의 카드 하나만 펼친다(지도를 누르면 닫힘)
+const TG = { road: true, cam: true, park: true };
+const CARD = { road: !isMobile(), cam: !isMobile() };
+const cardsOpen = () => CARD.road || CARD.cam;
+const viewPad = () => (isMobile() ? { top: 40, bottom: Math.round(window.innerHeight * 0.52) + 8, left: 0, right: 0 } : { top: 0, bottom: 0, left: 384, right: cardsOpen() ? 324 : 0 });   // 상황판이 왼쪽(지금 파주와 같은 배치), 목록 카드가 오른쪽
 
 function unpackBuildings(p) {
   return { type: 'FeatureCollection', features: p.g.map((g, i) => {
@@ -89,7 +128,8 @@ function buildStyle() {
 
 function homeView(animate) {
   // 축제장(북서)과 진입로가 모이는 문산 방향(남동)이 한 화면에: 중심을 둘 사이로, 남동쪽이 화면 아래로 오게 방위 +25°
-  const cam = { center: [VENUE[0] + 0.016, VENUE[1] - 0.014], zoom: isMobile() ? 12.5 : 13.0, pitch: 50, bearing: 25, padding: viewPad() };
+  //   좁은 화면은 가로가 짧아 같은 중심이면 축제장 표시가 왼쪽 끝에 잘린다(x=22px 실측) → 축제장 쪽으로 당긴다
+  const cam = { center: isMobile() ? [VENUE[0] + 0.006, VENUE[1] - 0.009] : [VENUE[0] + 0.016, VENUE[1] - 0.014], zoom: isMobile() ? 12.5 : 13.0, pitch: 50, bearing: 25, padding: viewPad() };
   if (animate) map.flyTo({ ...cam, duration: 1800, essential: true }); else map.jumpTo(cam);
 }
 
@@ -171,6 +211,38 @@ function renderCrowd(sum, spot) {
   $('#kv').innerHTML = age || sex ? '주 방문층 ' + (age ? `<b>${esc(age.highestAge)}</b>${age.highestRatio != null ? ` <span class="num">${age.highestRatio}%</span>` : ''}` : '-') + (sex ? ` · <b>${sex}</b>` : '') : '';
 }
 
+function openHist() {
+  const NOT_HELD = FEST.notHeld, nd = FEST.hist[0].d.length;
+  const rows = FEST.hist.map((h) => ({ ...h, sum: h.d.reduce((a, b) => a + b, 0) }));
+  rows.forEach((h, i) => {                                               // 지난 3번의 축제 평균과 비교(열린 해만 센다)
+    const prev = rows.slice(Math.max(0, i - 3), i);
+    h.vs = prev.length === 3 ? (h.sum / (prev.reduce((a, b) => a + b.sum, 0) / 3) - 1) * 100 : null;
+  });
+  const max = Math.max(...rows.map((h) => h.sum));
+  const thisYear = +FEST.start.slice(0, 4), first = rows[0].y;
+  const man = (v) => (v / 10000).toFixed(1) + '만';
+  const cols = [];
+  for (let y = first; y <= thisYear; y++) {
+    const h = rows.find((r) => r.y === y);
+    if (NOT_HELD.includes(y)) {                                          // 미개최 해는 한 칸으로 묶는다(휴대폰 폭에서 숫자가 맞닿지 않게)
+      if (y === NOT_HELD[0]) cols.push({ y: `${String(NOT_HELD[0]).slice(2)}~${String(NOT_HELD[NOT_HELD.length - 1]).slice(2)}`, html: '<span class="na">미개최</span>' });
+      continue;
+    }
+    cols.push({ y, html: h ? `<i style="height:${Math.round(h.sum / max * 150)}px"><b class="num">${man(h.sum)}</b></i>` : '<span class="na">집계 전</span>' });
+  }
+  const tr = rows.map((h, i) => `<tr><td class="num">${i + 1}</td><td class="num">${h.y}</td><td class="num">${h.s} ~ ${h.e}</td><td class="r num">${fmt(h.sum)}</td><td class="num">${h.vs == null ? '-' : fmtDiff(h.vs)}</td></tr>`).join('')
+    + `<tr class="wait"><td class="num">${rows.length + 1}</td><td class="num">${thisYear}</td><td class="num">${+FEST.start.slice(5, 7)}. ${FEST.start.slice(8)}. ~ ${FEST.end.slice(8)}.</td><td class="r">${FEST.ready}</td><td>-</td></tr>`;
+  $('#h-body').innerHTML = `<div class="hbars">${cols.map((c) => `<div class="c">${c.html}</div>`).join('')}</div>`
+    + `<div class="hx num">${cols.map((c) => `<span>${c.y}</span>`).join('')}</div>`
+    + `<div class="hunit">단위: 명</div>`
+    + `<table class="htbl"><thead><tr><th>#</th><th>연도</th><th>기간</th><th>방문객(${nd}일)</th><th>3년 평균 대비</th></tr></thead><tbody>${tr}</tbody></table>`
+    + `<div class="src">한국관광공사 관광빅데이터(이동통신 기반) · 파주시 전체 외지인 수라 임진각만의 인원은 아니다 · 2019~2021년 미개최 · 3년 평균은 그 전에 열린 축제 3번의 평균</div>`;
+  $('#h-title').textContent = FEST.name + ' 방문객 추이';
+  $('#h-sub').textContent = `파주시 외지인 · 축제 ${nd}일 합계`;
+  $('#hist').classList.add('open');
+}
+function closeHist() { $('#hist').classList.remove('open'); }
+
 // 날씨(지금 파주 /api/weather — 같은 아이콘·문구·미세먼지 등급)
 const _SUN = '#f2a72c', _CLOUD = '#8fa6bd', _RAIN = '#4a90d9', _SNOW = '#8ec6ea', _FOG = '#9aa7b4';
 const _sv = (d) => `<svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
@@ -200,6 +272,8 @@ function renderWx(j) {
 let pkMarkers = [], LOTS = [], pkPop = null;
 function lotPopupHtml(p) {
   const st = pkState(p), q = encodeURIComponent(p.n);
+  if (st === 'tmp') return `<div class="pp"><div class="pp-h">${esc(p.n)}</div><div class="pp-av">축제 임시주차장 · 빈자리 안내 없음</div><dl class="pp-kv"><dt>요금</dt><dd>무료(축제 기간)</dd><dt>주소</dt><dd>${esc(p.addr)}</dd></dl>`
+    + `<div class="navs"><a target="_blank" rel="noopener" href="https://map.kakao.com/link/to/${q},${p.lat},${p.lng}">카카오맵</a><a target="_blank" rel="noopener" href="https://map.naver.com/p/directions/-/${p.lng},${p.lat},${q}/-/car">네이버</a><a href="tmap://route?goalname=${q}&goalx=${p.lng}&goaly=${p.lat}">티맵</a></div></div>`;
   const fees = [p.bt && p.bf ? `기본 ${p.bt}분 ${fmt(p.bf)}원` : '', p.at && p.af ? `추가 ${p.at}분 ${fmt(p.af)}원` : '', p.dd ? `1일 ${fmt(p.dd)}원` : ''].filter(Boolean);
   const fee = fees.length ? fees.join(' · ') : ((p.bf || p.af || p.dd) ? '유료' : '무료');
   const hours = !(p.ws && p.we) ? '-' : ((p.ws === '00:00' && ['23:59', '24:00', '00:00'].includes(p.we)) ? '24시간' : `평일 ${p.ws}–${p.we}`);
@@ -217,37 +291,42 @@ function flyToLot(p) {
   });
 }
 function pkState(p) {
+  if (p.tmp) return 'tmp';
   if (p.avail == null) return 'na';
   if (p.avail > 0) { const r = p.avail / p.total; return r >= 0.3 ? 'ok' : (r >= 0.1 ? 'mid' : 'low'); }
   return p.seen24 ? 'full' : 'na';
 }
-const PK_COL = { ok: '#2fa876', mid: '#d9a62e', low: '#d94f3d', full: '#b3271b', na: '#a39d91' };
-const PK_TXT = { ok: '여유', mid: '보통', low: '혼잡', full: '만차', na: '빈자리 안내 없음' };
+const PK_COL = { ok: '#2fa876', mid: '#d9a62e', low: '#d94f3d', full: '#b3271b', na: '#a39d91', tmp: '#6b665b' };
+const PK_TXT = { ok: '여유', mid: '보통', low: '혼잡', full: '만차', na: '빈자리 안내 없음', tmp: '축제 임시' };
 function renderParking(pk) {
-  const lots = LOTS = (pk.lots || []).map((p) => ({ ...p, d: distM(p.lng, p.lat) })).filter((p) => p.d <= R).sort((a, b) => a.d - b.d);
+  const tmp = FEST.lots.map((p) => ({ ...p, tmp: true, d: distM(p.lng, p.lat) }));    // 축제 임시주차장을 맨 위에
+  const lots = LOTS = tmp.concat((pk.lots || []).map((p) => ({ ...p, d: distM(p.lng, p.lat) })).filter((p) => p.d <= R).sort((a, b) => a.d - b.d));
   $('#pk-asof').textContent = pk.asof ? hhmm(pk.asof) + ' 기준' : '';
   $('#lots').innerHTML = lots.length ? lots.map((p, i) => {
     const st = pkState(p);
-    const val = st === 'na' ? '<span class="av na">안내 없음</span>'
+    const val = st === 'tmp' ? '<span class="av st">무료</span>'
+      : st === 'na' ? '<span class="av na">안내 없음</span>'
       : st === 'full' ? '<span class="av full">만차</span>'
         : `<span class="av ${st} num"><b>${fmt(p.avail)}</b>/${fmt(p.total)}</span>`;
-    return `<button class="pkrow" data-i="${i}" title="지도에서 보기"><span class="tag">${(p.bf || p.af || p.dd) ? '유료' : '무료'}</span><span class="nm">${esc(p.n.replace(/\s*주차장$/, ''))}</span><span class="d num">${fmtDist(p.d)}</span>${val}</button>`;
+    return `<button class="pkrow" data-i="${i}" title="지도에서 보기"><span class="tag">${p.tmp ? '임시' : ((p.bf || p.af || p.dd) ? '유료' : '무료')}</span><span class="nm">${esc(p.tmp ? p.n : p.n.replace(/\s*주차장$/, ''))}</span><span class="d num">${fmtDist(p.d)}</span>${val}</button>`;
   }).join('') : '<div class="empty">반경 안 실시간 주차장 없음</div>';
   $('#lots').querySelectorAll('.pkrow').forEach((el) => { el.onclick = () => flyToLot(LOTS[+el.dataset.i]); });
   pkMarkers.forEach((m) => m.remove());
   pkMarkers = lots.map((p) => {
     const st = pkState(p), el = document.createElement('div');
     el.className = 'mk pk'; el.style.setProperty('--c', PK_COL[st]);
-    el.innerHTML = `<b>P</b>${st === 'na' ? '' : fmt(p.avail)}`;
+    el.innerHTML = `<b>P</b>${st === 'tmp' ? '임시' : (st === 'na' ? '' : fmt(p.avail))}`;
     el.title = p.n;
     el.onclick = (e) => { e.stopPropagation(); flyToLot(p); };
+    if (!TG.park) el.style.display = 'none';
     return new maplibregl.Marker({ element: el, anchor: 'top', offset: [0, 6] }).setLngLat([p.lng, p.lat]).addTo(map);   // 축제장 표시(위)와 겹치지 않게 아래로
   });
 }
 
 let camMarkers = [], CAMS = [];
 const camName = (n) => String(n || '').replace(/^\[[^\]]*\]\s*/, '').replace(/^파주\s*/, '');
-const camRoute = (n) => ((String(n || '').match(/^\[([^\]]*)\]/) || [])[1] || '').replace(/\s+/g, ' ');
+const camRoute = (n) => ((String(n || '').match(/^\[([^\]]*)\]/) || [])[1] || '').replace(/\s+/g, ' ').trim()
+  .replace(/^(국도|지방도|국지도)\s*(\d+)(호선)?$/, '$1 $2호선');   // 원본 표기가 제각각('국도1'·'국도 1호선'·'국도1호선')이라 한 가지로
 function renderCams(cc) {
   CAMS = (cc.cams || []).map((c) => ({ ...c, d: distM(c.lng, c.lat) })).filter((c) => c.d <= R).sort((a, b) => a.d - b.d).slice(0, 8);
   $('#cam-cnt').textContent = CAMS.length ? CAMS.length + '대' : '';
@@ -260,8 +339,19 @@ function renderCams(cc) {
     el.className = 'mk cam'; el.title = camName(c.n);
     el.innerHTML = '<svg viewBox="0 0 24 24"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>';
     el.onclick = () => openCam(c);
+    if (!TG.cam) el.style.display = 'none';
     return new maplibregl.Marker({ element: el }).setLngLat([c.lng, c.lat]).addTo(map);
   });
+}
+
+// 오른쪽 위 버튼: 진입 도로 = 도로 색·범례·목록 카드, CCTV = 카메라 표식·목록 카드, 주차 = P 표식
+function applyToggles() {
+  $('#tg-road').classList.toggle('on', TG.road); $('#tg-cam').classList.toggle('on', TG.cam); $('#tg-park').classList.toggle('on', TG.park);
+  $('#card-road').hidden = !CARD.road; $('#card-cam').hidden = !CARD.cam;
+  $('#legend').style.visibility = TG.road ? '' : 'hidden';
+  if (map && map.getLayer('tr-est')) ['tr-est', 'tr-real'].forEach((id) => map.setLayoutProperty(id, 'visibility', TG.road ? 'visible' : 'none'));
+  camMarkers.forEach((m) => { m.getElement().style.display = TG.cam ? '' : 'none'; });
+  pkMarkers.forEach((m) => { m.getElement().style.display = TG.park ? '' : 'none'; });
 }
 
 let camHls = null;
@@ -302,6 +392,14 @@ async function loadLive() {
 }
 
 async function startFestival() {
+  // 축제별 이름·기간 표시
+  const wd = (s) => '일월화수목금토'[new Date(s + 'T00:00:00Z').getUTCDay()];
+  const md = (s) => `${+s.slice(5, 7)}월 ${+s.slice(8)}일(${wd(s)})`;
+  document.title = FEST.name + ' 상황판 · 지금 파주';
+  $('#brand-name').textContent = FEST.name + ' 상황판';
+  $('#brand-sub').textContent = `${FEST.place} · ${md(FEST.start)} ~ ${+FEST.end.slice(8)}일(${wd(FEST.end)})`;
+  if (FEST.shuttle) { $('#shuttle').innerHTML = `셔틀 <b>${esc(FEST.shuttle)}</b> 무료 순환`; $('#shuttle').hidden = false; }
+  $('#pk-src').textContent = FEST.lots.length ? '경기도교통정보센터 실시간 잔여 · 임시주차장은 파주시 안내(빈자리 정보 없음)' : '경기도교통정보센터 실시간 잔여 · 축제 임시주차장은 미포함';
   dayChip();
   const [fd, rg] = await Promise.all([getJSON(BASE + 'fdata.json'), getJSON('/paju_roads.json')]);
   FD = fd; CENTER = fd.center; R = fd.radius;
@@ -313,19 +411,39 @@ async function startFestival() {
     minZoom: 10.5, maxBounds: [[FD.bbox[0] - 0.25, FD.bbox[1] - 0.2], [FD.bbox[2] + 0.25, FD.bbox[3] + 0.2]],
     canvasContextAttributes: { antialias: true }, attributionControl: { compact: true },
   });
-  map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'top-right');
+  map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'bottom-right');   // 오른쪽 위는 지금 파주처럼 켜기/끄기 버튼
   map.on('load', () => {
     document.querySelectorAll('.maplibregl-ctrl-attrib').forEach((a) => a.classList.remove('maplibregl-compact-show'));
     homeView(false);
     const el = document.createElement('div');
-    el.className = 'mk venue'; el.textContent = '축제장 · 임진각 평화누리';
+    el.className = 'mk venue'; el.textContent = FEST.venue;
+    el.style.zIndex = '3';                                                // 가까운 임시주차장 P가 이름표를 덮지 않게
     el.onclick = () => homeView(true);
     new maplibregl.Marker({ element: el, anchor: 'bottom', offset: [0, -4] }).setLngLat(VENUE).addTo(map);
     loadLive();
     setInterval(() => { dayChip(); loadLive(); }, 300000);
   });
   $('#reload').onclick = loadLive;
+  applyToggles();
+  [['road', '#tg-road'], ['cam', '#tg-cam'], ['park', '#tg-park']].forEach(([k, id]) => {
+    $(id).onclick = () => {
+      const hasCard = k in CARD, mob = isMobile();
+      if (hasCard && mob && TG[k] && !CARD[k]) CARD[k] = true;            // 좁은 화면: 켜져 있는데 카드가 접혀 있으면 펼치기만
+      else { TG[k] = !TG[k]; if (hasCard) CARD[k] = TG[k]; }
+      if (hasCard && mob && CARD[k]) Object.keys(CARD).forEach((o) => { if (o !== k) CARD[o] = false; });
+      applyToggles();
+    };
+  });
+  map.on('click', () => { if (isMobile() && cardsOpen()) { CARD.road = CARD.cam = false; applyToggles(); } });
+  const pn = $('#panel'), moreFade = () => pn.classList.toggle('more', pn.scrollTop + pn.clientHeight < pn.scrollHeight - 4);
+  pn.addEventListener('scroll', moreFade, { passive: true });
+  window.addEventListener('resize', moreFade);
+  const ro = new ResizeObserver(moreFade);                               // 자료가 들어와 길이가 바뀌어도 다시 판단
+  [...pn.children].forEach((c) => ro.observe(c));
   $('#m-x').onclick = closeCam;
+  $('#mc-diff').onclick = openHist;
+  $('#h-x').onclick = closeHist;
+  $('#hist').onclick = (e) => { if (e.target.id === 'hist') closeHist(); };
   $('#modal').onclick = (e) => { if (e.target.id === 'modal') closeCam(); };
-  window.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeCam(); });
+  window.addEventListener('keydown', (e) => { if (e.key === 'Escape') { closeCam(); closeHist(); } });
 }

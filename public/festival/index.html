@@ -4,14 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
-<title>장단콩축제 상황판 · 지금 파주</title>
+<title>축제 상황판 · 지금 파주</title>
 <link rel="stylesheet" href="lib/maplibre-gl.css">
 <!-- 지금 파주(index.html)와 같은 글꼴 링크·색·글자 크기 — 스타일 규칙은 지금 파주 원문을 그대로 옮겼다 -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.min.css">
 <style>
   :root{
     --bg:#f7f5ef; --ink:#23272f; --ink-2:#55514a; --sub:#6b665b; --hair:#dcd7cb; --hair2:#f0ece1;
-    --card:#ffffff; --panel:#fcfaf5; --hover:#faf8f2;
+    --card:#ffffff; --panel:#fcfaf5; --hover:#faf8f2; --float-bg:#ffffff; --float-bg2:rgba(255,255,255,.88);
     --s1:#2fa876; --s2:#d9a62e; --s3:#e07b2f; --s4:#d94f3d;
     --t1:#17714b; --t2:#7a5f0e; --t3:#8f4713; --t4:#b03225;
     --btn-dark:#23272f; --btn-dark-ink:#f2efe6; --btn-dark-hover:#3a404d;
@@ -29,11 +29,14 @@
   /* 왼쪽 상황판 — 지금 파주 왼쪽 목록과 같은 바탕·선 */
   #panel{position:absolute;top:12px;left:12px;bottom:12px;width:360px;overflow-y:auto;z-index:5;background:var(--panel);
     border:1px solid var(--hair);border-radius:var(--radius-lg);box-shadow:var(--shadow-2);scrollbar-width:thin}
+  /* 아래에 더 있으면 끝을 흐리게 — 줄이 경계에서 칼로 자른 듯 걸치지 않게. 끝까지 내리면 풀린다 */
+  #panel.more{-webkit-mask-image:linear-gradient(to bottom,#000 calc(100% - 36px),transparent);mask-image:linear-gradient(to bottom,#000 calc(100% - 36px),transparent)}
   .sec{padding:12px 18px;border-bottom:1px solid var(--hair2)}
   /* 머리 — 지금 파주 header .t(좁은 화면 크기)와 같은 크기 체계 */
   .top{background:var(--bg);border-bottom:1px solid var(--hair)}
-  .back{display:inline-block;font-size:12px;line-height:18px;font-weight:500;color:var(--sub);text-decoration:none}
+  .back{display:inline-block;font-size:14px;line-height:20px;font-weight:600;color:var(--ink-2);text-decoration:none}
   .back:hover{color:var(--ink);text-decoration:underline;text-underline-offset:3px}
+  .brand{text-align:center}
   .brand b{display:block;font-size:21px;line-height:28px;font-weight:800;letter-spacing:.5px;margin-top:4px}
   .brand span{display:block;font-size:12px;line-height:16px;font-weight:500;color:var(--sub);margin-top:2px}
   .meta{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:12px;line-height:18px;font-weight:500;color:var(--ink)}
@@ -104,8 +107,8 @@
   /* 도로 상황 — 지금 파주 .tb-title·.tr-row 원문 */
   .tb-title{font-size:13px;font-weight:700;color:var(--ink);margin-bottom:6px;display:flex;gap:10px;align-items:baseline}
   .tb-title span{font-weight:500;color:var(--sub);font-size:12px;margin-left:auto}
-  .tr-row{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:500;padding:2.5px 0;color:var(--ink)}
-  .tr-row i{width:8px;height:8px;border-radius:50%;flex:none}
+  .tr-row{display:flex;align-items:baseline;gap:7px;font-size:13px;line-height:19px;font-weight:500;padding:2.5px 0;color:var(--ink)}   /* 글자 크기가 다른 칸(속도 13·상태 12)을 글자 기준선에 맞춘다 */
+  .tr-row i{width:8px;height:8px;border-radius:50%;flex:none;align-self:center}
   .tr-row .sp{margin-left:auto}
   .tr-row small{font-size:12px;color:var(--sub);margin-left:2px}
   .tr-row small.dist{margin-left:6px}
@@ -113,6 +116,8 @@
   .src{font-size:12px;line-height:18px;font-weight:500;color:var(--sub);margin-top:6px}
   .empty{font-size:13px;line-height:19px;font-weight:500;color:var(--sub)}
   .pks .empty,.cams .empty{padding:6px 11px}
+  .shuttle{font-size:13px;line-height:19px;font-weight:500;color:var(--ink);margin-top:6px}
+  .shuttle b{font-weight:700}
   .foot{padding:10px 18px 14px;font-size:12px;line-height:18px;font-weight:500;color:var(--sub);text-align:center}
 
   /* 지도 위 표식·범례 */
@@ -122,9 +127,24 @@
   .mk.pk b{background:var(--c);color:#fff;border-radius:4px;padding:0 5px;font-size:12px}
   .mk.cam{width:22px;height:22px;background:var(--btn-dark);border-radius:var(--radius);border:1.5px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center}
   .mk.cam svg{width:13px;height:13px;fill:#fff}
-  .legend{position:absolute;right:12px;bottom:28px;z-index:4;background:var(--card);border:1px solid var(--hair);border-radius:var(--radius);padding:6px 11px;display:flex;gap:10px;align-items:center;font-size:12px;line-height:18px;font-weight:500;color:var(--ink);box-shadow:var(--shadow-1)}
+  .legend{position:absolute;right:58px;bottom:28px;z-index:4;background:var(--card);border:1px solid var(--hair);border-radius:var(--radius);padding:6px 11px;display:flex;gap:10px;align-items:center;font-size:12px;line-height:18px;font-weight:500;color:var(--ink);box-shadow:var(--shadow-1)}
   .legend b{font-weight:700}
   .legend i{display:inline-block;width:14px;height:4px;border-radius:2px;margin-right:4px;vertical-align:middle}
+  /* 지도 오른쪽 위 버튼 — 지금 파주 .mapbtns·.mbtn.tgl 원문 */
+  .mapbtns{position:absolute;top:12px;right:12px;z-index:6;display:flex;gap:6px;width:300px}   /* 아래 목록 카드와 양끝을 맞춘다 */
+  .mapbtns .mbtn{flex:1;white-space:nowrap}
+  .mbtn{background:var(--float-bg);border:1px solid var(--hair);border-radius:var(--radius);padding:7px 12px;font-size:13px;font-weight:500;color:var(--ink);cursor:pointer;box-shadow:var(--shadow-1);font-family:inherit;
+    display:flex;align-items:center;justify-content:center;min-width:88px}
+  .mbtn:hover{background:#f6f3ea}
+  .mbtn.tgl{display:flex;align-items:center;gap:6px}
+  .mbtn.tgl::before{content:"";width:8px;height:8px;border-radius:50%;background:#cfc9bb;flex:none}
+  .mbtn.tgl.on{background:var(--btn-dark);color:var(--btn-dark-ink);border-color:var(--btn-dark)}
+  .mbtn.tgl.on:hover{background:var(--btn-dark-hover)}
+  .mbtn.tgl.on::before{background:var(--s1)}
+  /* 버튼 아래 목록 카드 — 지금 파주 도로 상황 카드(.trafficbox)와 같은 바탕·선 */
+  .fcards{position:absolute;top:53px;right:12px;z-index:6;width:300px;max-height:calc(100% - 140px);overflow-y:auto;display:flex;flex-direction:column;gap:8px;scrollbar-width:thin}
+  .fcard{background:var(--float-bg2);border:1px solid var(--hair);border-radius:var(--radius);padding:10px 13px;box-shadow:var(--shadow-1)}
+  .fcard[hidden]{display:none}
   /* 주차장 정보창 — 지금 파주 pkPopup 과 같은 항목 */
   .maplibregl-popup-content{font-family:inherit;color:var(--ink);border-radius:var(--radius-lg);padding:12px 14px;box-shadow:var(--shadow-3)}
   .pp-h{font-size:15px;line-height:22px;font-weight:700;margin-bottom:6px;padding-right:14px}
@@ -138,8 +158,25 @@
   .navs a{display:block;text-align:center;padding:7px 4px;border-radius:var(--radius);border:1px solid var(--hair);background:var(--card);color:var(--ink);font-size:12px;font-weight:700;text-decoration:none}
   .navs a:hover{background:var(--hover)}
   /* CCTV 창 */
-  #modal{position:fixed;inset:0;background:rgba(20,20,24,.45);z-index:50;display:none;align-items:center;justify-content:center;padding:16px}
-  #modal.open{display:flex}
+  #modal,#hist{position:fixed;inset:0;background:rgba(20,20,24,.45);z-index:50;display:none;align-items:center;justify-content:center;padding:16px}
+  #modal.open,#hist.open{display:flex}
+  .mcard.mbtn{font:inherit;color:inherit;width:100%;cursor:pointer;display:block;min-width:0;box-shadow:none;padding:7px 10px;background:var(--card)}
+  .mcard.mbtn:hover{background:var(--hover)}
+  /* 연도별 축제 방문객 — 막대는 0부터, 가장 많은 해가 칸을 꽉 채움 */
+  .hbody{padding:12px 16px 16px;max-height:calc(100vh - 120px);overflow-y:auto}
+  .hbars{display:flex;align-items:flex-end;gap:8px;height:150px;margin-top:22px}
+  .hbars .c{flex:1;min-width:0;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center}
+  .hbars i{display:block;width:100%;max-width:44px;background:#c9c1ae;border-radius:3px 3px 0 0;position:relative}
+  .hbars i b{position:absolute;bottom:100%;left:50%;transform:translateX(-50%);margin-bottom:4px;font-size:12px;line-height:14px;font-style:normal;font-weight:700;color:var(--ink);white-space:nowrap}
+  .hbars .na{font-size:12px;line-height:16px;font-weight:500;color:var(--sub);white-space:nowrap;padding-bottom:4px}
+  .hx{display:flex;gap:8px;border-top:1px solid var(--hair);padding-top:4px}
+  .hx span{flex:1;min-width:0;text-align:center;font-size:12px;line-height:16px;font-weight:500;color:var(--ink)}
+  .hunit{font-size:12px;line-height:18px;font-weight:500;color:var(--sub);text-align:right;margin-top:14px}
+  .htbl{width:100%;border-collapse:collapse;border:1px solid var(--hair);font-size:13px;line-height:19px;font-weight:500}
+  .htbl th,.htbl td{padding:5px 8px;text-align:center;white-space:nowrap;border-bottom:1px solid var(--hair2)}
+  .htbl th{font-size:12px;font-weight:700;background:var(--panel);border-bottom:1px solid var(--hair)}
+  .htbl td.r{text-align:right}
+  .htbl tr.wait td{color:var(--sub)}
   .mbox{background:var(--card);border-radius:var(--radius-lg);width:min(720px,100%);overflow:hidden;box-shadow:var(--shadow-3)}
   .mhead{display:flex;align-items:center;gap:8px;padding:12px 14px;border-bottom:1px solid var(--hair2)}
   .mhead b{font-size:15px;line-height:22px;font-weight:700}
@@ -149,18 +186,39 @@
   .mvid video{width:100%;height:100%;object-fit:contain}
   @media (max-width:760px){
     #panel{top:auto;left:8px;right:8px;bottom:8px;width:auto;max-height:52%}
-    .legend{bottom:auto;top:8px;left:8px;right:auto}
+    .legend{display:none}                                            /* 좁은 화면은 도로 카드의 점·상태 글자가 범례를 대신한다 */
+    .mapbtns{top:8px;right:8px;width:auto}
+    .mapbtns .mbtn{min-width:0;padding:7px 11px}
+    .fcards{top:48px;right:8px;left:8px;width:auto;max-height:calc(48% - 60px)}
+    .hbody{padding:12px 10px 14px}
+    .mhead{flex-wrap:wrap;row-gap:0}
+    .mhead b{white-space:nowrap}
+    .mhead span{order:3;flex-basis:100%}
+    .hbars,.hx{gap:4px}
+    .htbl th,.htbl td{padding:5px 4px}
   }
 </style>
 </head>
 <body>
 <div id="map"></div>
+<div class="mapbtns"><button class="mbtn tgl on" id="tg-road" title="진입 도로 색·목록 켜기/끄기">진입 도로</button><button class="mbtn tgl on" id="tg-cam" title="주변 도로 CCTV 위치·목록 켜기/끄기">CCTV</button><button class="mbtn tgl on" id="tg-park" title="주차장 표시 켜기/끄기">주차</button></div>
+<div class="fcards">
+  <section class="fcard" id="card-road">
+    <div class="tb-title">진입 도로<span class="num" id="tr-asof"></span></div>
+    <div id="roads"><div class="empty">불러오는 중</div></div>
+    <div class="src">축제장에서 가까운 간선 순</div>
+  </section>
+  <section class="fcard" id="card-cam">
+    <div class="tb-title">주변 도로 CCTV<span class="num" id="cam-cnt"></span></div>
+    <div class="cams" id="cams"><div class="empty">불러오는 중</div></div>
+  </section>
+</div>
 <div class="legend" id="legend"><b>도로</b><span><i style="background:#2f9b74"></i>원활</span><span><i style="background:#d18f3a"></i>서행</span><span><i style="background:#cc5647"></i>정체</span><span><i style="background:#fff;box-shadow:inset 0 0 0 1px #c9c1ae"></i>자료 없음</span></div>
 
 <aside id="panel">
   <section class="sec top">
     <a class="back" href="/">← 지금 파주</a>
-    <div class="brand"><b>장단콩축제 상황판</b><span>임진각 평화누리 · 11월 27일(금) ~ 29일(일)</span></div>
+    <div class="brand"><b id="brand-name">축제 상황판</b><span id="brand-sub">임진각</span></div>
     <div class="meta"><span class="chip" id="day-chip">-</span><span class="asof num" id="upd">불러오는 중</span><button id="reload">새로고침</button></div>
   </section>
 
@@ -168,7 +226,7 @@
     <div class="headline" id="crowd-head"><span id="crowd-label">불러오는 중</span></div>
     <div class="grid2">
       <div class="mcard acc" id="mc-pop"><div class="lb">추정 인구</div><div class="v num" id="v-pop">-</div></div>
-      <div class="mcard"><div class="lb">평시 대비</div><div class="v num" id="v-diff">-</div></div>
+      <button class="mcard mbtn" id="mc-diff" title="연도별 축제 방문객 보기"><div class="lb">평시 대비 ›</div><div class="v num" id="v-diff">-</div></button>
       <div class="mcard"><div class="lb">평시 피크</div><div class="v num" id="v-peak">-</div></div>
       <div class="mcard"><div class="lb">24시간 최다</div><div class="v num" id="v-max">-</div></div>
     </div>
@@ -183,22 +241,14 @@
   <section class="sec">
     <div class="p-sec" style="margin-top:0">주변 주차장<span class="hint num" id="pk-asof"></span></div>
     <div class="pks" id="lots"><div class="empty">불러오는 중</div></div>
-    <div class="src">경기도교통정보센터 실시간 잔여 · 축제 임시주차장은 미포함</div>
+    <div class="shuttle" id="shuttle" hidden></div>
+    <div class="src" id="pk-src">경기도교통정보센터 실시간 잔여</div>
   </section>
 
-  <section class="sec">
-    <div class="tb-title">진입 도로<span class="num" id="tr-asof"></span></div>
-    <div id="roads"><div class="empty">불러오는 중</div></div>
-    <div class="src">축제장에서 가까운 간선 순 · 지금 파주와 같은 색 기준</div>
-  </section>
-
-  <section class="sec">
-    <div class="p-sec" style="margin-top:0">주변 도로 CCTV<span class="hint num" id="cam-cnt"></span></div>
-    <div class="cams" id="cams"><div class="empty">불러오는 중</div></div>
-  </section>
-
-  <p class="foot">건물·경계 국토교통부 VWorld<br>지도 OpenStreetMap · 지형 Mapterhorn<br>만든이 이대희</p>
+  <p class="foot">국토교통부 VWorld · OpenStreetMap · Mapterhorn<br>만든이 이대희</p>
 </aside>
+
+<div id="hist"><div class="mbox"><div class="mhead"><b id="h-title">방문객 추이</b><span id="h-sub"></span><button id="h-x">닫기</button></div><div class="hbody" id="h-body"></div></div></div>
 
 <div id="modal"><div class="mbox"><div class="mhead"><b id="m-title"></b><span id="m-sub">실시간 도로 CCTV</span><button id="m-x">닫기</button></div><div class="mvid" id="m-body"></div></div></div>
 

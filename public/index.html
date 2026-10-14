@@ -335,6 +335,7 @@
     .tabs{order:3;width:auto;flex:1 1 calc(100% - 96px);min-width:0}   /* 로고 옆엔 못 들어가 둘째 줄로, 축제 탭과 한 줄 */
     .ftab{order:3;flex:0 0 auto;min-height:44px;padding:0 12px;align-self:stretch}
     .ftab .ft-l{display:none} .ftab .ft-s{display:inline}
+    .ftab.later{display:none}
     .tab{flex:1;justify-content:center;padding:12px 6px;min-height:44px;font-size:13px}
     .banner{padding:9px 14px;font-size:13px;line-height:20px;font-weight:500}
 
@@ -383,7 +384,11 @@
     <button class="tab" data-m="I"><b>I</b>피해서 다닐래요</button>
     <button class="tab" data-m="E"><b>E</b>북적여야 신나요</button>
   </div>
-  <!-- 장단콩축제 상황판(축제팀 전용, 비밀번호) — 축제 끝나고 7일 뒤 자동으로 숨김 -->
+  <!-- 축제 상황판(축제팀 전용, 비밀번호) — 각 축제 끝나고 7일 뒤 자동으로 숨김. 좁은 화면은 가까운 축제 하나만 -->
+  <a class="ftab" id="ftab-g" href="/festival/?f=ginseng" title="축제 운영팀 전용 · 비밀번호 필요">
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+    <span class="ft-l">개성인삼축제</span><span class="ft-s">축제</span>
+  </a>
   <a class="ftab" id="ftab" href="/festival/" title="축제 운영팀 전용 · 비밀번호 필요">
     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
     <span class="ft-l">장단콩축제</span><span class="ft-s">축제</span>
@@ -1238,7 +1243,7 @@ function renderList(){
       const near=nearestCams(s,3);
       camSec=`<div class="p-sec">주변 도로 CCTV</div><div class="cams">${near.map(x=>{
         const m=(x.c.n||'').match(/^\[(.+?)\]\s*(.*)$/);          // [노선]이름 → 태그와 이름으로 분리
-        const tag=m?m[1]:'', nm=(m?m[2]:(x.c.n||'')).replace(/</g,'&lt;');
+        const tag=m?m[1].replace(/\s+/g,' ').trim().replace(/^(국도|지방도|국지도)\s*(\d+)(호선)?$/,'$1 $2호선'):'', nm=(m?m[2]:(x.c.n||'')).replace(/</g,'&lt;');   // 노선 표기 통일('국도1'·'국도 1호선' → '국도 1호선')
         return `<button class="cambtn" data-ci="${x.i}" data-spot="${s.n}">${tag?`<span class="tag">${tag}</span>`:''}<span class="nm">${nm}</span><span class="go">보기 ›</span></button>`;
       }).join('')}</div>`;
     } else {
@@ -1525,7 +1530,11 @@ setInterval(loadParking, 300000);
 // ── 초기화
 document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.dataset.m===mode));
 // 장단콩축제 탭: 2026-11-29 축제 끝나고 7일 뒤(12-06)부터 숨김(한국 시각 기준)
-if(new Date(Date.now()+9*3600e3).toISOString().slice(0,10) > '2026-12-06') document.getElementById('ftab').style.display='none';
+{ const kst=new Date(Date.now()+9*3600e3).toISOString().slice(0,10);
+  const g=kst<='2026-10-25', j=kst<='2026-12-06';                     // 인삼축제(10.17~18)·장단콩축제(11.27~29) 끝나고 7일 뒤까지
+  if(!g) document.getElementById('ftab-g').style.display='none';
+  if(!j) document.getElementById('ftab').style.display='none';
+  if(g&&j) document.getElementById('ftab').classList.add('later'); }   // 둘 다 보일 땐 좁은 화면에서 나중 축제를 숨긴다
 map.fitBounds(pajuBounds);
 zoomClass();
 renderBanner(); renderNodes(); renderCams(); renderList();
