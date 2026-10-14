@@ -290,7 +290,7 @@ function openHist() {
     + `<div class="hx num">${cols.map((c) => `<span>${c.y}</span>`).join('')}</div>`
     + `<div class="hunit">단위: 명</div>`
     + `<table class="htbl"><thead><tr><th>#</th><th>연도</th><th>기간</th><th>방문객(${nd}일)</th><th>3년 평균 대비</th></tr></thead><tbody>${tr}</tbody></table>`
-    + `<div class="src">한국관광공사 관광빅데이터(이동통신 기반) · 파주시 전체 외지인 수라 임진각만의 인원은 아니다 · 2019~2021년 미개최 · 3년 평균은 그 전에 열린 축제 3번의 평균</div>`;
+    + `<div class="src">한국관광공사 관광빅데이터(이동통신 기반)</div>`;
   $('#h-title').textContent = FEST.name + ' 지난 축제 대비';
   $('#h-sub').textContent = '임진각 · 작년 같은 날차·같은 시각';
   $('#hist').classList.add('open');
@@ -479,6 +479,10 @@ async function startFestival() {
   $('#brand-sub').textContent = `${FEST.place} · ${md(FEST.start)} ~ ${+FEST.end.slice(8)}일(${wd(FEST.end)})`;
   // 출처는 한 줄로(상황판 세로 스크롤 없게)
   $('#pk-src').textContent = '경기도교통정보센터 실시간 · ' + (FEST.lots.length ? (FEST.basis ? '셔틀 파주시 안내 · 임시는 작년 안내' : '임시·셔틀은 파주시 안내') : '축제 임시주차장 미포함');
+  // 축제 바꾸기: 열려 있는(끝나고 7일 안) 축제가 둘 이상일 때만 — 지금 파주 헤더 탭과 같은 기간
+  { const kst = new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10);
+    const open = Object.entries(FESTS).filter(([, f]) => kst <= new Date(Date.parse(f.end) + 7 * 864e5).toISOString().slice(0, 10)).sort((a, b) => a[1].start.localeCompare(b[1].start));
+    if (open.length > 1) $('#fsw').innerHTML = open.map(([k, f]) => `<a href="/festival/${k === 'jangdan' ? '' : '?f=' + k}"${k === FKEY ? ' class="on" aria-current="page"' : ''}>${esc(f.name.replace(/축제$/, ''))}</a>`).join(''); }
   dayChip();
   const [fd, rg] = await Promise.all([getJSON(BASE + 'fdata.json'), getJSON('/paju_roads.json')]);
   FD = fd; CENTER = fd.center; R = fd.radius;

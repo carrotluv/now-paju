@@ -47,6 +47,14 @@
   .ftab svg{color:var(--s3);flex:none}
   .ftab:hover{border-color:var(--s3)}
   .ftab .ft-s{display:none}
+  .ftab .ft-v{display:none;color:var(--sub)}
+  /* 좁은 화면: '축제' 탭 하나를 누르면 열려 있는 축제를 고르는 메뉴 */
+  .fmenu{position:fixed;z-index:1400;min-width:220px;background:var(--float-bg);border:1.5px solid var(--hair);border-radius:var(--radius-lg);box-shadow:var(--shadow-2);padding:4px}
+  .fmenu[hidden]{display:none}
+  .fmenu a{display:flex;align-items:center;gap:8px;min-height:44px;padding:0 12px;border-radius:var(--radius);font-size:14px;font-weight:700;line-height:20px;color:var(--ink);text-decoration:none}
+  .fmenu a svg{color:var(--s3);flex:none}
+  .fmenu a:hover{background:var(--hover)}
+  .fmenu a span{margin-left:auto;font-size:12px;font-weight:500;color:var(--sub);white-space:nowrap}
   .legend{margin-left:auto;display:flex;gap:15px;font-size:13px;line-height:20px;font-weight:500;color:var(--ink);align-items:flex-end;flex-wrap:wrap}
   .legend i{width:12px;height:12px;border-radius:50%;display:inline-block;margin-right:6px;vertical-align:-1px}
   .asof{font-weight:500;font-size:13px;color:var(--ink);border-left:1px solid var(--hair);padding-left:15px}
@@ -336,6 +344,8 @@
     .ftab{order:3;flex:0 0 auto;min-height:44px;padding:0 12px;align-self:stretch}
     .ftab .ft-l{display:none} .ftab .ft-s{display:inline}
     .ftab.later{display:none}
+    .ftab.multi .ft-v{display:block}
+    .ftab.multi>svg:not(.ft-v){display:none}                 /* 펼침 표시가 붙으면 자물쇠를 빼 I/E 탭과 한 줄 유지(자물쇠는 메뉴 항목에) */
     .tab{flex:1;justify-content:center;padding:12px 6px;min-height:44px;font-size:13px}
     .banner{padding:9px 14px;font-size:13px;line-height:20px;font-weight:500}
 
@@ -387,12 +397,13 @@
   <!-- 축제 상황판(축제팀 전용, 비밀번호) — 각 축제 끝나고 7일 뒤 자동으로 숨김. 좁은 화면은 가까운 축제 하나만 -->
   <a class="ftab" id="ftab-g" href="/festival/?f=ginseng" title="축제 운영팀 전용 · 비밀번호 필요">
     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
-    <span class="ft-l">개성인삼축제</span><span class="ft-s">축제</span>
+    <span class="ft-l">개성인삼축제</span><span class="ft-s">축제</span><svg class="ft-v" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
   </a>
   <a class="ftab" id="ftab" href="/festival/" title="축제 운영팀 전용 · 비밀번호 필요">
     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
-    <span class="ft-l">장단콩축제</span><span class="ft-s">축제</span>
+    <span class="ft-l">장단콩축제</span><span class="ft-s">축제</span><svg class="ft-v" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
   </a>
+  <div class="fmenu" id="fmenu" role="menu" hidden></div>
   <div class="legend">
     <span><i style="background:var(--s1)"></i>여유</span>
     <span><i style="background:var(--s2)"></i>보통</span>
@@ -1534,7 +1545,27 @@ document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.dataset.m
   const g=kst<='2026-10-25', j=kst<='2026-12-06';                     // 인삼축제(10.17~18)·장단콩축제(11.27~29) 끝나고 7일 뒤까지
   if(!g) document.getElementById('ftab-g').style.display='none';
   if(!j) document.getElementById('ftab').style.display='none';
-  if(g&&j) document.getElementById('ftab').classList.add('later'); }   // 둘 다 보일 땐 좁은 화면에서 나중 축제를 숨긴다
+  if(g&&j){                                                             // 둘 다 열려 있으면 좁은 화면은 '축제' 탭 하나 → 누르면 고르는 메뉴
+    const ft=document.getElementById('ftab-g'), fm=document.getElementById('fmenu');
+    document.getElementById('ftab').classList.add('later'); ft.classList.add('multi');
+    const lock=ft.querySelector('svg').outerHTML;
+    fm.innerHTML=[['/festival/?f=ginseng','개성인삼축제','10. 17.~18.'],['/festival/','장단콩축제','11. 27.~29.']]
+      .map(([h,n,d])=>`<a role="menuitem" href="${h}">${lock}${n}<span class="num">${d}</span></a>`).join('');
+    const close=()=>{ fm.hidden=true; ft.setAttribute('aria-expanded','false'); };
+    ft.setAttribute('aria-haspopup','menu'); ft.setAttribute('aria-expanded','false');
+    ft.addEventListener('click',e=>{
+      if(!matchMedia('(max-width:600px)').matches) return;            // 넓은 화면은 탭 두 개라 그대로 이동
+      e.preventDefault();
+      if(!fm.hidden){ close(); return; }
+      const r=ft.getBoundingClientRect();
+      fm.hidden=false; fm.style.top=(r.bottom+6)+'px';
+      fm.style.left=Math.max(8,Math.min(r.right-fm.offsetWidth, innerWidth-fm.offsetWidth-8))+'px';
+      ft.setAttribute('aria-expanded','true');
+    });
+    document.addEventListener('click',e=>{ if(!fm.hidden && !fm.contains(e.target) && !ft.contains(e.target)) close(); });
+    document.addEventListener('keydown',e=>{ if(e.key==='Escape') close(); });
+    addEventListener('resize',close); }
+}
 map.fitBounds(pajuBounds);
 zoomClass();
 renderBanner(); renderNodes(); renderCams(); renderList();

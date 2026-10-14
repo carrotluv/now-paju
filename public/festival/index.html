@@ -34,6 +34,13 @@
   .top{background:var(--bg);border-bottom:1px solid var(--hair)}
   .back{display:inline-block;font-size:14px;line-height:20px;font-weight:600;color:var(--ink-2);text-decoration:none}
   .back:hover{color:var(--ink);text-decoration:underline;text-underline-offset:3px}
+  /* 축제 바꾸기 — 지금 파주 I/E 탭(.tabs·.tab)과 같은 모양을 작게, 맨 위 줄 오른쪽(높이 늘지 않게) */
+  .toprow{display:flex;align-items:center;gap:8px}
+  .fsw{margin-left:auto;display:flex;padding:1px;border:1.5px solid var(--hair);border-radius:var(--radius);background:var(--card)}
+  .fsw:empty{display:none}
+  .fsw a{padding:0 9px;border-radius:6px;font-size:12px;line-height:17px;font-weight:500;color:var(--sub);text-decoration:none;white-space:nowrap}
+  .fsw a:hover{color:var(--ink)}
+  .fsw a.on{background:var(--btn-dark);color:var(--btn-dark-ink);font-weight:700}
   .brand{text-align:center}
   .brand b{display:block;font-size:21px;line-height:28px;font-weight:800;letter-spacing:.5px;margin-top:4px}
   .brand span{display:block;font-size:12px;line-height:16px;font-weight:500;color:var(--sub);margin-top:2px}
@@ -226,7 +233,7 @@
 
 <aside id="panel">
   <section class="sec top">
-    <a class="back" href="/">← 지금 파주</a>
+    <div class="toprow"><a class="back" href="/">← 지금 파주</a><nav class="fsw" id="fsw" aria-label="축제 바꾸기"></nav></div>
     <div class="brand"><b id="brand-name">축제 상황판</b><span id="brand-sub">임진각</span></div>
     <div class="meta"><span class="chip" id="day-chip">-</span><span class="asof num" id="upd">불러오는 중</span><button id="reload">새로고침</button></div>
   </section>
