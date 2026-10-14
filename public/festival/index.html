@@ -162,6 +162,16 @@
   .mcard.mbtn:hover{background:var(--hover)}
   /* 연도별 축제 방문객 — 막대는 0부터, 가장 많은 해가 칸을 꽉 채움 */
   .hbody{padding:12px 16px 16px;max-height:calc(100vh - 120px);overflow-y:auto}
+  /* 작년 축제와 같은 시각 비교 — 시각마다 작년(회색)·오늘(진한색) 막대 두 개 */
+  .cmpv{font-size:13px;line-height:19px;font-weight:500;color:var(--ink);margin-top:2px}
+  .cmpv b{font-weight:700}
+  .cbars{display:flex;align-items:flex-end;gap:3px;height:110px;margin-top:10px;border-bottom:1px solid var(--hair)}
+  .cbars .c{flex:1;min-width:0;display:flex;align-items:flex-end;gap:1px;height:100%}
+  .cbars i{flex:1;display:block;background:#c9c1ae;border-radius:2px 2px 0 0}
+  .cbars i.t{background:var(--ink)}
+  .clg{display:flex;justify-content:flex-end;gap:12px;font-size:12px;line-height:18px;font-weight:500;color:var(--ink);margin-top:6px}
+  .clg i{display:inline-block;width:10px;height:10px;border-radius:2px;background:#c9c1ae;margin-right:4px;vertical-align:-1px}
+  .clg i.t{background:var(--ink)}
   .hbars{display:flex;align-items:flex-end;gap:8px;height:150px;margin-top:22px}
   .hbars .c{flex:1;min-width:0;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center}
   .hbars i{display:block;width:100%;max-width:44px;background:#c9c1ae;border-radius:3px 3px 0 0;position:relative}
@@ -224,8 +234,8 @@
     <div class="headline" id="crowd-head"><span id="crowd-label">불러오는 중</span></div>
     <div class="grid2">
       <div class="mcard acc" id="mc-pop"><div class="lb">추정 인구</div><div class="v num" id="v-pop">-</div></div>
-      <button class="mcard mbtn" id="mc-diff" title="연도별 축제 방문객 보기"><div class="lb">평시 대비 ›</div><div class="v num" id="v-diff">-</div></button>
-      <div class="mcard"><div class="lb">평시 피크</div><div class="v num" id="v-peak">-</div></div>
+      <button class="mcard mbtn" id="mc-diff" title="작년 축제와 시간별 비교 보기"><div class="lb">지난 축제 대비 ›</div><div class="v num" id="v-prev">-</div></button>
+      <div class="mcard"><div class="lb">평시 대비</div><div class="v num" id="v-diff">-</div></div>
       <div class="mcard"><div class="lb">24시간 최다</div><div class="v num" id="v-max">-</div></div>
     </div>
     <div class="wx" id="wx" hidden></div>

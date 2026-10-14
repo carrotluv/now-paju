@@ -16,6 +16,13 @@ const FESTS = {
     ],
     // 임시주차장·셔틀: 올해 안내가 나오기 전이라 작년(2025, 제29회) 파주시 안내 기준 — 올해 안내가 나오면 바꾸고 basis를 지운다
     notHeld: [2019, 2020, 2021], basis: '작년(2025) 안내 기준',
+    // 작년 축제 날 임진각 시간별 인원(경기도 실시간 방문소비 = 지금 칸과 같은 자료, 원본 날짜 조회 24hours-1hour?date=, 2026-10-14 받음)
+    //   이 자료는 2025-04-11부터라 지금은 작년 한 번과 비교한다. 내년엔 올해 값을 더해 평균으로
+    prev: { y: 2025, days: [
+      { d: '2025-11-21', h: [119, 107, 103, 91, 112, 112, 100, 112, 215, 368, 683, 1486, 2276, 2418, 2345, 2598, 1563, 831, 187, 137, 142, 124, 129, 127] },
+      { d: '2025-11-22', h: [112, 126, 105, 124, 128, 132, 106, 141, 273, 636, 1322, 2401, 3370, 4140, 3927, 4185, 3661, 2452, 834, 240, 236, 262, 212, 131] },
+      { d: '2025-11-23', h: [118, 137, 146, 137, 129, 123, 139, 141, 369, 627, 1260, 2219, 3403, 3777, 3997, 3697, 3190, 2124, 1132, 177, 118, 127, 119, 114] },
+    ] },
     lots: [
       { n: '임진각 야외 보조주차장', addr: '문산읍 마정리 1177-8', lat: 37.89025, lng: 126.74581 },
       { n: '평화주차장', addr: '문산읍 마정리 989-1', lat: 37.89342, lng: 126.74676 },
@@ -34,6 +41,12 @@ const FESTS = {
       { y: 2025, s: '10. 18.', e: '19.', d: [189231, 198618] },
     ],
     notHeld: [2019, 2020, 2021],
+    // 작년 축제 날 임진각 시간별 인원(경기도 실시간 방문소비 = 지금 칸과 같은 자료, 원본 날짜 조회 24hours-1hour?date=, 2026-10-14 받음)
+    //   이 자료는 2025-04-11부터라 지금은 작년 한 번과 비교한다. 내년엔 올해 값을 더해 평균으로
+    prev: { y: 2025, days: [
+      { d: '2025-10-18', h: [159, 141, 158, 171, 159, 191, 187, 268, 498, 816, 1330, 1969, 2528, 3078, 3292, 3384, 3104, 2298, 1003, 311, 266, 254, 208, 150] },
+      { d: '2025-10-19', h: [217, 188, 203, 178, 171, 180, 181, 251, 486, 896, 1390, 2143, 3386, 4103, 4257, 4429, 4157, 3028, 1754, 431, 302, 223, 191, 154] },
+    ] },
     lots: [
       { n: '임진각 야외 보조주차장', addr: '문산읍 마정리 1177-8', lat: 37.89025, lng: 126.74581 },
       { n: '평화주차장', addr: '문산읍 마정리 989-1', lat: 37.89342, lng: 126.74676 },
@@ -201,8 +214,9 @@ function renderCrowd(sum, spot) {
   const last = tr[tr.length - 1];
   $('#v-pop').innerHTML = last ? fmt(last.sum) + '<small>명</small>' : '-';
   $('#v-diff').textContent = last ? fmtDiff(last.vsAvg) : '-';
-  let ph = null, pv = -1; tr.forEach((x) => { if (x.avgSum > pv) { pv = x.avgSum; ph = x.h; } });
-  $('#v-peak').textContent = ph != null ? ph + '시' : '-';
+  CROWD = { tr, last, label };
+  const pc = prevCompare();
+  $('#v-prev').textContent = pc && pc.vs != null ? fmtDiff(pc.vs) : '-';
   const max = Math.max(1, ...tr.map((x) => x.sum));                    // 그 지점의 24시간 중 가장 많은 실제 인원 = 칸 꽉 채움
   $('#v-max').innerHTML = tr.length ? fmt(max) + '<small>명</small>' : '-';
   $('#now-h').textContent = last ? '지금 ' + last.h + '시' : '';
@@ -217,6 +231,35 @@ function renderCrowd(sum, spot) {
   const age = spot && spot.age && spot.age.highestAge ? spot.age : null;
   const sex = spot && spot.sex && spot.sex.highestGender ? (spot.sex.highestGender === '여성' ? '여 ' : '남 ') + Math.max(spot.sex.maleRatio, spot.sex.femaleRatio).toFixed(0) + '%' : null;
   $('#kv').innerHTML = age || sex ? '주 방문층 ' + (age ? `<b>${esc(age.highestAge)}</b>${age.highestRatio != null ? ` <span class="num">${age.highestRatio}%</span>` : ''}` : '-') + (sex ? ` · <b>${sex}</b>` : '') : '';
+}
+
+// ---- 지난 축제 대비: 지금 임진각 인원 ÷ 작년 축제 같은 날차·같은 시각 인원(같은 통신 자료) ----
+//   축제 기간이면 오늘이 몇째 날인지로, 축제 전·후엔 작년 1일차와 비교한다
+let CROWD = null;
+function prevCompare() {
+  if (!FEST.prev || !CROWD || !CROWD.last) return null;
+  const kst = new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10);
+  const inFest = kst >= FEST.start && kst <= FEST.end;
+  const n = inFest ? Math.round((Date.parse(kst) - Date.parse(FEST.start)) / 864e5) : 0;
+  const day = FEST.prev.days[Math.min(n, FEST.prev.days.length - 1)];
+  const h = CROWD.last.h, base = day.h[h];
+  return { n: Math.min(n, FEST.prev.days.length - 1), inFest, day, h, now: CROWD.last.sum, base, vs: base ? (CROWD.last.sum / base - 1) * 100 : null, kst };
+}
+function prevSectionHtml() {
+  const pc = prevCompare();
+  if (!pc) return '';
+  const today = new Array(24).fill(null);
+  CROWD.tr.forEach((x) => { if (x.d === pc.kst || (!x.d && x.h <= pc.h)) today[x.h] = x.sum; });
+  const max = Math.max(1, ...pc.day.h, ...today.filter((v) => v != null));
+  const bars = pc.day.h.map((v, j) => `<div class="c"><i style="height:${Math.max(1, Math.round(v / max * 110))}px"></i><i class="t" style="height:${today[j] == null ? 0 : Math.max(1, Math.round(today[j] / max * 110))}px"></i></div>`).join('');
+  const md = (s) => `${+s.slice(5, 7)}. ${+s.slice(8)}.`;
+  const pk = pc.day.h.reduce((b, v, j) => (v > pc.day.h[b] ? j : b), 0);
+  return `<div class="p-sec" style="margin-top:0">작년 축제와 같은 시각 비교<span class="hint num">${FEST.prev.y} ${pc.n + 1}일차(${md(pc.day.d)})${pc.inFest ? '' : ' · 축제 전·후엔 1일차와'}</span></div>`
+    + `<div class="cmpv num">지금 ${pc.h}시 <b>${fmt(pc.now)}명</b> · 작년 같은 시각 <b>${fmt(pc.base)}명</b> · <b>${pc.vs == null ? '-' : fmtDiff(pc.vs)}</b></div>`
+    + `<div class="cbars">${bars}</div><div class="bar-x num"><span>0시</span><span>6시</span><span>12시</span><span>18시</span><span>23시</span></div>`
+    + `<div class="clg"><span><i></i>작년 ${pc.n + 1}일차(최다 ${fmt(pc.day.h[pk])}명 · ${pk}시)</span><span><i class="t"></i>오늘</span></div>`
+    + `<div class="src">경기도 실시간 방문소비 현황(통신 기반 추정) · 임진각 평화누리공원 · 지금 칸과 같은 자료</div>`
+    + `<div class="p-sec">연도별 축제 방문객<span class="hint">한국관광공사 · 파주시 전체</span></div>`;
 }
 
 function openHist() {
@@ -240,13 +283,13 @@ function openHist() {
   }
   const tr = rows.map((h, i) => `<tr><td class="num">${i + 1}</td><td class="num">${h.y}</td><td class="num">${h.s} ~ ${h.e}</td><td class="r num">${fmt(h.sum)}</td><td class="num">${h.vs == null ? '-' : fmtDiff(h.vs)}</td></tr>`).join('')
     + `<tr class="wait"><td class="num">${rows.length + 1}</td><td class="num">${thisYear}</td><td class="num">${+FEST.start.slice(5, 7)}. ${FEST.start.slice(8)}. ~ ${FEST.end.slice(8)}.</td><td class="r">${FEST.ready}</td><td>-</td></tr>`;
-  $('#h-body').innerHTML = `<div class="hbars">${cols.map((c) => `<div class="c">${c.html}</div>`).join('')}</div>`
+  $('#h-body').innerHTML = prevSectionHtml() + `<div class="hbars">${cols.map((c) => `<div class="c">${c.html}</div>`).join('')}</div>`
     + `<div class="hx num">${cols.map((c) => `<span>${c.y}</span>`).join('')}</div>`
     + `<div class="hunit">단위: 명</div>`
     + `<table class="htbl"><thead><tr><th>#</th><th>연도</th><th>기간</th><th>방문객(${nd}일)</th><th>3년 평균 대비</th></tr></thead><tbody>${tr}</tbody></table>`
     + `<div class="src">한국관광공사 관광빅데이터(이동통신 기반) · 파주시 전체 외지인 수라 임진각만의 인원은 아니다 · 2019~2021년 미개최 · 3년 평균은 그 전에 열린 축제 3번의 평균</div>`;
-  $('#h-title').textContent = FEST.name + ' 방문객 추이';
-  $('#h-sub').textContent = `파주시 외지인 · 축제 ${nd}일 합계`;
+  $('#h-title').textContent = FEST.name + ' 지난 축제 대비';
+  $('#h-sub').textContent = '임진각 · 작년 같은 날차·같은 시각';
   $('#hist').classList.add('open');
 }
 function closeHist() { $('#hist').classList.remove('open'); }
