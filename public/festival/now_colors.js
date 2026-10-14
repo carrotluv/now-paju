@@ -8,7 +8,7 @@ function computeColors(speeds){
     if(v==null) continue;
     (measured[ri]=measured[ri]||[]).push(v);
   }
-  // 이름만 같은 먼 구간을 메울 도로별 대표값 — 그 도로 링크들의 색 중 가장 많은 것(같으면 더 막히는 쪽).
+  // 도로 상황 카드의 도로별 대표 색 — 그 도로 실측 링크들의 색 중 가장 많은 것(같으면 더 막히는 쪽). 지도 칠하기엔 쓰지 않는다.
   //   서버가 준 도로 상태는 경기도 등급이 없는 도로면 60/35 속도 기준이라 지도 색과 어긋났다.
   const roadAvg={}, tally={}, names=new Set(ROADS.map(r=>r.road));
   for(const [ri,a] of Object.entries(measured)){

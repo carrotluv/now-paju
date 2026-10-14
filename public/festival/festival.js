@@ -67,7 +67,6 @@ const esc = (t) => String(t ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<
 // ---- 지금 파주와 같은 도로 색 기준(now_colors.js의 computeColors가 이 전역들을 쓴다) ----
 const LVC = { '원활': '#2f9b74', '서행': '#d18f3a', '정체': '#cc5647' };
 const spdColor = (v) => (v >= 48 ? LVC['원활'] : (v >= 24 ? LVC['서행'] : LVC['정체']));
-const mixWhite = (hex, t) => { const n = parseInt(hex.slice(1), 16), m = (x) => Math.round(x + (255 - x) * t); return `rgb(${m((n >> 16) & 255)},${m((n >> 8) & 255)},${m(n & 255)})`; };
 let ROADGEO = [], LINKMAP = {}, ROADSIB = {}, ROADS = [], LINK_SPD = {};
 const CROWD_C = { '여유': 'var(--s1)', '보통': 'var(--s2)', '약간 붐빔': 'var(--s3)', '붐빔': 'var(--s4)' };
 const CROWD_HEX = { '여유': '#2fa876', '보통': '#d9a62e', '약간 붐빔': '#e07b2f', '붐빔': '#d94f3d' };

@@ -728,8 +728,6 @@ let ROADGEO=[], LINKMAP={}, ROADSIB={}, linkLayer=L.layerGroup();
 //   예전 60/35는 고속도로 잣대라 72%였고, 등급이 없는 시내 도로(파주 지도 링크의 91%)가 퇴근길에 통째로 빨강이었다(2026-09-16).
 //   등급이 있는 링크는 등급 대표값(원활 75·서행 45·정체 20)으로 들어와 같은 함수로 색이 정해진다.
 const spdColor=v=>v>=48?LVC['원활']:(v>=24?LVC['서행']:LVC['정체']);
-const mixWhite=(hex,t)=>{ const n=parseInt(hex.slice(1),16), m=x=>Math.round(x+(255-x)*t);
-  return `rgb(${m((n>>16)&255)},${m((n>>8)&255)},${m(n&255)})`; };   // 추정 구간은 같은 색을 옅게
 async function loadLinks(){
   if(ROADGEO.length) return;
   try{
@@ -738,7 +736,7 @@ async function loadLinks(){
   }catch(e){ ROADGEO=[]; }
 }
 // 파일에 이미 '지점 반경 3km 이내' 링크만 담겨 있다.
-// 실측 속도가 없는 구간은 같은 도로의 평균으로 이어 그려 끊김을 없앤다(연하게 = 추정).
+// 실측 속도가 없는 구간은 칠하지 않는다(10-14 '실측 데이터만' — 추정으로 잇지 않음).
 // 줌에 따라 보여줄 도로 등급과 선 굵기 (축소 시 간선만 남겨 뭉침 방지)
 function trafficStyleForZoom(){
   const z=map.getZoom();
@@ -760,7 +758,7 @@ function computeColors(speeds){
     if(v==null) continue;
     (measured[ri]=measured[ri]||[]).push(v);
   }
-  // 이름만 같은 먼 구간을 메울 도로별 대표값 — 그 도로 링크들의 색 중 가장 많은 것(같으면 더 막히는 쪽).
+  // 도로 상황 카드의 도로별 대표 색 — 그 도로 실측 링크들의 색 중 가장 많은 것(같으면 더 막히는 쪽). 지도 칠하기엔 쓰지 않는다.
   //   서버가 준 도로 상태는 경기도 등급이 없는 도로면 60/35 속도 기준이라 지도 색과 어긋났다.
   const roadAvg={}, tally={}, names=new Set(ROADS.map(r=>r.road));
   for(const [ri,a] of Object.entries(measured)){
