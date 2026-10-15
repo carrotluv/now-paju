@@ -46,6 +46,10 @@
     font-size:13px;font-weight:700;line-height:20px;color:var(--ink);text-decoration:none;white-space:nowrap;align-self:flex-end}
   .ftab svg{color:var(--s3);flex:none}
   .ftab:hover{border-color:var(--s3)}
+  /* 축제 묶음: 세로선 + '축제 상황판' 글자 + 축제 버튼(버튼은 깃발·이름 그대로, 10-15 사용자 "요 모양 고대로") */
+  .fests{display:flex;align-items:center;gap:8px;align-self:flex-end}
+  .fsep{width:1px;height:22px;background:var(--hair);margin-right:4px}
+  .flab{font-size:13px;line-height:20px;font-weight:500;color:var(--sub);white-space:nowrap}
   .ftab .ft-s{display:none}
   .ftab .ft-v{display:none;color:var(--sub)}
   /* 좁은 화면: '축제' 탭 하나를 누르면 열려 있는 축제를 고르는 메뉴 */
@@ -341,6 +345,8 @@
     .legend>span:not(.asof){display:none}       /* 색 설명은 리스트 배지로 충분 */
     .asof{border-left:0;padding-left:0;font-size:12px}
     .tabs{order:3;width:auto;flex:1 1 calc(100% - 96px);min-width:0}   /* 로고 옆엔 못 들어가 둘째 줄로, 축제 탭과 한 줄 */
+    .fests{order:3;flex:0 0 auto;align-self:stretch}
+    .fsep,.flab{display:none}                        /* 휴대폰은 '축제' 버튼 하나라 묶음 글자가 필요 없다 */
     .ftab{order:3;flex:0 0 auto;min-height:44px;padding:0 12px;align-self:stretch}
     .ftab .ft-l{display:none} .ftab .ft-s{display:inline}
     .ftab.later{display:none}
@@ -394,15 +400,19 @@
     <button class="tab" data-m="I"><b>I</b>피해서 다닐래요</button>
     <button class="tab" data-m="E"><b>E</b>북적여야 신나요</button>
   </div>
-  <!-- 축제 상황판(누구나, 10-14 비밀번호 없앰) — 각 축제 끝나고 7일 뒤 자동으로 숨김. 좁은 화면은 '축제' 탭 하나 → 고르는 메뉴 -->
-  <a class="ftab" id="ftab-g" href="/festival/?f=ginseng" title="축제 교통 상황판">
+  <!-- 축제 상황판(누구나, 10-14 비밀번호 없앰) — 각 축제 끝나고 7일 뒤 자동으로 숨김. 좁은 화면은 '축제' 탭 하나 → 고르는 메뉴.
+       넓은 화면은 세로선과 '축제 상황판' 글자로 묶는다. 버튼은 깃발·이름 그대로(10-15 사용자 시안 3 + "요 모양 고대로") -->
+  <div class="fests" id="fests">
+  <span class="fsep" aria-hidden="true"></span><span class="flab">축제 상황판</span>
+  <a class="ftab" id="ftab-g" href="/festival/?f=ginseng" title="개성인삼축제 교통 상황판">
     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 21V4"/><path d="M5 4h11l-2 4 2 4H5"/></svg>
     <span class="ft-l">개성인삼축제</span><span class="ft-s">축제</span><svg class="ft-v" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
   </a>
-  <a class="ftab" id="ftab" href="/festival/" title="축제 교통 상황판">
+  <a class="ftab" id="ftab" href="/festival/" title="장단콩축제 교통 상황판">
     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 21V4"/><path d="M5 4h11l-2 4 2 4H5"/></svg>
     <span class="ft-l">장단콩축제</span><span class="ft-s">축제</span><svg class="ft-v" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
   </a>
+  </div>
   <div class="fmenu" id="fmenu" role="menu" hidden></div>
   <div class="legend">
     <span><i style="background:var(--s1)"></i>여유</span>
@@ -1412,6 +1422,7 @@ document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.dataset.m
   const g=kst<='2026-10-25', j=kst<='2026-12-06';                     // 인삼축제(10.17~18)·장단콩축제(11.27~29) 끝나고 7일 뒤까지
   if(!g) document.getElementById('ftab-g').style.display='none';
   if(!j) document.getElementById('ftab').style.display='none';
+  if(!g&&!j) document.getElementById('fests').style.display='none';   // 둘 다 끝나면 세로선·'축제 상황판' 글자도 함께 숨김
   if(g&&j){                                                             // 둘 다 열려 있으면 좁은 화면은 '축제' 탭 하나 → 누르면 고르는 메뉴
     const ft=document.getElementById('ftab-g'), fm=document.getElementById('fmenu');
     document.getElementById('ftab').classList.add('later'); ft.classList.add('multi');
