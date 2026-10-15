@@ -363,13 +363,24 @@ async function festivalGate(request, env, url) {
   return res;
 }
 
+// 2026-10-15 전체 중지 — 정보팀 연락 뒤 사용자 "지금파주에 관해서 외부 통신되는건 전부 내려".
+//   화면·API는 안내 한 장만 내주고, 5분 자동 수집(scheduled)도 돌지 않는다.
+//   다시 열 땐 CLOSED를 false로 바꾸고 .github/workflows/its-sync.yml의 schedule 두 줄도 되살린다
+const CLOSED = true;
+const CLOSED_PAGE = '<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">'
+  + '<meta name="robots" content="noindex"><title>지금 파주</title><style>body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;'
+  + 'padding:16px;background:#f7f5ef;color:#23272f;font-family:\'Malgun Gothic\',sans-serif;text-align:center}b{display:block;font-size:22px;font-weight:800;'
+  + 'margin-bottom:8px}p{margin:0;font-size:15px;line-height:22px}</style></head><body><div><b>지금 파주</b><p>서비스를 잠시 쉬고 있습니다.</p></div></body></html>';
+
 export default {
   async scheduled(event, env, ctx) {            // 5분마다: 경기도 전체 소통을 추려 KV에 저장 + 주차장 빈자리 기록
+    if (CLOSED) return;
     ctx.waitUntil(ggRefresh(env).catch(() => {}));
     ctx.waitUntil(pkSeenUpdate(env, ctx).catch(() => {}));
   },
 
   async fetch(request, env, ctx) {
+    if (CLOSED) return new Response(CLOSED_PAGE, { status: 503, headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store', 'x-robots-tag': 'noindex' } });
     const url = new URL(request.url);
     if (url.pathname === '/api/visit' || url.pathname === '/api/stats') {
       const s = await visitStats(env, url.pathname === '/api/visit');
