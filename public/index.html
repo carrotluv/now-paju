@@ -400,7 +400,7 @@
     <button class="tab" data-m="I"><b>I</b>피해서 다닐래요</button>
     <button class="tab" data-m="E"><b>E</b>북적여야 신나요</button>
   </div>
-  <!-- 축제 상황판(누구나, 10-14 비밀번호 없앰) — 각 축제 끝나고 7일 뒤 자동으로 숨김. 좁은 화면은 '축제' 탭 하나 → 고르는 메뉴.
+  <!-- 축제 상황판(누구나, 10-14 비밀번호 없앰) — 버튼은 각 축제가 끝나고 3일 뒤까지만 보임(상황판 주소는 계속 열림). 좁은 화면은 '축제' 탭 하나 → 고르는 메뉴.
        넓은 화면은 세로선과 '축제 상황판' 글자로 묶는다. 버튼은 깃발·이름 그대로(10-15 사용자 시안 3 + "요 모양 고대로") -->
   <div class="fests" id="fests">
   <span class="fsep" aria-hidden="true"></span><span class="flab">축제 상황판</span>
@@ -1417,9 +1417,11 @@ setInterval(loadParking, 300000);
 
 // ── 초기화
 document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.dataset.m===mode));
-// 장단콩축제 탭: 2026-11-29 축제 끝나고 7일 뒤(12-06)부터 숨김(한국 시각 기준)
+// 축제 탭: 축제가 끝나고 3일 뒤까지만 보이고 그다음 날부터 숨긴다(한국 시각, 10-15 사용자 "끝나고 3일 뒤면 버튼 사라지게").
+//   버튼만 숨긴다. 상황판(/festival)은 그대로 열려 있어 내년엔 아래 끝난 날과 festival.js FESTS 날짜만 바꿔 다시 쓴다
 { const kst=new Date(Date.now()+9*3600e3).toISOString().slice(0,10);
-  const g=kst<='2026-10-25', j=kst<='2026-12-06';                     // 인삼축제(10.17~18)·장단콩축제(11.27~29) 끝나고 7일 뒤까지
+  const SHOW_DAYS=3, upto=end=>new Date(Date.parse(end)+SHOW_DAYS*864e5).toISOString().slice(0,10);
+  const g=kst<=upto('2026-10-18'), j=kst<=upto('2026-11-29');       // 개성인삼축제(10.17~18)·장단콩축제(11.27~29)가 끝난 날
   if(!g) document.getElementById('ftab-g').style.display='none';
   if(!j) document.getElementById('ftab').style.display='none';
   if(!g&&!j) document.getElementById('fests').style.display='none';   // 둘 다 끝나면 세로선·'축제 상황판' 글자도 함께 숨김

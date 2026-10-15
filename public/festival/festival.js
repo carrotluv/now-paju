@@ -479,9 +479,9 @@ async function startFestival() {
   $('#brand-sub').textContent = `${FEST.place} · ${md(FEST.start)} ~ ${+FEST.end.slice(8)}일(${wd(FEST.end)})`;
   // 출처는 한 줄로(상황판 세로 스크롤 없게)
   $('#pk-src').textContent = '경기도교통정보센터 실시간 · ' + (FEST.lots.length ? (FEST.basis ? '셔틀 파주시 안내 · 임시는 작년 안내' : '임시·셔틀은 파주시 안내') : '축제 임시주차장 미포함');
-  // 축제 바꾸기: 열려 있는(끝나고 7일 안) 축제가 둘 이상일 때만 — 지금 파주 헤더 탭과 같은 기간
+  // 축제 바꾸기: 끝나고 3일 뒤까지인 축제가 둘 이상일 때만 — 지금 파주 머리말 축제 버튼과 같은 기간(10-15 사용자 "3일 뒤면 사라지게")
   { const kst = new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10);
-    const open = Object.entries(FESTS).filter(([, f]) => kst <= new Date(Date.parse(f.end) + 7 * 864e5).toISOString().slice(0, 10)).sort((a, b) => a[1].start.localeCompare(b[1].start));
+    const open = Object.entries(FESTS).filter(([, f]) => kst <= new Date(Date.parse(f.end) + 3 * 864e5).toISOString().slice(0, 10)).sort((a, b) => a[1].start.localeCompare(b[1].start));
     if (open.length > 1) $('#fsw').innerHTML = open.map(([k, f]) => `<a href="/festival/${k === 'jangdan' ? '' : '?f=' + k}"${k === FKEY ? ' class="on" aria-current="page"' : ''}>${esc(f.name.replace(/축제$/, ''))}</a>`).join(''); }
   dayChip();
   const [fd, rg] = await Promise.all([getJSON(BASE + 'fdata.json'), getJSON('/paju_roads.json')]);
