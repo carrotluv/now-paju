@@ -446,8 +446,31 @@ function openCam(c) {
   const v = $('#cv');
   if (window.Hls && Hls.isSupported()) { camHls = new Hls({ maxBufferLength: 15 }); camHls.loadSource(c.url); camHls.attachMedia(v); } else { v.src = c.url; }
   $('#modal').classList.add('open');
+  if (camPos) placeCam(camPos.x, camPos.y);                  // 옮겨 둔 자리가 있으면 거기에(화면 크기가 바뀌었으면 안으로)
 }
 function closeCam() { $('#modal').classList.remove('open'); stopStream(); }
+
+// CCTV 창 옮기기: 머리줄을 끌면 창이 그 자리에 머물고 어두운 바탕을 걷어 지도를 그대로 쓸 수 있다(닫기는 버튼·Esc).
+//   자리는 페이지를 닫을 때까지 기억해서 다른 CCTV를 눌러도 같은 자리에 뜬다
+let camPos = null;
+function placeCam(x, y) {
+  const box = $('#modal .mbox'), head = $('#modal .mhead');
+  x = Math.min(Math.max(x, 0), Math.max(0, innerWidth - box.offsetWidth));
+  y = Math.min(Math.max(y, 0), Math.max(0, innerHeight - head.offsetHeight));
+  camPos = { x, y }; box.style.left = x + 'px'; box.style.top = y + 'px'; $('#modal').classList.add('moved');
+}
+function initCamDrag() {
+  const box = $('#modal .mbox'), head = $('#modal .mhead');
+  head.addEventListener('pointerdown', (e) => {
+    if (e.button !== 0 || e.target.closest('button')) return;
+    const r = box.getBoundingClientRect(), dx = e.clientX - r.left, dy = e.clientY - r.top;
+    head.setPointerCapture(e.pointerId); placeCam(r.left, r.top);
+    const mv = (ev) => placeCam(ev.clientX - dx, ev.clientY - dy);
+    const up = () => { head.removeEventListener('pointermove', mv); head.removeEventListener('pointerup', up); head.removeEventListener('pointercancel', up); };
+    head.addEventListener('pointermove', mv); head.addEventListener('pointerup', up); head.addEventListener('pointercancel', up);
+  });
+  addEventListener('resize', () => { if (camPos && $('#modal').classList.contains('open')) placeCam(camPos.x, camPos.y); });
+}
 
 async function loadLive() {
   $('#upd').textContent = '갱신 중';
@@ -522,6 +545,7 @@ async function startFestival() {
   });
   map.on('click', () => { if (isMobile() && cardsOpen()) { CARD.road = CARD.cam = false; applyToggles(); } });
   $('#m-x').onclick = closeCam;
+  initCamDrag();
   $('#mc-diff').onclick = openHist;
   $('#h-x').onclick = closeHist;
   $('#hist').onclick = (e) => { if (e.target.id === 'hist') closeHist(); };

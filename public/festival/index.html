@@ -214,6 +214,10 @@
   .mhead b{font-size:15px;line-height:22px;font-weight:700}
   .mhead span{font-size:12px;font-weight:500;color:var(--sub)}
   .mhead button{margin-left:auto;border:1px solid var(--hair);background:var(--card);border-radius:var(--radius);padding:5px 12px;font-size:13px;font-weight:700;color:var(--ink)}
+  #modal .mhead{cursor:move;touch-action:none;user-select:none;-webkit-user-select:none}   /* CCTV 창은 머리줄을 끌어 옮긴다 */
+  #modal .mhead button{cursor:pointer}
+  #modal.moved{background:transparent;pointer-events:none}                                 /* 옮긴 뒤엔 어두운 바탕을 걷어 지도를 그대로 쓴다 */
+  #modal.moved .mbox{position:fixed;pointer-events:auto}
   .mvid{aspect-ratio:16/9;background:#000}
   .mvid video{width:100%;height:100%;object-fit:contain}
   /* 접근성 설정 3가지: 지금 파주와 같은 값 */
@@ -308,7 +312,7 @@
 
 <div id="hist"><div class="mbox"><div class="mhead"><b id="h-title">방문객 추이</b><span id="h-sub"></span><button id="h-x">닫기</button></div><div class="hbody" id="h-body"></div></div></div>
 
-<div id="modal"><div class="mbox"><div class="mhead"><b id="m-title"></b><span id="m-sub">실시간 도로 CCTV</span><button id="m-x">닫기</button></div><div class="mvid" id="m-body"></div></div></div>
+<div id="modal"><div class="mbox"><div class="mhead" title="끌어서 옮기기"><b id="m-title"></b><span id="m-sub">실시간 도로 CCTV</span><button id="m-x">닫기</button></div><div class="mvid" id="m-body"></div></div></div>
 
 <script src="lib/maplibre-gl.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.5.13/hls.min.js"></script>
