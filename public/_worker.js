@@ -366,7 +366,8 @@ async function festivalGate(request, env, url) {
 // 2026-10-15 전체 중지 — 정보팀 연락 뒤 사용자 "지금파주에 관해서 외부 통신되는건 전부 내려".
 //   화면·API는 안내 한 장만 내주고, 5분 자동 수집(scheduled)도 돌지 않는다.
 //   다시 열 땐 CLOSED를 false로 바꾸고 .github/workflows/its-sync.yml의 schedule 두 줄도 되살린다
-const CLOSED = true;
+// 2026-10-16 다시 엶(맥북으로 옮긴 뒤 사용자 "다시 열자"). 다시 닫으려면 true로
+const CLOSED = false;
 const CLOSED_PAGE = '<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">'
   + '<meta name="robots" content="noindex"><title>지금 파주</title><style>body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;'
   + 'padding:16px;background:#f7f5ef;color:#23272f;font-family:\'Malgun Gothic\',sans-serif;text-align:center}b{display:block;font-size:22px;font-weight:800;'
