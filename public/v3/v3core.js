@@ -58,6 +58,28 @@ const MODE = {
   },
 };
 
+// 화풍 3종(10-16) — 3D 화풍판(styles.ts)의 땅·물·도로·건물 색을 v3 지도 모드로 옮긴 것. 지도 기능은 도면·일러스트와 똑같다(그림만 다름)
+Object.assign(MODE, {
+  real: { bg: '#c6d3dd', land: '#a9a58d', water: '#3f6378', wline: '#4f7488', road: '#76787b', roadMajor: '#62656a', casing: '#a7a39a', mask: '#d7dcde', maskOp: 0.5, bridge: '#b5b1a9',
+    lc: { forest: '#465f35', park: '#6a8a4a', grass: '#879c64', wetland: '#738f7b', farm: '#a3a274', urban: '#b3aea2', industrial: '#a9a6a0' },
+    hs: { shadow: '#3c4030', highlight: '#f2efe2', accent: '#5a6046', ex: 0.55 },
+    sky: { 'sky-color': '#4f86c6', 'horizon-color': '#dbe6ee', 'fog-color': '#c6d3dd', 'sky-horizon-blend': 0.6, 'horizon-fog-blend': 0.55, 'fog-ground-blend': 0.2 },
+    wall: ['#d4cfc4', '#d8c4a8', '#e6e3dc', '#d7d4cd', '#b7c2cc', '#e1d9c8', '#c6c9cc', '#d3cdbb'], roof: ['#99958d', '#8b5b45', '#b5b1a9', '#9fa2a5', '#8995a1', '#a3a08f', '#8d9aa5', '#c2c7c6'] },
+  paint: { bg: '#e9f1f2', land: '#b6d57c', water: '#68b6d8', wline: '#7cc0de', road: '#f7f1e3', roadMajor: '#f4ecd8', casing: '#d4c39d', mask: '#f3f1e4', maskOp: 0.45, bridge: '#f3e8d2',
+    lc: { forest: '#5d9d4a', park: '#7dbb5a', grass: '#a2cd6f', wetland: '#8cc4a4', farm: '#dccf86', urban: '#e7ddc4', industrial: '#ddd6c6' },
+    hs: { shadow: '#4f7a3e', highlight: '#fffbe8', accent: '#7fa35e', ex: 0.5 },
+    sky: { 'sky-color': '#4f9fe3', 'horizon-color': '#f6f2e2', 'fog-color': '#e9f1f2', 'sky-horizon-blend': 0.6, 'horizon-fog-blend': 0.55, 'fog-ground-blend': 0.15 },
+    wall: ['#efe7d8', '#f5ead4', '#f7f2e6', '#f3dfc6', '#e4edf1', '#f0f1de', '#e8e4da', '#f1e6c6'], roof: ['#c9785a', '#c4513d', '#d98263', '#3f8f8b', '#5c87b6', '#6f9f5a', '#8aa0b3', '#b98c4f'] },
+  ash: { bg: '#a3826c', land: '#8c876c', water: '#4c6470', wline: '#5d7480', road: '#bdb095', roadMajor: '#b4a78c', casing: '#6b604f', mask: '#8f8476', maskOp: 0.5, bridge: '#b8b1a3',
+    lc: { forest: '#3d4d32', park: '#55643e', grass: '#72764d', wetland: '#5e6a59', farm: '#978c60', urban: '#8b8478', industrial: '#827e77' },
+    hs: { shadow: '#2b2830', highlight: '#e8c9a8', accent: '#594a3b', ex: 0.6 },
+    sky: { 'sky-color': '#2c323d', 'horizon-color': '#e0864e', 'fog-color': '#a3826c', 'sky-horizon-blend': 0.7, 'horizon-fog-blend': 0.6, 'fog-ground-blend': 0.3 },
+    wall: ['#b3aa98', '#c7b9a0', '#b8b1a3', '#b5a993', '#a7a59e', '#bdb39c', '#9c9890', '#b0a68e'], roof: ['#94503a', '#a3523a', '#8c4a36', '#7d4535', '#6b6560', '#7f5a3e', '#5f5f5f', '#8a6a45'] },
+});
+const styleCol = (arr) => ['match', ['get', 'u'], 2, arr[0], 1, arr[1], 3, arr[2], 4, arr[3], 5, arr[4], 6, arr[5], 7, arr[6], arr[7]];
+// 지금 모드가 화풍이면(용도 색 기준일 때) 건물 벽·지붕을 화풍 색으로
+const mWall = (f) => { const m = MODE[state.mode]; return m && m.wall && state.color !== 'year' ? styleCol(m.wall) : f(); };
+const mRoof = () => { const m = MODE[state.mode]; return m && m.roof ? styleCol(m.roof) : roofColor(); };
 const state = { mode: 'plan', useOn: new Set(USE_ORDER), color: 'use', yearOn: new Set(YEAR.map((b, i) => i)) };
 try { if (localStorage.getItem('paju3d.color') === 'year') state.color = 'year'; } catch (e) { /* 저장소 없음 */ }
 // 표시 요소 체크 칸: 키 → 이름·지도 층
@@ -323,6 +345,41 @@ function buildStyle() {
 }
 
 // ---------- 모드 전환 (스타일 재생성 없이 속성만 바꿔 깜박임 없음) ----------
+
+// ---------- 가상 성벽(잿빛 성곽 화풍일 때만, 장식 — 실제 시설 아님) ----------
+//   3D 화풍판 castle.ts처럼 파주 경계를 따라 높이 90m·두께 22m 벽(멀리서도 보이게 화풍판보다 키움)을 세우고, 위에 성가퀴(톱니)를 얹는다. 지형 위에 선다
+function castleData() {
+  const kx = 111320 * Math.cos(37.83 * Math.PI / 180), ky = 110574, T = 11;
+  const wall = [], crest = [];
+  const quad = (a, b, t0, t1, out) => {
+    const dx = (b[0] - a[0]) * kx, dy = (b[1] - a[1]) * ky, L = Math.hypot(dx, dy);
+    if (L < 1) return;
+    const nx = -dy / L * T / kx, ny = dx / L * T / ky;
+    const p = (q, s) => [a[0] + (b[0] - a[0]) * q + nx * s, a[1] + (b[1] - a[1]) * q + ny * s];
+    out.push({ type: 'Feature', properties: {}, geometry: { type: 'Polygon', coordinates: [[p(t0, 1), p(t1, 1), p(t1, -1), p(t0, -1), p(t0, 1)]] } });
+  };
+  DATA.boundary.features.forEach((f) => (f.geometry.type === 'Polygon' ? [f.geometry.coordinates] : f.geometry.coordinates).forEach((poly) => {
+    const r = poly[0];
+    for (let i = 0; i + 1 < r.length; i++) {
+      const a = r[i], b = r[i + 1];
+      quad(a, b, -0.02, 1.02, wall);                       // 이음매가 벌어지지 않게 조금 겹쳐 그린다
+      const L = Math.hypot((b[0] - a[0]) * kx, (b[1] - a[1]) * ky), n = Math.floor(L / 24);
+      for (let k = 0; k < n; k += 2) quad(a, b, k / Math.max(n, 1), (k + 1) / Math.max(n, 1), crest);   // 24m마다 톱니
+    }
+  }));
+  return { wall: { type: 'FeatureCollection', features: wall }, crest: { type: 'FeatureCollection', features: crest } };
+}
+function showCastle(on) {
+  if (!map) return;
+  if (on && !map.getSource('castle-wall')) {
+    const d = castleData();
+    map.addSource('castle-wall', { type: 'geojson', data: d.wall });
+    map.addSource('castle-crest', { type: 'geojson', data: d.crest });
+    map.addLayer({ id: 'castle-wall', type: 'fill-extrusion', source: 'castle-wall', paint: { 'fill-extrusion-color': '#b9ad98', 'fill-extrusion-height': 90, 'fill-extrusion-base': 0, 'fill-extrusion-opacity': 1, 'fill-extrusion-vertical-gradient': true } });
+    map.addLayer({ id: 'castle-crest', type: 'fill-extrusion', source: 'castle-crest', paint: { 'fill-extrusion-color': '#a39782', 'fill-extrusion-height': 102, 'fill-extrusion-base': 90, 'fill-extrusion-opacity': 1 } });
+  }
+  ['castle-wall', 'castle-crest'].forEach((id) => map.getLayer(id) && map.setLayoutProperty(id, 'visibility', on ? 'visible' : 'none'));
+}
 function setMode(mode) {
   state.mode = mode;
   const m = MODE[mode];
@@ -341,10 +398,13 @@ function setMode(mode) {
   paint('road-case', 'line-color', m.casing);
   paint('mask', 'fill-color', m.mask);
   paint('mask', 'fill-opacity', m.maskOp);
-  paint('bld-roof', 'fill-extrusion-color', selColor(roofColor()));
+  paint('bld-roof', 'fill-extrusion-color', selColor(mRoof()));
+  paint('bld', 'fill-extrusion-color', selColor(mWall(wallColor)));
+  paint('bld-far', 'fill-extrusion-color', selColor(mWall(farColor)));
   paint('bridge', 'fill-extrusion-color', ['case', ['==', ['get', 'k'], 1], '#c6ccd4', m.bridge]);
   map.setSky(m.sky);
   applyVisibility();
+  showCastle(mode === 'ash');
   document.querySelectorAll('#seg-style button').forEach((b) => b.classList.toggle('on', b.dataset.style === mode));
 }
 
@@ -353,9 +413,9 @@ function setColorBy(c) {
   state.color = c;
   try { localStorage.setItem('paju3d.color', c); } catch (e) { /* 저장소 없음 */ }
   const paint = (id, k, v) => map.getLayer(id) && map.setPaintProperty(id, k, v);
-  paint('bld', 'fill-extrusion-color', selColor(wallColor()));
-  paint('bld-roof', 'fill-extrusion-color', selColor(roofColor()));
-  paint('bld-far', 'fill-extrusion-color', selColor(farColor()));
+  paint('bld', 'fill-extrusion-color', selColor(mWall(wallColor)));
+  paint('bld-roof', 'fill-extrusion-color', selColor(mRoof()));
+  paint('bld-far', 'fill-extrusion-color', selColor(mWall(farColor)));
   applyUseFilter();
   applyVisibility();
   buildLegend();

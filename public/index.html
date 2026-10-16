@@ -1068,16 +1068,26 @@ addEventListener('resize',()=>{ clearTimeout(pkResize); pkResize=setTimeout(()=>
 const ROWS_VISIBLE=10;
 function fitRows(){
   const list=document.getElementById('list');
-  if(!list||innerWidth<=640){ document.documentElement.style.removeProperty('--rowh'); return; }
-  const head=list.querySelector('.list-head');
-  const avail=list.clientHeight-(head?head.offsetHeight:0);
+  if(!list) return;
+  const head=list.querySelector('.list-head'), mv=document.getElementById('mview'), rows=document.getElementById('rows');
+  const top=(head?head.offsetHeight:0)+(mv?mv.offsetHeight:0);   // 지도·화풍 보기 칸(펼치면 높아짐)까지 빼야 마지막 줄이 안 잘린다(10-16)
+  if(innerWidth<=640){
+    // 좁은 화면: 줄 높이는 그대로 두고, 리스트 상자 높이를 줄 단위로 맞춰 반쪽 줄이 보이지 않게
+    document.documentElement.style.removeProperty('--rowh');
+    const r=rows&&(rows.querySelector('.row:not(.sel)')||rows.querySelector('.row'));
+    if(!r||!r.offsetHeight){ list.style.maxHeight=''; return; }
+    const rh=r.offsetHeight, n=Math.max(3,Math.floor((480-top)/rh));
+    list.style.maxHeight=(top+n*rh)+'px';
+    return;
+  }
+  list.style.maxHeight='';
+  const avail=list.clientHeight-top;
   if(avail<=0) return;
   let n=ROWS_VISIBLE, h=Math.floor(avail/n);
   if(h>84){ n=Math.ceil(avail/84); h=Math.floor(avail/n); }          // 큰 화면은 개수를 늘려 여백을 없앤다
   if(h<48){ n=Math.max(4,Math.floor(avail/48)); h=Math.floor(avail/n); }
   document.documentElement.style.setProperty('--rowh',h+'px');
-  const rows=document.getElementById('rows');                        // 남는 몇 px 때문에 다음 행이 살짝 보이던 것 제거
-  if(rows) rows.style.paddingTop=Math.max(0,avail-h*n)+'px';
+  if(rows) rows.style.paddingTop=Math.max(0,avail-h*n)+'px';           // 남는 몇 px 때문에 다음 행이 살짝 보이던 것 제거
 }
 addEventListener('resize',fitRows);
 
@@ -1556,6 +1566,7 @@ loadVisits();
   ['map','style'].forEach(k=>{ if(V.q[k]!=='normal') V.q[k]='high'; });   // 화질은 보통·선명 두 단계(10-16)
   const save=()=>{ try{ localStorage.setItem('nowpaju.view', JSON.stringify({kind:V.kind,map:V.map,style:V.style,q:V.q})); }catch(e){} };
   const wrap=document.querySelector('.mapwrap'), box=$i('sty3d');
+  let viewSel='over';                                         // 보기 줄 선택 표시: 'over'(전체 조감 시점) · 'tour'(투어 중) · null(사용자가 지도를 움직임·지점 고름)
   let frame=null;
   const fdoc=()=>{ try{ return frame&&frame.contentDocument; }catch(e){ return null; } };
   // 화풍판: 자기 패널은 감추고, 화풍·효과는 그 안의 버튼·체크 칸을 대신 눌러 맞춘다
@@ -1568,7 +1579,11 @@ loadVisits();
     Object.entries(want).forEach(([k,v])=>{ const c=d.querySelector(`#fx input[data-k="${k}"]`); if(c&&c.checked!==v) c.click(); });
     return true;
   }
-  function showStyle(on){
+  // 화풍은 같은 지도에서 그림만 바꾼다(10-16 사용자 "화풍은 표현 방식만") — 지점·도로 색·주차·CCTV·조감·투어가 지도와 똑같이 동작
+  const curMode=()=>V.kind==='map'?V.map:V.style;
+  function applyMode(){ if(window.V3&&V3.map) V3.setMode(curMode()); }
+  function showStyle(on){ applyMode(); }
+  function showStyleOld(on){
     box.hidden=!on; wrap.classList.toggle('sty',on);
     if(on&&!frame){
       frame=document.createElement('iframe'); frame.title='파주 3D 화풍판'; frame.src='/3d/';
@@ -1584,12 +1599,15 @@ loadVisits();
     $i('mv-sty-l').textContent=isMap?'':' · '+(STYLES.find(x=>x[0]===V.style)||STYLES[0])[1];
     $i('mv-map').setAttribute('aria-expanded',String(V.open&&isMap)); $i('mv-sty').setAttribute('aria-expanded',String(V.open&&!isMap));
     $i('mv-dd').hidden=!V.open;
+    if(typeof fitRows==='function') fitRows();   // 칸을 펼치고 접으면 리스트 줄 높이를 다시 맞춘다
     $i('mv-kind').textContent=isMap?'지도':'화풍';
     const opts=isMap?MAPS:STYLES, cur=isMap?V.map:V.style;
     $i('mv-opts').innerHTML=opts.map(([k,n])=>`<button data-k="${k}" class="${k===cur?'on':''}">${n}</button>`).join('');
     document.querySelectorAll('#mv-q button').forEach(b=>b.classList.toggle('on',b.dataset.q===V.q[V.kind]));
-    $i('mv-tour').classList.toggle('on',!!(isMap&&window.V3&&V3.touring));
-    $i('mv-tour').textContent=(isMap&&window.V3&&V3.touring)?'투어 끝내기':'헬기투어';
+    const touring=!!(window.V3&&V3.touring);
+    $i('mv-over').classList.toggle('on',!touring&&viewSel==='over');
+    $i('mv-tour').classList.toggle('on',touring);
+    $i('mv-tour').textContent=touring?'투어 끝내기':'헬기투어';
   }
   function pick(kind){
     if(V.kind===kind) V.open=!V.open; else { V.kind=kind; V.open=true; }
@@ -1599,34 +1617,41 @@ loadVisits();
   $i('mv-sty').onclick=()=>pick('style');
   $i('mv-opts').onclick=e=>{
     const b=e.target.closest('button'); if(!b) return;
-    if(V.kind==='map'){ V.map=b.dataset.k; if(window.V3&&V3.map) V3.setMode(V.map); }
-    else { V.style=b.dataset.k; styleSync(); }
+    if(V.kind==='map') V.map=b.dataset.k; else V.style=b.dataset.k;
+    applyMode();
+    if(V.kind==='style'&&V.style==='ash') banner('잿빛 성곽의 성벽은 파주 경계를 따라 세운 장식이에요(실제 시설 아님)',3500);
     save(); render();
   };
   $i('mv-q').onclick=e=>{
     const b=e.target.closest('button'); if(!b) return;
-    V.q[V.kind]=b.dataset.q;
-    if(V.kind==='map'){ if(window.V3) V3.setQuality(V.q.map); } else styleSync();
+    V.q.map=V.q.style=b.dataset.q;                             // 화질은 지도·화풍 공통
+    if(window.V3) V3.setQuality(V.q.map);
     save(); render();
   };
   $i('mv-over').onclick=()=>{
-    if(V.kind!=='map'){ banner('화풍에서 전체 조감은 다음 단계에서 붙여요. 지금은 지도에서 볼 수 있어요',3200); return; }
     if(window.V3&&V3.touring) V3.stopTour();
     if(window.V3&&V3.map) V3.overview();
-    render();
+    viewSel='over'; render();
   };
   $i('mv-tour').onclick=()=>{
-    if(V.kind!=='map'){ banner('화풍 헬기투어는 다음 단계에서 붙여요. 지금은 지도에서 돌아볼 수 있어요',3200); return; }
     if(!(window.V3&&V3.map)) return;
-    if(V3.touring) V3.stopTour(); else V3.startTour();
+    if(V3.touring){ V3.stopTour(); viewSel=null; } else { V3.startTour(); viewSel='tour'; }
     setTimeout(render,50);
   };
   ['t-stop'].forEach(id=>$i(id).addEventListener('click',()=>setTimeout(render,50)));
+  // 보기 줄 표시 풀기: 손으로 지도를 움직이거나 지점을 고르면 '전체 조감'이 아니다. 투어가 끝나면(자막 버튼·Esc 포함) 다시 그린다
+  const _renderList=window.renderList;
+  window.renderList=function(){ const r=_renderList.apply(this,arguments); fitRows(); return r; };
+  const _select=window.select;
+  window.select=function(){ viewSel=null; render(); return _select.apply(this,arguments); };
+  let lastTour=false;
+  setInterval(()=>{ const t=!!(window.V3&&V3.touring); if(t!==lastTour){ lastTour=t; if(!t&&viewSel==='tour') viewSel=null; render(); } },400);
+  const hookMap=setInterval(()=>{ if(!(window.V3&&V3.map)) return; clearInterval(hookMap);
+    ['dragstart','zoomstart','rotatestart','pitchstart'].forEach(ev=>V3.map.on(ev,e=>{ if(e.originalEvent&&viewSel==='over'&&!V3.touring){ viewSel=null; render(); } })); },300);
   // 지도 엔진이 준비되면 저장해 둔 도면·일러스트·화질을 건다
   const ready=setInterval(()=>{ if(window.V3&&V3.map&&V3.map.loaded()){ clearInterval(ready);
     try{ localStorage.setItem('paju3d.quality',V.q.map); }catch(e){}
-    V3.setQuality(V.q.map); if(V.map!=='plan') V3.setMode(V.map); } },300);
-  if(V.kind==='style') showStyle(true);
+    V3.setQuality(V.q.map); if(curMode()!=='plan') V3.setMode(curMode()); } },300);
   render();
 })();
 </script>
