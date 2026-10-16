@@ -882,7 +882,8 @@ const V_FAST = 760, V_SLOW = 210, PLAY = 10;     // m/s (재생 기준), 배속
 const smooth = (a, b, x) => { const t = Math.max(0, Math.min(1, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
 
 function buildTour() {
-  const stops = DATA.landmarks.filter((l) => l.tour);
+  // 지금 파주 첫 화면: 지점 리스트 순서(고른 지점부터)로 날아간다(10-16). 정해 주지 않으면 v3 명소 경로
+  const stops = tour.custom && tour.custom.length > 1 ? tour.custom : DATA.landmarks.filter((l) => l.tour);
   const P = stops.map((l) => toM([l.lon, l.lat]));
   const OFF = 420;
   const W = P.map((p, i) => {
@@ -996,7 +997,7 @@ function startTour() {
   // 투어 중엔 화면 배율 1배(보통)로 그려 끊김을 줄이고, 끝나면 고른 화질로 되돌림
   map.setPixelRatio(window.devicePixelRatio || 1);
   tour.start = s0; tour.wrapped = false;
-  tour.on = true; tour.paused = false; tour.s = s0; tour.tgt = null; tour.alt = 0; tour.cur = -2; tour.last = 0;
+  tour.on = true; tour.paused = false; tour.s = s0; tour.tgt = null; tour.alt = 0; tour.cur = -2; tour.last = 0; tour.jt = null;
   $('#btn-tour').classList.add('on'); $('#btn-tour').textContent = '투어 중';
   document.body.classList.add('touring');
   $('#hud').classList.add('on'); $('#t-pause').textContent = '일시정지';
@@ -1031,11 +1032,20 @@ function stopTour(finished) {
 }
 function jumpStop(d) {
   if (!tour.on) return;
-  const cur = tour.stops.findIndex((st) => st.s - tour.s > 1600);
-  let target = (cur < 0 ? tour.stops.length : cur) - 1 + d;
-  if (d < 0) target = Math.max(0, (cur < 0 ? tour.stops.length : cur) - 2);
-  target = Math.max(0, Math.min(tour.stops.length - 1, target));
-  tour.s = Math.max(0, tour.stops[target].s - 2400); tour.tgt = null;
+  // 기준 지점: 마지막으로 '다음·이전'으로 간 지점(아직 300m 넘게 지나치지 않았으면) → 화면에 보이는 다가가는 지점(1.5km 안) → 이미 지난 마지막 지점.
+  //   예전엔 '1.6km 넘게 앞인 지점'을 기준으로 해서, 지점끼리 가까우면(오두산·운정 일대) 같은 지점을 또 골라 제자리였다(10-16)
+  const S = tour.stops;
+  let base = -1;
+  if (tour.jt != null && tour.jt < S.length && tour.s <= S[tour.jt].s + 300) base = tour.jt;
+  else {
+    const ahead = S.findIndex((st) => st.s > tour.s + 300 && st.s - tour.s <= 1500);
+    if (ahead >= 0) base = ahead;
+    else S.forEach((st, k) => { if (st.s <= tour.s + 300) base = k; });
+  }
+  let target = Math.max(0, Math.min(S.length - 1, base + d));
+  let pos = S[target].s - 2400;
+  if (d > 0 && pos <= tour.s + 200) pos = S[target].s - 500;   // 지점끼리 가까우면 2.4km 앞이 이미 지나온 자리 — 그 지점 바로 앞으로
+  tour.s = Math.max(0, pos); tour.tgt = null; tour.jt = target;
 }
 
 // ---------- 시작 ----------
@@ -1124,6 +1134,9 @@ function setQuality(q) {
 window.V3 = {
   start: (container, onReady) => main(container, onReady).catch((e) => { $('#loading').textContent = '불러오기 실패: ' + e.message; console.error(e); }),
   get map() { return map; }, get state() { return state; }, get data() { return DATA; }, get touring() { return tour.on; },
-  setMode, setQuality, overview, startTour, stopTour: () => stopTour(true), quality: () => (qualityRatio(), state.quality),
+  setMode, setQuality, overview, startTour, stopTour: () => stopTour(true),
+  get tourInfo() { return { s: Math.round(tour.s), L: Math.round(tour.L), cur: tour.cur, stops: (tour.stops || []).map((x) => x.l.name), ss: (tour.stops || []).map((x) => Math.round(x.s)), paused: tour.paused }; },
+  jumpStop,
+  setTourStops: (list) => { tour.custom = list; tour.L = 0; state.sel = null; },   // [{name, desc, lon, lat}] — 다음 startTour 때 경로를 새로 만든다 quality: () => (qualityRatio(), state.quality),
 };
 })();
