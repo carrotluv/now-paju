@@ -82,19 +82,22 @@ function json(data, status = 200, ttl = 0) {
 //    사무실 PC의 its_sync.py 가 5분마다 data 브랜치에 올린 its.json 을 GitHub API로 읽는다.
 //    GH_TOKEN(읽기 전용 PAT)은 Cloudflare Secret — 응답에 절대 싣지 않는다.
 const GH_ITS = 'https://api.github.com/repos/carrotluv/now-paju/contents/its.json?ref=data';
+const GH_ITS_RAW = 'https://raw.githubusercontent.com/carrotluv/now-paju/data/its.json';
 
 async function ghItsData(env, ctx) {
   const cache = caches.default;
   const ck = new Request('https://cache.now-paju.internal/gh-its');
   const hit = await cache.match(ck);
   if (hit) return hit.json();
-  const r = await fetch(GH_ITS, {
+  let r = env.GH_TOKEN ? await fetch(GH_ITS, {
     headers: {
       accept: 'application/vnd.github.raw+json',
       authorization: 'Bearer ' + env.GH_TOKEN,
       'user-agent': 'now-paju-worker'
     }
-  });
+  }).catch(() => null) : null;
+  // 토큰이 없거나 막히면(10-16 GH_TOKEN 401로 CCTV 503) 공개 저장소 원본 주소로 읽는다 — 키 없이 되고 깃허브 API 한도도 안 쓴다
+  if (!r || !r.ok) r = await fetch(GH_ITS_RAW, { headers: { 'user-agent': 'now-paju-worker' }, cf: { cacheTtl: 60 } });
   if (!r.ok) throw new Error('gh ' + r.status);
   const body = await r.text();
   ctx.waitUntil(cache.put(ck, new Response(body, { headers: { 'content-type': 'application/json', 'cache-control': 'public, max-age=180' } })));
@@ -392,7 +395,7 @@ export default {
     try {
       if (url.pathname === '/api/cctv' || url.pathname === '/api/traffic') {
         let d = null;
-        if (env.GH_TOKEN) { try { d = await ghItsData(env, ctx); } catch (e) { d = null; } }
+        try { d = await ghItsData(env, ctx); } catch (e) { d = null; }
         if (url.pathname === '/api/cctv') {
           if (!d) return json({ error: 'no-key', message: '데이터 채널(GH_TOKEN)이 아직 연결되지 않았습니다' }, 503);
           return json({ asof: d.asof, count: (d.cams || []).length, cams: d.cams || [] }, 200, 180);
