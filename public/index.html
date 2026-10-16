@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>지금 파주 · 파주 실시간 인파 지도</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="/v3/lib/maplibre-gl.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.min.css">
 <style>
   :root{
@@ -391,6 +391,52 @@
     .pp-h{padding-right:30px}
   }
   @media(max-width:389px){ .pkleg .std{display:none} }   /* 글자 12px에서 한 줄로 — 360px 폭은 '기준'을 떼야 들어간다(357→334px) */
+
+  /* ---- 지도 보기 칸(10-16 시안 1): 지도(파주 3D 맵 v3 도면·일러스트) · 화풍(3D 화풍판 3종) ---- */
+  .mview{padding:10px 12px;border-bottom:1px solid var(--hair);background:var(--panel);display:flex;flex-direction:column;gap:8px}
+  .mv-btns{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .mv-b{display:flex;align-items:center;justify-content:center;gap:4px;min-height:40px;border:1.5px solid var(--hair);border-radius:var(--radius);background:var(--card);color:var(--ink);font:inherit;font-size:14px;font-weight:700;cursor:pointer}
+  .mv-b.on{background:var(--ink);border-color:var(--ink);color:#fff}
+  .mv-b[aria-expanded="true"] svg{transform:rotate(180deg)}
+  .mv-dd[hidden]{display:none}
+  .mv-dd{border:1.5px solid var(--hair);border-radius:var(--radius-lg);background:var(--card);padding:8px;display:flex;flex-direction:column;gap:6px}
+  .mv-row{display:grid;grid-template-columns:32px 1fr;align-items:center;gap:6px}
+  .mv-lb{font-size:12px;font-weight:500;color:var(--sub)}
+  .mv-seg{display:flex;border:1.5px solid var(--hair);border-radius:var(--radius);overflow:hidden}
+  .mv-seg button{flex:1;min-height:36px;border:0;border-left:1px solid var(--hair);background:var(--card);color:var(--ink);font:inherit;font-size:13px;font-weight:500;cursor:pointer}
+  .mv-seg button:first-child{border-left:0}
+  .mv-seg button.on{background:var(--ink);color:#fff;font-weight:700}
+  #sty3d{position:absolute;inset:0;z-index:5000;background:#c6d3dd}  /* 지도 표식(z 900~3000) 위로 덮는다 */
+  #sty3d iframe{width:100%;height:100%;border:0;display:block}
+  .mapwrap.sty .maplibregl-marker,.mapwrap.sty .maplibregl-popup,.mapwrap.sty .mapbtns,.mapwrap.sty .statchip,.mapwrap.sty .trafficbox,.mapwrap.sty .pkleg,.mapwrap.sty .maptag{display:none}
+  /* v3 엔진이 그리는 것 — 명소 이름표는 헬기투어 때만(첫 화면 지점 표식과 겹치지 않게) */
+  .mapwrap .lm{display:none}
+  body.touring .mapwrap .lm.tour,body.touring .mapwrap .lm.now{display:block}
+  .lm{background:#fff;color:var(--ink);border:1px solid var(--hair);border-radius:4px;padding:3px 7px;font-size:12px;font-weight:700;white-space:nowrap;position:relative}
+  .lm.now{background:var(--ink);border-color:var(--ink);color:#fff}
+  .emd{font-size:12px;font-weight:700;color:#2d3748;text-shadow:0 0 3px #fff,0 0 3px #fff,0 0 6px #fff;white-space:nowrap;pointer-events:none}
+  .maplibregl-popup{z-index:1300}
+  .maplibregl-popup-content{font-family:inherit;color:var(--ink);border-radius:var(--radius-lg);padding:12px 14px;box-shadow:var(--shadow-2)}
+  .maplibregl-popup-content b{display:block;font-size:15px;font-weight:800;margin-bottom:4px}
+  .lsh-pop .maplibregl-popup-content{padding:0;width:236px}
+  .lsh-pop .maplibregl-popup-content b{display:inline;font-size:inherit;margin:0}
+  .maplibregl-popup-close-button{width:32px;height:32px;font-size:20px}
+  .pp-row{display:grid;grid-template-columns:52px auto;gap:4px;margin-top:3px;font-size:13px;font-weight:500}
+  .pp-row span:first-child{color:var(--sub)}
+  .pp-src{margin-top:6px;font-size:12px;font-weight:500;color:var(--sub)}
+  #hud{position:absolute;left:16px;bottom:16px;z-index:700;pointer-events:none;opacity:0;transition:opacity .5s;width:min(520px,calc(100% - 32px));background:#fff;border:1px solid var(--hair);border-radius:var(--radius-lg);padding:14px 16px;box-shadow:var(--shadow-2)}
+  #hud.on{opacity:1}
+  #hud .idx{font-size:12px;font-weight:700;letter-spacing:.18em;color:var(--ink-2);min-height:1.2em}
+  #hud .name{font-size:26px;font-weight:800;line-height:1.2;margin-top:2px;transition:opacity .6s}
+  #hud .desc{font-size:13px;font-weight:500;color:var(--sub);margin-top:4px;transition:opacity .6s}
+  #hud .stat{display:block;font-size:12px;font-weight:500;color:var(--sub);margin-top:10px}
+  #hud .bar{height:4px;background:var(--hair2);border-radius:2px;margin-top:8px;overflow:hidden}
+  #hud .bar i{display:block;height:100%;width:0;background:var(--ink)}
+  #hud .fade{opacity:0}
+  .hud-ctl{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:10px;pointer-events:auto}
+  .hud-ctl button{min-height:36px;border:1.5px solid var(--hair);border-radius:var(--radius);background:var(--card);color:var(--ink);font:inherit;font-size:13px;font-weight:700}
+  .hud-ctl button.stop{background:var(--ink);border-color:var(--ink);color:#fff}   /* 지도 보기 칸과 같은 검정(10-16 통일) */
+  body.touring .mapbtns,body.touring .statchip,body.touring .trafficbox{display:none}
 </style>
 </head>
 <body>
@@ -430,6 +476,15 @@
 <div class="wrap">
   <div class="mapwrap">
     <div id="map"></div>
+    <div id="sty3d" hidden></div>
+    <div id="hud">
+      <div class="idx" id="hud-idx"></div>
+      <div class="name" id="hud-name"></div>
+      <div class="desc" id="hud-desc"></div>
+      <div class="stat" id="hud-stat"></div>
+      <div class="bar"><i id="hud-bar"></i></div>
+      <div class="hud-ctl"><button id="t-prev">이전</button><button id="t-pause">일시정지</button><button id="t-next">다음</button><button id="t-stop" class="stop">투어 끝내기</button></div>
+    </div>
     <div class="mapbtns">
       <select class="msel" id="spot-jump"><option value="__all">파주 전체</option></select>
       <button class="mbtn tgl on" id="tg-cam" title="지점 주변 CCTV 위치 표시 (확대하면 나타남)">CCTV</button>
@@ -444,12 +499,23 @@
           <path d="M12 1.5v2.6M12 19.9v2.6M22.5 12h-2.6M4.1 12H1.5"/></svg>내 위치</button>
     </div>
     <div class="statchip" id="statchip"></div>
-    <div class="maptag"><span class="mt-x">지도: </span>© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a><span class="mt-x"> 기여자</span></div>
+    <div class="maptag"><span class="mt-x">지도: </span>건물·경계 국토교통부 VWorld · 지형 Mapterhorn · © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a></div>
     <div class="trafficbox" id="trafficbox"></div>
     <div class="pkleg" id="pkleg" hidden></div>
     <div class="pkleg trleg" id="trleg" hidden></div>
   </div>
   <aside class="list" id="list">
+    <div class="mview" id="mview">
+      <div class="mv-btns">
+        <button class="mv-b on" id="mv-map" aria-expanded="false">지도 · <span id="mv-map-l">도면</span><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+        <button class="mv-b" id="mv-sty" aria-expanded="false">화풍<span id="mv-sty-l"></span><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+      </div>
+      <div class="mv-dd" id="mv-dd" hidden>
+        <div class="mv-row"><span class="mv-lb">보기</span><div class="mv-seg"><button id="mv-over">전체 조감</button><button id="mv-tour">헬기투어</button></div></div>
+        <div class="mv-row"><span class="mv-lb" id="mv-kind">지도</span><div class="mv-seg" id="mv-opts"></div></div>
+        <div class="mv-row"><span class="mv-lb">화질</span><div class="mv-seg" id="mv-q"><button data-q="normal">보통</button><button data-q="high">선명</button></div></div>
+      </div>
+    </div>
     <div class="list-head"><b>지점 리스트</b><span id="sort-note"></span></div>
     <div id="rows"></div>
   </aside>
@@ -473,7 +539,9 @@
   </div>
 </div>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="/v3/lib/maplibre-gl.js"></script>
+<script src="/v3/v3core.js"></script>
+<script src="/v3/lshim.js"></script>   <!-- 지도는 파주 3D 맵 v3(MapLibre). 첫 화면 코드는 Leaflet 흉내 층 위에서 그대로 돈다 -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.5.13/hls.min.js"></script>
 <script>
 const PAJU_RING=[[38.00704,126.99008],[38.00602,126.99138],[38.00335,126.99325],[38.0013,126.99527],[37.99871,126.99887],[37.99597,127.00105],[37.99395,127.00488],[37.99277,127.01484],[37.98696,127.01711],[37.98634,127.01668],[37.98541,127.0152],[37.98089,127.01186],[37.97748,127.01208],[37.97728,127.01196],[37.97558,127.01074],[37.97454,127.00906],[37.97388,127.00714],[37.97533,127.00498],[37.97347,127.00275],[37.97229,127.00341],[37.9697,127.00307],[37.96753,126.99748],[37.9679,126.99248],[37.96768,126.99092],[37.96239,126.98838],[37.96131,126.98859],[37.95646,126.98851],[37.95597,126.98659],[37.95572,126.98506],[37.95118,126.9772],[37.94455,126.9763],[37.94212,126.9716],[37.93597,126.96442],[37.93086,126.9646],[37.92757,126.96442],[37.92601,126.96326],[37.92517,126.96222],[37.92387,126.9615],[37.92284,126.96167],[37.92105,126.96163],[37.92006,126.96016],[37.92094,126.95798],[37.9184,126.94954],[37.91478,126.95191],[37.91413,126.95312],[37.91217,126.95447],[37.90782,126.952],[37.90706,126.95035],[37.90493,126.94904],[37.90367,126.94895],[37.90091,126.94589],[37.89834,126.94655],[37.89684,126.94823],[37.89197,126.94679],[37.88624,126.9469],[37.88537,126.94723],[37.88035,126.94621],[37.86971,126.94451],[37.86825,126.94606],[37.86591,126.94584],[37.85964,126.94163],[37.85768,126.94],[37.85444,126.93837],[37.85263,126.9394],[37.84932,126.93549],[37.84542,126.93387],[37.84285,126.93561],[37.84039,126.93596],[37.83887,126.93414],[37.83765,126.92731],[37.84138,126.92402],[37.84132,126.91492],[37.84047,126.91237],[37.83847,126.91133],[37.83588,126.91294],[37.83033,126.91183],[37.82855,126.91101],[37.82851,126.91022],[37.82816,126.90659],[37.82655,126.90259],[37.82541,126.9021],[37.8244,126.90228],[37.81666,126.90998],[37.81168,126.90854],[37.81037,126.90906],[37.80983,126.9097],[37.80498,126.9119],[37.80239,126.90602],[37.7924,126.90468],[37.79057,126.9063],[37.79128,126.91127],[37.78976,126.91967],[37.78814,126.92084],[37.78564,126.92746],[37.78775,126.93037],[37.78881,126.93152],[37.78846,126.93414],[37.78696,126.93795],[37.78412,126.9368],[37.77861,126.93398],[37.77577,126.93515],[37.77124,126.93417],[37.76771,126.93336],[37.75703,126.92797],[37.75516,126.93113],[37.75346,126.93179],[37.75026,126.9308],[37.74821,126.92567],[37.74701,126.91968],[37.74783,126.91794],[37.74403,126.90788],[37.73898,126.9018],[37.73454,126.90237],[37.72902,126.90272],[37.72723,126.90014],[37.726,126.89335],[37.72368,126.88718],[37.72505,126.88604],[37.72479,126.88502],[37.72612,126.87978],[37.72537,126.87529],[37.72743,126.87307],[37.72999,126.86708],[37.7326,126.86415],[37.73268,126.86113],[37.73542,126.85547],[37.73488,126.85343],[37.73163,126.84169],[37.73105,126.84089],[37.72964,126.84027],[37.72946,126.84032],[37.72746,126.83676],[37.72711,126.82879],[37.72673,126.82847],[37.72661,126.8281],[37.72544,126.82114],[37.72563,126.81848],[37.72555,126.8171],[37.72443,126.81532],[37.7235,126.81439],[37.72446,126.81136],[37.72483,126.81078],[37.72554,126.81011],[37.72669,126.80918],[37.72727,126.80402],[37.73075,126.80057],[37.73348,126.80142],[37.73452,126.80112],[37.73597,126.79642],[37.73503,126.79433],[37.73458,126.79393],[37.73026,126.79571],[37.72986,126.79567],[37.72808,126.79502],[37.72409,126.79152],[37.72367,126.79082],[37.72354,126.79038],[37.72358,126.78977],[37.72287,126.78751],[37.72007,126.78425],[37.71971,126.78451],[37.71932,126.78455],[37.7191,126.78448],[37.71775,126.7801],[37.71274,126.77586],[37.70919,126.77383],[37.7063,126.77349],[37.70498,126.77415],[37.70462,126.77278],[37.70695,126.76787],[37.70717,126.76703],[37.70442,126.76377],[37.7033,126.75996],[37.70383,126.75629],[37.70495,126.75385],[37.70401,126.7515],[37.70301,126.75002],[37.70324,126.74864],[37.70372,126.74705],[37.70412,126.74633],[37.70429,126.74618],[37.7052,126.74152],[37.70438,126.7378],[37.70438,126.73697],[37.705,126.7335],[37.70506,126.72974],[37.70455,126.725],[37.7025,126.72297],[37.70012,126.71633],[37.69964,126.71303],[37.69979,126.71167],[37.69952,126.71045],[37.69814,126.70751],[37.69766,126.7067],[37.6966,126.70333],[37.69649,126.70183],[37.69665,126.70147],[37.69696,126.70085],[37.69534,126.69848],[37.68864,126.69031],[37.69599,126.68288],[37.69995,126.67487],[37.70054,126.67396],[37.71437,126.67654],[37.73169,126.68029],[37.74437,126.67717],[37.74657,126.67694],[37.76933,126.66511],[37.7807,126.66262],[37.78604,126.66353],[37.80046,126.66618],[37.81849,126.66931],[37.83478,126.67135],[37.83793,126.66211],[37.83909,126.65989],[37.84024,126.65932],[37.84287,126.66023],[37.84325,126.66498],[37.84618,126.67071],[37.84498,126.67156],[37.84418,126.67653],[37.84603,126.67957],[37.84677,126.68],[37.84705,126.68008],[37.85175,126.67988],[37.85658,126.6842],[37.86727,126.69138],[37.87285,126.68588],[37.87289,126.6815],[37.87148,126.6809],[37.87019,126.67911],[37.86996,126.67292],[37.87159,126.67349],[37.87449,126.6752],[37.87682,126.67236],[37.87743,126.67186],[37.87775,126.67183],[37.87811,126.67227],[37.87759,126.67427],[37.87726,126.6751],[37.87734,126.67595],[37.87877,126.68054],[37.87929,126.68166],[37.88007,126.68185],[37.88042,126.68055],[37.88082,126.67939],[37.88188,126.67861],[37.88255,126.67887],[37.88338,126.67952],[37.88412,126.68018],[37.8846,126.67989],[37.88497,126.67735],[37.88455,126.67639],[37.88295,126.67644],[37.8819,126.67594],[37.88148,126.67452],[37.88221,126.67252],[37.8826,126.67219],[37.88336,126.6728],[37.88454,126.67427],[37.88525,126.67463],[37.88642,126.67396],[37.88696,126.67153],[37.88803,126.67014],[37.88841,126.67111],[37.88875,126.67218],[37.89779,126.67735],[37.89862,126.67744],[37.90012,126.67741],[37.905,126.67686],[37.90768,126.67684],[37.91286,126.68278],[37.91396,126.67819],[37.91663,126.66801],[37.91906,126.666],[37.92145,126.66573],[37.92342,126.66615],[37.92596,126.66743],[37.92796,126.6679],[37.9302,126.66783],[37.9308,126.66772],[37.934,126.66726],[37.93436,126.66743],[37.93533,126.66918],[37.93577,126.66969],[37.93951,126.67211],[37.93989,126.67199],[37.94045,126.67129],[37.94063,126.67061],[37.94102,126.66965],[37.94153,126.6692],[37.9418,126.66911],[37.94598,126.66976],[37.94657,126.67027],[37.94696,126.67108],[37.94779,126.67176],[37.94887,126.67196],[37.95183,126.67118],[37.95481,126.67093],[37.95525,126.67393],[37.95404,126.67607],[37.95376,126.67622],[37.95401,126.67674],[37.95648,126.67949],[37.95811,126.6813],[37.95701,126.6863],[37.96613,126.6923],[37.97048,126.70073],[37.97408,126.70229],[37.97484,126.70371],[37.97516,126.70885],[37.97271,126.7093],[37.96926,126.71094],[37.96935,126.71485],[37.96849,126.71701],[37.96684,126.71775],[37.96569,126.71773],[37.96645,126.72519],[37.96836,126.72701],[37.96879,126.73041],[37.96637,126.73574],[37.96605,126.7369],[37.96762,126.73779],[37.96904,126.73833],[37.97337,126.74069],[37.97266,126.74163],[37.97359,126.74428],[37.97735,126.74854],[37.97929,126.74956],[37.98165,126.75393],[37.98366,126.75835],[37.98338,126.76054],[37.98385,126.76581],[37.98056,126.77019],[37.97911,126.77131],[37.97854,126.77214],[37.97835,126.7728],[37.9788,126.77421],[37.97925,126.77475],[37.98042,126.77535],[37.98194,126.77216],[37.98446,126.77587],[37.98173,126.78357],[37.98302,126.78442],[37.98814,126.79012],[37.9903,126.79262],[37.99226,126.79307],[37.99327,126.797],[37.99227,126.79982],[37.98966,126.8008],[37.98768,126.80018],[37.98126,126.80476],[37.97668,126.80664],[37.97421,126.81074],[37.97338,126.80955],[37.97316,126.80916],[37.97306,126.80879],[37.97267,126.80688],[37.969,126.80919],[37.96922,126.8122],[37.9689,126.81394],[37.96572,126.81732],[37.9622,126.81754],[37.96098,126.81687],[37.9582,126.82371],[37.96182,126.83044],[37.96405,126.83275],[37.96299,126.83751],[37.9674,126.83831],[37.97664,126.83942],[37.97899,126.84013],[37.98561,126.84645],[37.98649,126.8509],[37.98605,126.85264],[37.98416,126.85588],[37.98021,126.86123],[37.9758,126.86757],[37.97357,126.87031],[37.97109,126.87246],[37.97038,126.8736],[37.967,126.88129],[37.96624,126.88537],[37.96738,126.89181],[37.97027,126.89557],[37.97239,126.89563],[37.97421,126.89538],[37.97747,126.89328],[37.99024,126.89236],[37.99277,126.89276],[37.99495,126.89683],[37.99482,126.89772],[37.99445,126.9029],[37.99395,126.90522],[37.98903,126.90972],[37.98553,126.9211],[37.98407,126.92481],[37.98178,126.93249],[37.98832,126.95316],[37.99024,126.95595],[37.99536,126.95974],[37.99643,126.96016],[37.9989,126.96361],[38.00084,126.96638],[38.00557,126.97092],[38.00757,126.97423],[38.00688,126.97529],[38.00874,126.97913],[38.01,126.9896],[38.00845,126.98915],[38.00781,126.98914],[38.00704,126.99008]];
@@ -1476,6 +1544,91 @@ loadIts();
 loadParking();
 fitRows();
 loadVisits();
+</script>
+<script>
+// ── 지도 보기 칸(10-16 시안 1) — 지도: 파주 3D 맵 v3(도면·일러스트), 화풍: 3D 화풍판(실사풍·수채 동화·잿빛 성곽, /3d/ 창)
+//   화질·전체 조감·헬기투어는 고른 쪽에 걸린다. 화풍판은 같은 사이트 창이라 그 안의 버튼을 대신 눌러 맞춘다.
+(function(){
+  const $i=id=>document.getElementById(id);
+  const MAPS=[['plan','도면'],['illust','일러스트']], STYLES=[['real','실사풍'],['paint','수채 동화'],['ash','잿빛 성곽']];
+  const V={kind:'map', map:'plan', style:'real', q:{map:'high', style:'high'}, open:false};
+  try{ Object.assign(V, JSON.parse(localStorage.getItem('nowpaju.view')||'{}'), {open:false}); }catch(e){}
+  ['map','style'].forEach(k=>{ if(V.q[k]!=='normal') V.q[k]='high'; });   // 화질은 보통·선명 두 단계(10-16)
+  const save=()=>{ try{ localStorage.setItem('nowpaju.view', JSON.stringify({kind:V.kind,map:V.map,style:V.style,q:V.q})); }catch(e){} };
+  const wrap=document.querySelector('.mapwrap'), box=$i('sty3d');
+  let frame=null;
+  const fdoc=()=>{ try{ return frame&&frame.contentDocument; }catch(e){ return null; } };
+  // 화풍판: 자기 패널은 감추고, 화풍·효과는 그 안의 버튼·체크 칸을 대신 눌러 맞춘다
+  function styleSync(){
+    const d=fdoc(); if(!d||!d.querySelector('#seg-style button')) return false;
+    if(!d.getElementById('np-hide')){ const st=d.createElement('style'); st.id='np-hide'; st.textContent='#panel{display:none!important}'; d.head.appendChild(st); }
+    const b=d.querySelector(`#seg-style button[data-k="${V.style}"]`)||[...d.querySelectorAll('#seg-style button')][STYLES.findIndex(x=>x[0]===V.style)];
+    if(b&&!b.classList.contains('on')) b.click();
+    const want={normal:{shadow:false,trees:false,outline:false},high:{shadow:true,trees:true,outline:false}}[V.q.style];
+    Object.entries(want).forEach(([k,v])=>{ const c=d.querySelector(`#fx input[data-k="${k}"]`); if(c&&c.checked!==v) c.click(); });
+    return true;
+  }
+  function showStyle(on){
+    box.hidden=!on; wrap.classList.toggle('sty',on);
+    if(on&&!frame){
+      frame=document.createElement('iframe'); frame.title='파주 3D 화풍판'; frame.src='/3d/';
+      frame.addEventListener('load',()=>{ let n=0; const t=setInterval(()=>{ if(styleSync()||++n>40) clearInterval(t); },250); });
+      box.appendChild(frame);
+    } else if(on) styleSync();
+    if(on&&window.V3&&V3.touring) V3.stopTour();
+  }
+  function render(){
+    const isMap=V.kind==='map';
+    $i('mv-map').classList.toggle('on',isMap); $i('mv-sty').classList.toggle('on',!isMap);
+    $i('mv-map-l').textContent=(MAPS.find(x=>x[0]===V.map)||MAPS[0])[1];
+    $i('mv-sty-l').textContent=isMap?'':' · '+(STYLES.find(x=>x[0]===V.style)||STYLES[0])[1];
+    $i('mv-map').setAttribute('aria-expanded',String(V.open&&isMap)); $i('mv-sty').setAttribute('aria-expanded',String(V.open&&!isMap));
+    $i('mv-dd').hidden=!V.open;
+    $i('mv-kind').textContent=isMap?'지도':'화풍';
+    const opts=isMap?MAPS:STYLES, cur=isMap?V.map:V.style;
+    $i('mv-opts').innerHTML=opts.map(([k,n])=>`<button data-k="${k}" class="${k===cur?'on':''}">${n}</button>`).join('');
+    document.querySelectorAll('#mv-q button').forEach(b=>b.classList.toggle('on',b.dataset.q===V.q[V.kind]));
+    $i('mv-tour').classList.toggle('on',!!(isMap&&window.V3&&V3.touring));
+    $i('mv-tour').textContent=(isMap&&window.V3&&V3.touring)?'투어 끝내기':'헬기투어';
+  }
+  function pick(kind){
+    if(V.kind===kind) V.open=!V.open; else { V.kind=kind; V.open=true; }
+    showStyle(kind==='style'); save(); render();
+  }
+  $i('mv-map').onclick=()=>pick('map');
+  $i('mv-sty').onclick=()=>pick('style');
+  $i('mv-opts').onclick=e=>{
+    const b=e.target.closest('button'); if(!b) return;
+    if(V.kind==='map'){ V.map=b.dataset.k; if(window.V3&&V3.map) V3.setMode(V.map); }
+    else { V.style=b.dataset.k; styleSync(); }
+    save(); render();
+  };
+  $i('mv-q').onclick=e=>{
+    const b=e.target.closest('button'); if(!b) return;
+    V.q[V.kind]=b.dataset.q;
+    if(V.kind==='map'){ if(window.V3) V3.setQuality(V.q.map); } else styleSync();
+    save(); render();
+  };
+  $i('mv-over').onclick=()=>{
+    if(V.kind!=='map'){ banner('화풍에서 전체 조감은 다음 단계에서 붙여요. 지금은 지도에서 볼 수 있어요',3200); return; }
+    if(window.V3&&V3.touring) V3.stopTour();
+    if(window.V3&&V3.map) V3.overview();
+    render();
+  };
+  $i('mv-tour').onclick=()=>{
+    if(V.kind!=='map'){ banner('화풍 헬기투어는 다음 단계에서 붙여요. 지금은 지도에서 돌아볼 수 있어요',3200); return; }
+    if(!(window.V3&&V3.map)) return;
+    if(V3.touring) V3.stopTour(); else V3.startTour();
+    setTimeout(render,50);
+  };
+  ['t-stop'].forEach(id=>$i(id).addEventListener('click',()=>setTimeout(render,50)));
+  // 지도 엔진이 준비되면 저장해 둔 도면·일러스트·화질을 건다
+  const ready=setInterval(()=>{ if(window.V3&&V3.map&&V3.map.loaded()){ clearInterval(ready);
+    try{ localStorage.setItem('paju3d.quality',V.q.map); }catch(e){}
+    V3.setQuality(V.q.map); if(V.map!=='plan') V3.setMode(V.map); } },300);
+  if(V.kind==='style') showStyle(true);
+  render();
+})();
 </script>
 </body>
 </html>
