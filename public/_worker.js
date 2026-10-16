@@ -376,6 +376,47 @@ const CLOSED_PAGE = '<!doctype html><html lang="ko"><head><meta charset="utf-8">
   + 'padding:16px;background:#f7f5ef;color:#23272f;font-family:\'Malgun Gothic\',sans-serif;text-align:center}b{display:block;font-size:22px;font-weight:800;'
   + 'margin-bottom:8px}p{margin:0;font-size:15px;line-height:22px}</style></head><body><div><b>지금 파주</b><p>서비스를 잠시 쉬고 있습니다.</p></div></body></html>';
 
+// 버스(실시간) — 3D 화풍판(/3d/)이 부른다. 국토교통부 TAGO 버스위치정보를 키(DATAGOKR_KEY, Cloudflare 비밀값)로 대신 부른다.
+//   노선·경유 정류장 목록은 정적 파일 /3d/data/bus_routes.json(맥 화풍판 server.py가 받은 것) — 노선 80개를 사이트에서 매번 받지 않으려고.
+//   화면 범위에 정류장이 있는 노선만 최대 12개, 노선마다 60초 캐시. 받은 GPS 자리만 보낸다(추정 이동 없음).
+//   포털이 하루 한도를 넘었다고 하면 1시간 동안 더 부르지 않는다.
+const TAGO_BUS = 'https://apis.data.go.kr/1613000/BusLcInfoInqireService/getRouteAcctoBusLcList';
+async function busNear(env, ctx, w, s, e, n) {
+  if (!env.DATAGOKR_KEY) return { at: '', routes: 0, buses: [], limited: false, nokey: true };
+  const cache = caches.default;
+  const lim = new Request('https://cache.now-paju.internal/bus-limited');
+  if (await cache.match(lim)) return { at: '', routes: 0, buses: [], limited: true, nokey: false };
+  const R = (await (await env.ASSETS.fetch(new Request('https://now-paju.internal/3d/data/bus_routes.json'))).json()).routes;
+  const pad = 0.01;
+  const pick = R.map((r) => [r.stops.filter(([x, y]) => x >= w - pad && x <= e + pad && y >= s - pad && y <= n + pad).length, r])
+    .filter((t) => t[0]).sort((a, b) => b[0] - a[0]).slice(0, 12).map((t) => t[1]);
+  const out = []; let oldest = Date.now(), limited = false;
+  for (const r of pick) {                                   // 차례로 — 한꺼번에 부르면 포털이 429를 낸다
+    const ck = new Request('https://cache.now-paju.internal/bus/' + r.id);
+    const hit = await cache.match(ck);
+    let d = hit ? await hit.json() : null;
+    if (!d) {
+      let t = '';
+      try {
+        const res = await fetch(TAGO_BUS + '?serviceKey=' + encodeURIComponent(env.DATAGOKR_KEY) + '&cityCode=31200&routeId=' + encodeURIComponent(r.id) + '&numOfRows=100&pageNo=1&_type=json');
+        t = await res.text();
+      } catch (err) { continue; }
+      if (/LIMITED_NUMBER_OF_SERVICE_REQUESTS|returnReasonCode>22</.test(t)) { limited = true; break; }
+      let j = null;
+      try { j = JSON.parse(t); } catch (err) { continue; }   // 'HTTP_ERROR' 같은 XML 오류 — 이번엔 건너뛴다
+      const body = (j.response && j.response.body) || {};
+      let it = (body.items && body.items.item) || [];
+      if (!Array.isArray(it)) it = [it];
+      d = { t: Date.now(), b: it.filter((b) => b.gpslong).map((b) => ({ no: r.no, tp: r.tp, lon: +b.gpslong, lat: +b.gpslati, stop: b.nodenm || '', ord: b.nodeord || 0, id: String(b.vehicleno || '') })) };
+      ctx.waitUntil(cache.put(ck, new Response(JSON.stringify(d), { headers: { 'content-type': 'application/json', 'cache-control': 'public, max-age=60' } })));
+    }
+    out.push(...d.b); oldest = Math.min(oldest, d.t);
+  }
+  if (limited) ctx.waitUntil(cache.put(lim, new Response('1', { headers: { 'cache-control': 'public, max-age=3600' } })));
+  const at = new Date(oldest + 9 * 3600 * 1000).toISOString().slice(11, 19);
+  return { at, routes: pick.length, buses: out, limited, nokey: false };
+}
+
 export default {
   async scheduled(event, env, ctx) {            // 5분마다: 경기도 전체 소통을 추려 KV에 저장 + 주차장 빈자리 기록
     if (CLOSED) return;
@@ -389,6 +430,11 @@ export default {
     if (url.pathname === '/api/visit' || url.pathname === '/api/stats') {
       const s = await visitStats(env, url.pathname === '/api/visit');
       return json(s || { off: true });
+    }
+    if (url.pathname === '/3d/api/bus') {
+      const q = ['w', 's', 'e', 'n'].map((k) => parseFloat(url.searchParams.get(k)));
+      if (q.some((v) => !isFinite(v)) || q[2] - q[0] > 0.5 || q[3] - q[1] > 0.5) return json({ error: 'w,s,e,n(경위도) 필요' }, 400);
+      return json(await busNear(env, ctx, ...q));
     }
     if (url.pathname === '/festival' || url.pathname.startsWith('/festival/')) return festivalGate(request, env, url);
     if (!url.pathname.startsWith('/api/')) return env.ASSETS.fetch(request);

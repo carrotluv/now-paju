@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>파주 3D 화풍판</title>
+<!-- 디자인 라이브러리 'Pretendard 화면' 규격(3D 맵 v3과 같은 링크), 인터넷이 없으면 맑은 고딕 -->
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+  <script type="module" crossorigin src="./assets/index-BH3tvylD.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-BSlumWWx.css">
+</head>
+<body>
+<div id="view"></div>
+<div id="labels"></div>
+<aside id="panel">
+  <section class="card">
+    <div class="eyebrow">PAJU · 3D STYLE MAP</div>
+    <h1>파주 3D 화풍판</h1>
+    <p class="sub" id="sub">파주시 전역</p>
+    <div class="q-row q-first">
+      <span class="q-lbl">화풍</span>
+      <div class="seg" id="seg-style"></div>
+    </div>
+    <div class="chk-grid" id="fx">
+      <label class="chk"><input type="checkbox" data-k="shadow">그림자</label>
+      <label class="chk"><input type="checkbox" data-k="outline">윤곽선</label>
+      <label class="chk"><input type="checkbox" data-k="trees">나무</label>
+      <label class="chk"><input type="checkbox" data-k="castle">가상 성벽</label>
+      <label class="chk"><input type="checkbox" data-k="bus">버스(실시간)</label>
+    </div>
+  </section>
+  <section class="card fold" id="sec-spots">
+    <h2>명소 <span class="tog">−</span></h2>
+    <div class="body"><ul class="spots" id="spots"></ul></div>
+  </section>
+  <section class="card fold closed" id="sec-data">
+    <h2>데이터 구성 <span class="tog">+</span></h2>
+    <div class="body"><table class="src" id="src"></table><p class="src-note" id="src-note"></p></div>
+  </section>
+  <div class="stat" id="stat"></div>
+</aside>
+<div id="pop" hidden></div>
+<div id="loading">불러오는 중</div>
+</body>
+</html>
