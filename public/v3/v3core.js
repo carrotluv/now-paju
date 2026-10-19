@@ -64,7 +64,7 @@ Object.assign(MODE, {
     lc: { forest: '#465f35', park: '#6a8a4a', grass: '#879c64', wetland: '#738f7b', farm: '#a3a274', urban: '#b3aea2', industrial: '#a9a6a0' },
     hs: { shadow: '#3c4030', highlight: '#f2efe2', accent: '#5a6046', ex: 0.55 },
     sky: { 'sky-color': '#4f86c6', 'horizon-color': '#dbe6ee', 'fog-color': '#d3dde4', 'sky-horizon-blend': 0.6, 'horizon-fog-blend': 0.55, 'fog-ground-blend': 0.08 },
-    waterEdge: '#6f8a8c', center: '#e2c25a',
+    waterEdge: '#6f8a8c', center: '#e2c25a', bnd: ['#4d5257', '#f2f0ea'],
     osm: { 'raster-saturation': -0.7, 'raster-opacity': 0.8, 'raster-contrast': -0.05, 'raster-brightness-min': 0.12, 'raster-brightness-max': 0.88, 'raster-hue-rotate': 0 },
     win: '#6f8aa3', lit: 0, leaf: ['#4a6a34', '#577a3c', '#3d5c2c'], light: { color: '#fff6ea', intensity: 0.46, position: [1.3, 215, 46] },
     wall: ['#d4cfc4', '#d8c4a8', '#e6e3dc', '#d7d4cd', '#b7c2cc', '#e1d9c8', '#c6c9cc', '#d3cdbb'], roof: ['#99958d', '#8b5b45', '#b5b1a9', '#9fa2a5', '#8995a1', '#a3a08f', '#8d9aa5', '#c2c7c6'] },
@@ -72,7 +72,7 @@ Object.assign(MODE, {
     lc: { forest: '#5d9d4a', park: '#7dbb5a', grass: '#a2cd6f', wetland: '#8cc4a4', farm: '#dccf86', urban: '#e7ddc4', industrial: '#ddd6c6' },
     hs: { shadow: '#4f7a3e', highlight: '#fffbe8', accent: '#7fa35e', ex: 0.5 },
     sky: { 'sky-color': '#4f9fe3', 'horizon-color': '#f6f2e2', 'fog-color': '#e9f1f2', 'sky-horizon-blend': 0.6, 'horizon-fog-blend': 0.55, 'fog-ground-blend': 0.15 },
-    waterEdge: '#a8d9ea',
+    waterEdge: '#a8d9ea', bnd: ['#e0793a', '#ffffff'],
     osm: { 'raster-saturation': -0.35, 'raster-opacity': 0.7, 'raster-contrast': -0.2, 'raster-brightness-min': 0.3, 'raster-brightness-max': 1, 'raster-hue-rotate': 0 },
     win: '#6f91b0', lit: 0, leaf: ['#5ea24b', '#7cbc5c', '#4e9142'], light: { color: '#fff3dc', intensity: 0.32, position: [1.2, 200, 38] },
     wall: ['#efe7d8', '#f5ead4', '#f7f2e6', '#f3dfc6', '#e4edf1', '#f0f1de', '#e8e4da', '#f1e6c6'], roof: ['#c9785a', '#c4513d', '#d98263', '#3f8f8b', '#5c87b6', '#6f9f5a', '#8aa0b3', '#b98c4f'] },
@@ -80,7 +80,7 @@ Object.assign(MODE, {
     lc: { forest: '#3d4d32', park: '#55643e', grass: '#72764d', wetland: '#5e6a59', farm: '#978c60', urban: '#8b8478', industrial: '#827e77' },
     hs: { shadow: '#2b2830', highlight: '#e8c9a8', accent: '#594a3b', ex: 0.6 },
     sky: { 'sky-color': '#2c323d', 'horizon-color': '#d98a55', 'fog-color': '#8d857e', 'sky-horizon-blend': 0.7, 'horizon-fog-blend': 0.7, 'fog-ground-blend': 0.15 },
-    waterEdge: '#77878a',
+    waterEdge: '#77878a', bnd: ['#5a4a3c', '#c9bca4'],
     osm: { 'raster-saturation': -0.9, 'raster-opacity': 0.85, 'raster-contrast': 0.05, 'raster-brightness-min': 0.05, 'raster-brightness-max': 0.62, 'raster-hue-rotate': 25 },
     win: '#3a3a40', lit: 0.12, leaf: ['#4a5638', '#5a6444', '#3e4a30'], light: { color: '#eadfd6', intensity: 0.42, position: [1.4, 250, 58] },
     wall: ['#aaa69e', '#b8b0a2', '#b2aea6', '#aca69a', '#a3a3a0', '#b4ae9f', '#9a9893', '#a9a395'], roof: ['#7a6a5c', '#8a5a44', '#6e665e', '#74584a', '#6b6560', '#7a6650', '#5f5f5f', '#80705a'] },
@@ -443,15 +443,14 @@ function paperTexture() {
 }
 // 수채 동화 물: 물감 번짐(밝은 붓질 + 가장자리 진한 결) 무늬
 function waterWash() {
-  const S = 128, c = mkCanvas(S, S), g = c.getContext('2d');
+  // 무늬 판을 256px로 키워 반복이 덜 보이게, 붓질은 옅고 길게(10-19: 멀리서 줄무늬처럼 보이던 것 고침)
+  const S = 256, c = mkCanvas(S, S), g = c.getContext('2d');
   g.fillStyle = '#68b6d8'; g.fillRect(0, 0, S, S);
   let seed = 11; const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
-  for (let i = 0; i < 26; i++) {
-    const x = rnd() * S, y = rnd() * S, w = 18 + rnd() * 40, h = 3 + rnd() * 5;
-    g.fillStyle = rnd() < 0.6 ? 'rgba(255,255,255,.16)' : 'rgba(40,110,160,.12)';
-    g.beginPath(); g.ellipse(x, y, w, h, -0.15, 0, Math.PI * 2); g.fill();
-    g.beginPath(); g.ellipse(x - S, y, w, h, -0.15, 0, Math.PI * 2); g.fill();      // 이음매 없이 이어지게
-    g.beginPath(); g.ellipse(x + S, y, w, h, -0.15, 0, Math.PI * 2); g.fill();
+  for (let i = 0; i < 46; i++) {
+    const x = rnd() * S, y = rnd() * S, w = 30 + rnd() * 70, h = 4 + rnd() * 8, a = -0.25 + rnd() * 0.3;
+    g.fillStyle = rnd() < 0.6 ? 'rgba(255,255,255,.09)' : 'rgba(40,110,160,.06)';
+    for (const dx of [-S, 0, S]) for (const dy of [-S, 0, S]) { g.beginPath(); g.ellipse(x + dx, y + dy, w, h, a, 0, Math.PI * 2); g.fill(); }   // 이음매 없이
   }
   return g.getImageData(0, 0, S, S);
 }
@@ -503,6 +502,7 @@ function setMode(mode) {
   }
   if (map.getLayer('road-center')) map.setLayoutProperty('road-center', 'visibility', m.center ? 'visible' : 'none');
   Object.entries(art ? m.osm : OSM0).forEach(([k, v]) => paint('osm', k, v));   // 파주 밖 바탕도 화풍 톤으로
+  paint('bnd', 'line-color', art ? m.bnd[0] : '#e0793a'); paint('bnd-case', 'line-color', art ? m.bnd[1] : '#ffffff');   // 시 경계선도 화풍 색
   applyVisibility();
   showCastle(mode === 'ash');
   styleVeil(mode);
