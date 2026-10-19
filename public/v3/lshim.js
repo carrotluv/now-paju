@@ -49,6 +49,12 @@
         if (m.getSource(this.id)) { m.getSource(this.id).setData(data); return; }
         if (!fs.length) return;
         m.addSource(this.id, { type: 'geojson', data });
+        // 어떤 화풍(어두운 잿빛 성곽 포함) 위에서도 색 선이 묻히지 않게 밝은 테두리를 아래에 깐다(10-19)
+        m.addLayer({
+          id: this.id + '-case', type: 'line', source: this.id,
+          layout: { 'line-cap': 'round', 'line-join': 'round' },
+          paint: { 'line-color': 'rgba(255,255,255,.85)', 'line-width': ['+', ['get', 'w'], 2.5], 'line-opacity': ['get', 'o'] },
+        }, m.getLayer('bld') ? 'bld' : undefined);
         m.addLayer({
           id: this.id, type: 'line', source: this.id,
           layout: { 'line-cap': 'round', 'line-join': 'round' },
