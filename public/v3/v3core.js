@@ -530,7 +530,7 @@ function applyVisibility() {
     const win = mode === 'illust' || ART.includes(mode);       // 일러스트·화풍은 창 무늬 건물
     if (id === 'bld') return !win || state.color === 'year';
     if (id === 'bld-ill') return win && state.color !== 'year';
-    if (id === 'landcover-pat') return mode === 'illust' || mode === 'paint';
+    if (id === 'landcover-pat') return mode === 'illust' || ART.includes(mode);   // 반투명 밭고랑·숲 결 — 화풍 바탕색 위에도 얹힌다
     if (id === 'road-center') return !!(MODE[mode] && MODE[mode].center);   // 실사풍만
     if (id.startsWith('castle-')) return mode === 'ash';                        // 잿빛 성곽만
     if (id === 'water-edge') return mode !== 'sat';
