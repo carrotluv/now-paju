@@ -414,9 +414,8 @@
   .mv-seg button{flex:1;min-height:36px;border:0;border-left:1px solid var(--hair);background:var(--card);color:var(--ink);font:inherit;font-size:13px;font-weight:500;cursor:pointer}
   .mv-seg button:first-child{border-left:0}
   .mv-seg button.on{background:var(--ink);color:#fff;font-weight:700}
-  /* v3 엔진이 그리는 것 — 명소 이름표는 헬기투어 때만(첫 화면 지점 표식과 겹치지 않게) */
+  /* v3 엔진이 그리는 것 — v3 명소 이름표는 숨긴다(투어도 첫 화면 지점으로 돌아 지점 표식과 겹친다, 10-19) */
   .mapwrap .lm{display:none}
-  body.touring .mapwrap .lm.tour,body.touring .mapwrap .lm.now{display:block}
   .lm{background:#fff;color:var(--ink);border:1px solid var(--hair);border-radius:4px;padding:3px 7px;font-size:12px;font-weight:700;white-space:nowrap;position:relative}
   .lm.now{background:var(--ink);border-color:var(--ink);color:#fff}
   .emd{font-size:12px;font-weight:700;color:#2d3748;text-shadow:0 0 3px #fff,0 0 3px #fff,0 0 6px #fff;white-space:nowrap;pointer-events:none}
@@ -438,6 +437,7 @@
   #hud .bar{height:4px;background:var(--hair2);border-radius:2px;margin-top:8px;overflow:hidden}
   #hud .bar i{display:block;height:100%;width:0;background:var(--ink)}
   #hud .fade{opacity:0}
+  #hud .name.next{color:var(--sub);font-size:20px}                /* 다음 지점 미리 보기(지점 사이를 나는 동안) */
   .hud-ctl{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:10px;pointer-events:auto}
   .hud-ctl button{min-height:36px;border:1.5px solid var(--hair);border-radius:var(--radius);background:var(--card);color:var(--ink);font:inherit;font-size:13px;font-weight:700}
   .hud-ctl button.stop{background:var(--ink);border-color:var(--ink);color:#fff}   /* 지도 보기 칸과 같은 검정(10-16 통일) */

@@ -1084,7 +1084,17 @@ function showStop(idx) {
   tour.cur = idx;
   const n = $('#hud-name'), d = $('#hud-desc'), i = $('#hud-idx');
   DATA.spots.forEach((l) => l._el && l._el.classList.remove('now'));
-  if (idx < 0) { [n, d, i].forEach((e) => e.classList.add('fade')); return; }
+  if (idx < 0) {
+    // 지점 사이를 나는 동안: 다음 지점을 흐리게 미리 보여 준다(빈 자막 카드가 떠 있지 않게, 10-19 지금 파주)
+    const k = tour.stops ? tour.stops.findIndex((st) => st.s > tour.s) : -1;
+    if (k < 0) { [n, d, i].forEach((e) => e.classList.add('fade')); return; }
+    i.textContent = '다음 · ' + String(k + 1).padStart(2, '0') + ' / ' + String(tour.stops.length).padStart(2, '0');
+    n.textContent = tour.stops[k].l.name; d.textContent = tour.stops[k].l.desc || '';
+    [n, d, i].forEach((e) => e.classList.remove('fade'));
+    n.classList.add('next');
+    return;
+  }
+  n.classList.remove('next');
   const st = tour.stops[idx];
   i.textContent = String(idx + 1).padStart(2, '0') + ' / ' + String(tour.stops.length).padStart(2, '0');
   n.textContent = st.l.name; d.textContent = st.l.desc;
