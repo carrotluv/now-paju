@@ -442,6 +442,15 @@
   .hud-ctl button{min-height:36px;border:1.5px solid var(--hair);border-radius:var(--radius);background:var(--card);color:var(--ink);font:inherit;font-size:13px;font-weight:700}
   .hud-ctl button.stop{background:var(--ink);border-color:var(--ink);color:#fff}   /* 지도 보기 칸과 같은 검정(10-16 통일) */
   body.touring .mapbtns,body.touring .statchip,body.touring .trafficbox{display:none}
+  @media (max-width:640px){                                          /* 휴대폰: 투어 자막을 줄여 지도를 가리지 않게, 출처 표기는 투어 중 비킨다(지도 'i'에 있음) */
+    #hud{left:8px;bottom:8px;width:calc(100% - 16px);padding:10px 12px}
+    #hud .name{font-size:20px} #hud .name.next{font-size:17px}
+    #hud .desc{display:none}
+    #hud .stat{margin-top:6px}
+    .hud-ctl{margin-top:8px}
+    .hud-ctl button{min-height:44px}
+    body.touring .maptag{display:none}
+  }
 </style>
 </head>
 <body>
