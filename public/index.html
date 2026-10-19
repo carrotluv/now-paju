@@ -428,6 +428,8 @@
   .pp-row{display:grid;grid-template-columns:52px auto;gap:4px;margin-top:3px;font-size:13px;font-weight:500}
   .pp-row span:first-child{color:var(--sub)}
   .pp-src{margin-top:6px;font-size:12px;font-weight:500;color:var(--sub)}
+  #loading{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:900;background:#fff;border:1px solid var(--hair);border-radius:var(--radius-lg);box-shadow:var(--shadow-2);padding:10px 16px;font-size:14px;font-weight:700;color:var(--ink);white-space:nowrap;pointer-events:none}
+  #loading:empty{display:none}
   #hud{position:absolute;left:16px;bottom:16px;z-index:700;pointer-events:none;opacity:0;transition:opacity .5s;width:min(520px,calc(100% - 32px));background:#fff;border:1px solid var(--hair);border-radius:var(--radius-lg);padding:14px 16px;box-shadow:var(--shadow-2)}
   #hud.on{opacity:1}
   #hud .idx{font-size:12px;font-weight:700;letter-spacing:.18em;color:var(--ink-2);min-height:1.2em}
@@ -490,6 +492,7 @@
 <div class="wrap">
   <div class="mapwrap">
     <div id="map"></div>
+    <div id="loading" role="status" aria-live="polite"></div>   <!-- v3 엔진이 '지도 자료 불러오는 중'·'건물 N동 불러오는 중'을 적는다(다 받으면 빈 칸) -->
     <div id="hud">
       <div class="idx" id="hud-idx"></div>
       <div class="name" id="hud-name"></div>

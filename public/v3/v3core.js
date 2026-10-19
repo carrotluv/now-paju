@@ -1198,6 +1198,9 @@ async function main(container, onReady) {
   map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'bottom-right');
   if (onReady) onReady(map);
   map.on('styleimagemissing', () => {});
+  // 휴대폰에서 메모리가 모자라면 그래픽 문맥을 잃는다 — 다시 그리는 동안 안내
+  map.on('webglcontextlost', () => { $('#loading').textContent = '지도를 다시 그리는 중'; });
+  map.on('webglcontextrestored', () => { $('#loading').textContent = ''; });
   map.on('load', async () => {
     USE_ORDER.forEach((u) => map.addImage('win' + u, windowPattern(u), { pixelRatio: 4 }));
     map.addImage('tree0', treeIcon('#6fb556', '#468c3c'), { pixelRatio: 4 });
@@ -1264,7 +1267,11 @@ function setQuality(q) {
   if (map && !tour.on) map.setPixelRatio(qualityRatio());
 }
 window.V3 = {
-  start: (container, onReady) => main(container, onReady).catch((e) => { $('#loading').textContent = '불러오기 실패: ' + e.message; console.error(e); }),
+  start: (container, onReady) => main(container, onReady).catch((e) => {
+    // WebGL을 못 쓰는 기기·브라우저는 기술 문구 대신 안내로(10-19 지금 파주)
+    $('#loading').textContent = /webgl/i.test(String(e && e.message)) ? '이 기기에선 3D 지도를 그릴 수 없어요. 다른 브라우저로 열어 주세요' : '지도를 불러오지 못했어요. 새로고침해 주세요';
+    console.error(e);
+  }),
   get map() { return map; }, get state() { return state; }, get data() { return DATA; }, get touring() { return tour.on; },
   setMode, setQuality, overview, startTour, stopTour: () => stopTour(true),
   get tourInfo() { return { s: Math.round(tour.s), L: Math.round(tour.L), cur: tour.cur, stops: (tour.stops || []).map((x) => x.l.name), ss: (tour.stops || []).map((x) => Math.round(x.s)), paused: tour.paused }; },
