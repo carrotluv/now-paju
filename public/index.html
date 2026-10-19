@@ -394,10 +394,18 @@
 
   /* ---- 지도 보기 칸(10-16 시안 1): 지도(파주 3D 맵 v3 도면·일러스트) · 화풍(3D 화풍판 3종) ---- */
   .mview{padding:10px 12px;border-bottom:1px solid var(--hair);background:var(--panel);display:flex;flex-direction:column;gap:8px}
-  .mv-btns{display:grid;grid-template-columns:1fr 1fr;gap:6px}
   .mv-b{display:flex;align-items:center;justify-content:center;gap:4px;min-height:40px;border:1.5px solid var(--hair);border-radius:var(--radius);background:var(--card);color:var(--ink);font:inherit;font-size:14px;font-weight:700;cursor:pointer}
   .mv-b.on{background:var(--ink);border-color:var(--ink);color:#fff}
   .mv-b[aria-expanded="true"] svg{transform:rotate(180deg)}
+  .mv-seg #mv-art{display:flex;align-items:center;justify-content:center;gap:3px}
+  #mv-art[aria-expanded="true"] svg{transform:rotate(180deg)}
+  .mv-rel{position:relative}
+  .mv-menu{position:absolute;right:0;top:calc(100% + 4px);width:calc((100% - 38px) / 2);z-index:30;background:var(--card);border:1.5px solid var(--hair);border-radius:var(--radius);box-shadow:var(--shadow-2);padding:4px;display:flex;flex-direction:column}
+  .mv-menu[hidden]{display:none}
+  .mv-menu button{display:flex;align-items:center;justify-content:space-between;min-height:36px;padding:0 10px;border:0;border-radius:6px;background:none;color:var(--ink);font:inherit;font-size:13px;font-weight:500;text-align:left;cursor:pointer}
+  .mv-menu button:hover{background:var(--hover)}
+  .mv-menu button.on{font-weight:700}
+  .mv-menu button.on::after{content:"";width:6px;height:10px;border:solid var(--ink);border-width:0 2px 2px 0;transform:rotate(45deg) translate(-2px,-2px)}
   .mv-dd[hidden]{display:none}
   .mv-dd{border:1.5px solid var(--hair);border-radius:var(--radius-lg);background:var(--card);padding:8px;display:flex;flex-direction:column;gap:6px}
   .mv-row{display:grid;grid-template-columns:32px 1fr;align-items:center;gap:6px}
@@ -406,9 +414,6 @@
   .mv-seg button{flex:1;min-height:36px;border:0;border-left:1px solid var(--hair);background:var(--card);color:var(--ink);font:inherit;font-size:13px;font-weight:500;cursor:pointer}
   .mv-seg button:first-child{border-left:0}
   .mv-seg button.on{background:var(--ink);color:#fff;font-weight:700}
-  #sty3d{position:absolute;inset:0;z-index:5000;background:#c6d3dd}  /* 지도 표식(z 900~3000) 위로 덮는다 */
-  #sty3d iframe{width:100%;height:100%;border:0;display:block}
-  .mapwrap.sty .maplibregl-marker,.mapwrap.sty .maplibregl-popup,.mapwrap.sty .mapbtns,.mapwrap.sty .statchip,.mapwrap.sty .trafficbox,.mapwrap.sty .pkleg,.mapwrap.sty .maptag{display:none}
   /* v3 엔진이 그리는 것 — 명소 이름표는 헬기투어 때만(첫 화면 지점 표식과 겹치지 않게) */
   .mapwrap .lm{display:none}
   body.touring .mapwrap .lm.tour,body.touring .mapwrap .lm.now{display:block}
@@ -476,7 +481,6 @@
 <div class="wrap">
   <div class="mapwrap">
     <div id="map"></div>
-    <div id="sty3d" hidden></div>
     <div id="hud">
       <div class="idx" id="hud-idx"></div>
       <div class="name" id="hud-name"></div>
@@ -506,13 +510,11 @@
   </div>
   <aside class="list" id="list">
     <div class="mview" id="mview">
-      <div class="mv-btns">
-        <button class="mv-b on" id="mv-map" aria-expanded="false">지도 · <span id="mv-map-l">도면</span><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
-        <button class="mv-b" id="mv-sty" aria-expanded="false">화풍<span id="mv-sty-l"></span><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
-      </div>
+      <button class="mv-b on" id="mv-map" aria-expanded="false">지도 · <span id="mv-map-l">도면</span><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
       <div class="mv-dd" id="mv-dd" hidden>
         <div class="mv-row"><span class="mv-lb">보기</span><div class="mv-seg"><button id="mv-over">전체 조감</button><button id="mv-tour">헬기투어</button></div></div>
-        <div class="mv-row"><span class="mv-lb" id="mv-kind">지도</span><div class="mv-seg" id="mv-opts"></div></div>
+        <div class="mv-row mv-rel"><span class="mv-lb">지도</span><div class="mv-seg"><button id="mv-plan">도면</button><button id="mv-art" aria-haspopup="menu" aria-expanded="false"><span id="mv-art-l">일러스트</span><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button></div>
+          <div class="mv-menu" id="mv-menu" role="menu" hidden></div></div>
         <div class="mv-row"><span class="mv-lb">화질</span><div class="mv-seg" id="mv-q"><button data-q="normal">보통</button><button data-q="high">선명</button></div></div>
       </div>
     </div>
@@ -1557,76 +1559,56 @@ fitRows();
 loadVisits();
 </script>
 <script>
-// ── 지도 보기 칸(10-16 시안 1) — 지도: 파주 3D 맵 v3(도면·일러스트), 화풍: 3D 화풍판(실사풍·수채 동화·잿빛 성곽, /3d/ 창)
-//   화질·전체 조감·헬기투어는 고른 쪽에 걸린다. 화풍판은 같은 사이트 창이라 그 안의 버튼을 대신 눌러 맞춘다.
+// ── 지도 보기 칸(10-16 시안 1 → 10-19 화풍을 지도에 편입) — 파주 3D 맵 v3 한 장에서 그림 방식만 바꾼다
+//   지도 줄: [도면 | 화풍▾] — 화풍 칸을 누르면 일러스트·실사풍·수채 동화·잿빛 성곽. 보기(전체 조감·헬기투어)·화질은 어느 방식이든 같다
 (function(){
   const $i=id=>document.getElementById(id);
-  const MAPS=[['plan','도면'],['illust','일러스트']], STYLES=[['real','실사풍'],['paint','수채 동화'],['ash','잿빛 성곽']];
-  const V={kind:'map', map:'plan', style:'real', q:{map:'high', style:'high'}, open:false};
-  try{ Object.assign(V, JSON.parse(localStorage.getItem('nowpaju.view')||'{}'), {open:false}); }catch(e){}
-  ['map','style'].forEach(k=>{ if(V.q[k]!=='normal') V.q[k]='high'; });   // 화질은 보통·선명 두 단계(10-16)
-  const save=()=>{ try{ localStorage.setItem('nowpaju.view', JSON.stringify({kind:V.kind,map:V.map,style:V.style,q:V.q})); }catch(e){} };
-  const wrap=document.querySelector('.mapwrap'), box=$i('sty3d');
-  let viewSel='over';                                         // 보기 줄 선택 표시: 'over'(전체 조감 시점) · 'tour'(투어 중) · null(사용자가 지도를 움직임·지점 고름)
-  let frame=null;
-  const fdoc=()=>{ try{ return frame&&frame.contentDocument; }catch(e){ return null; } };
-  // 화풍판: 자기 패널은 감추고, 화풍·효과는 그 안의 버튼·체크 칸을 대신 눌러 맞춘다
-  function styleSync(){
-    const d=fdoc(); if(!d||!d.querySelector('#seg-style button')) return false;
-    if(!d.getElementById('np-hide')){ const st=d.createElement('style'); st.id='np-hide'; st.textContent='#panel{display:none!important}'; d.head.appendChild(st); }
-    const b=d.querySelector(`#seg-style button[data-k="${V.style}"]`)||[...d.querySelectorAll('#seg-style button')][STYLES.findIndex(x=>x[0]===V.style)];
-    if(b&&!b.classList.contains('on')) b.click();
-    const want={normal:{shadow:false,trees:false,outline:false},high:{shadow:true,trees:true,outline:false}}[V.q.style];
-    Object.entries(want).forEach(([k,v])=>{ const c=d.querySelector(`#fx input[data-k="${k}"]`); if(c&&c.checked!==v) c.click(); });
-    return true;
-  }
-  // 화풍은 같은 지도에서 그림만 바꾼다(10-16 사용자 "화풍은 표현 방식만") — 지점·도로 색·주차·CCTV·조감·투어가 지도와 똑같이 동작
-  const curMode=()=>V.kind==='map'?V.map:V.style;
-  function applyMode(){ if(window.V3&&V3.map) V3.setMode(curMode()); }
-  function showStyle(on){ applyMode(); }
-  function showStyleOld(on){
-    box.hidden=!on; wrap.classList.toggle('sty',on);
-    if(on&&!frame){
-      frame=document.createElement('iframe'); frame.title='파주 3D 화풍판'; frame.src='/3d/';
-      frame.addEventListener('load',()=>{ let n=0; const t=setInterval(()=>{ if(styleSync()||++n>40) clearInterval(t); },250); });
-      box.appendChild(frame);
-    } else if(on) styleSync();
-    if(on&&window.V3&&V3.touring) V3.stopTour();
-  }
+  const ARTS=[['illust','일러스트'],['real','실사풍'],['paint','수채 동화'],['ash','잿빛 성곽']];
+  const NAME=k=>k==='plan'?'도면':(ARTS.find(x=>x[0]===k)||ARTS[0])[1];
+  const V={map:'plan', art:'illust', q:'high', open:false};
+  try{
+    const o=JSON.parse(localStorage.getItem('nowpaju.view')||'{}');
+    if(o.kind==='style'&&o.style) o.map=o.style;                // 예전 저장값(지도·화풍 두 버튼 시절) 옮기기
+    if(o.q&&typeof o.q==='object') o.q=o.q.map;
+    if(o.map&&(o.map==='plan'||ARTS.some(x=>x[0]===o.map))) V.map=o.map;
+    if(o.art&&ARTS.some(x=>x[0]===o.art)) V.art=o.art; else if(V.map!=='plan') V.art=V.map;
+    if(o.q==='normal') V.q='normal';
+  }catch(e){}
+  const save=()=>{ try{ localStorage.setItem('nowpaju.view', JSON.stringify({map:V.map,art:V.art,q:V.q})); }catch(e){} };
+  let viewSel='over', menu=false;                            // 보기 줄 선택 표시: 'over'·'tour'·null(지도를 움직이거나 지점을 고름)
+  function applyMode(){ if(window.V3&&V3.map) V3.setMode(V.map); }
   function render(){
-    const isMap=V.kind==='map';
-    $i('mv-map').classList.toggle('on',isMap); $i('mv-sty').classList.toggle('on',!isMap);
-    $i('mv-map-l').textContent=(MAPS.find(x=>x[0]===V.map)||MAPS[0])[1];
-    $i('mv-sty-l').textContent=isMap?'':' · '+(STYLES.find(x=>x[0]===V.style)||STYLES[0])[1];
-    $i('mv-map').setAttribute('aria-expanded',String(V.open&&isMap)); $i('mv-sty').setAttribute('aria-expanded',String(V.open&&!isMap));
+    $i('mv-map-l').textContent=NAME(V.map);
+    $i('mv-map').setAttribute('aria-expanded',String(V.open));
     $i('mv-dd').hidden=!V.open;
-    if(typeof fitRows==='function') fitRows();   // 칸을 펼치고 접으면 리스트 줄 높이를 다시 맞춘다
-    $i('mv-kind').textContent=isMap?'지도':'화풍';
-    const opts=isMap?MAPS:STYLES, cur=isMap?V.map:V.style;
-    $i('mv-opts').innerHTML=opts.map(([k,n])=>`<button data-k="${k}" class="${k===cur?'on':''}">${n}</button>`).join('');
-    document.querySelectorAll('#mv-q button').forEach(b=>b.classList.toggle('on',b.dataset.q===V.q[V.kind]));
+    if(typeof fitRows==='function') fitRows();               // 칸을 펼치고 접으면 리스트 줄 높이를 다시 맞춘다
+    $i('mv-plan').classList.toggle('on',V.map==='plan');
+    $i('mv-art').classList.toggle('on',V.map!=='plan');
+    $i('mv-art-l').textContent=NAME(V.map==='plan'?V.art:V.map);
+    $i('mv-art').setAttribute('aria-expanded',String(menu));
+    $i('mv-menu').hidden=!menu;
+    $i('mv-menu').innerHTML=ARTS.map(([k,n])=>`<button role="menuitem" data-k="${k}" class="${k===V.map?'on':''}">${n}</button>`).join('');
+    document.querySelectorAll('#mv-q button').forEach(b=>b.classList.toggle('on',b.dataset.q===V.q));
     const touring=!!(window.V3&&V3.touring);
     $i('mv-over').classList.toggle('on',!touring&&viewSel==='over');
     $i('mv-tour').classList.toggle('on',touring);
     $i('mv-tour').textContent=touring?'투어 끝내기':'헬기투어';
   }
-  function pick(kind){
-    if(V.kind===kind) V.open=!V.open; else { V.kind=kind; V.open=true; }
-    showStyle(kind==='style'); save(); render();
-  }
-  $i('mv-map').onclick=()=>pick('map');
-  $i('mv-sty').onclick=()=>pick('style');
-  $i('mv-opts').onclick=e=>{
-    const b=e.target.closest('button'); if(!b) return;
-    if(V.kind==='map') V.map=b.dataset.k; else V.style=b.dataset.k;
+  function setMap(k){
+    V.map=k; if(k!=='plan') V.art=k; menu=false;
     applyMode();
-    if(V.kind==='style'&&V.style==='ash') banner('잿빛 성곽의 성벽은 파주 경계를 따라 세운 장식이에요(실제 시설 아님)',3500);
+    if(k==='ash') banner('잿빛 성곽의 성벽은 파주 경계를 따라 세운 장식이에요(실제 시설 아님)',3500);
     save(); render();
-  };
+  }
+  $i('mv-map').onclick=()=>{ V.open=!V.open; menu=false; render(); };
+  $i('mv-plan').onclick=()=>setMap('plan');
+  $i('mv-art').onclick=e=>{ e.stopPropagation(); menu=!menu; render(); };
+  $i('mv-menu').onclick=e=>{ e.stopPropagation(); const b=e.target.closest('button'); if(b) setMap(b.dataset.k); };
+  document.addEventListener('click',e=>{ if(menu&&!$i('mv-menu').contains(e.target)&&!$i('mv-art').contains(e.target)){ menu=false; render(); } });
+  addEventListener('keydown',e=>{ if(e.key==='Escape'&&menu){ menu=false; render(); } });
   $i('mv-q').onclick=e=>{
     const b=e.target.closest('button'); if(!b) return;
-    V.q.map=V.q.style=b.dataset.q;                             // 화질은 지도·화풍 공통
-    if(window.V3) V3.setQuality(V.q.map);
+    V.q=b.dataset.q; if(window.V3) V3.setQuality(V.q);
     save(); render();
   };
   $i('mv-over').onclick=()=>{
@@ -1646,8 +1628,8 @@ loadVisits();
     }
     setTimeout(render,50);
   };
-  ['t-stop'].forEach(id=>$i(id).addEventListener('click',()=>setTimeout(render,50)));
-  // 보기 줄 표시 풀기: 손으로 지도를 움직이거나 지점을 고르면 '전체 조감'이 아니다. 투어가 끝나면(자막 버튼·Esc 포함) 다시 그린다
+  $i('t-stop').addEventListener('click',()=>setTimeout(render,50));
+  // 리스트를 다시 그리면 줄 높이를 맞추고, 지점을 고르면 '전체 조감' 표시를 푼다. 투어가 끝나면(자막 버튼·Esc 포함) 다시 그린다
   const _renderList=window.renderList;
   window.renderList=function(){ const r=_renderList.apply(this,arguments); fitRows(); return r; };
   const _select=window.select;
@@ -1656,10 +1638,10 @@ loadVisits();
   setInterval(()=>{ const t=!!(window.V3&&V3.touring); if(t!==lastTour){ lastTour=t; if(!t&&viewSel==='tour') viewSel=null; render(); } },400);
   const hookMap=setInterval(()=>{ if(!(window.V3&&V3.map)) return; clearInterval(hookMap);
     ['dragstart','zoomstart','rotatestart','pitchstart'].forEach(ev=>V3.map.on(ev,e=>{ if(e.originalEvent&&viewSel==='over'&&!V3.touring){ viewSel=null; render(); } })); },300);
-  // 지도 엔진이 준비되면 저장해 둔 도면·일러스트·화질을 건다
+  // 지도 엔진이 준비되면 저장해 둔 그림 방식·화질을 건다
   const ready=setInterval(()=>{ if(window.V3&&V3.map&&V3.map.loaded()){ clearInterval(ready);
-    try{ localStorage.setItem('paju3d.quality',V.q.map); }catch(e){}
-    V3.setQuality(V.q.map); if(curMode()!=='plan') V3.setMode(curMode()); } },300);
+    try{ localStorage.setItem('paju3d.quality',V.q); }catch(e){}
+    V3.setQuality(V.q); if(V.map!=='plan') V3.setMode(V.map); } },300);
   render();
 })();
 </script>
