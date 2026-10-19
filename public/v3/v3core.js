@@ -402,6 +402,36 @@ function showCastle(on) {
   }
   ['castle-line-case', 'castle-line', 'castle-wall', 'castle-crest'].forEach((id) => map.getLayer(id) && map.setLayoutProperty(id, 'visibility', on ? 'visible' : 'none'));
 }
+
+// ---------- 화풍 막(지도 그림 위·표식 아래): 수채 동화 = 종이 결, 잿빛 성곽 = 가장자리 어둡게 ----------
+let paperURL = null;
+function paperTexture() {
+  if (paperURL) return paperURL;
+  const S = 256, c = mkCanvas(S, S), g = c.getContext('2d'), img = g.createImageData(S, S);
+  let seed = 7;
+  const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+  for (let i = 0; i < S * S; i++) {
+    const v = 200 + rnd() * 55, k = i * 4;
+    img.data[k] = v; img.data[k + 1] = v * 0.98; img.data[k + 2] = v * 0.93; img.data[k + 3] = 255;
+  }
+  g.putImageData(img, 0, 0);
+  g.globalAlpha = 0.08; g.strokeStyle = '#7a6a50';                       // 종이 섬유 결
+  for (let i = 0; i < 160; i++) { const x = rnd() * S, y = rnd() * S, l = 6 + rnd() * 18, a = rnd() * Math.PI; g.beginPath(); g.moveTo(x, y); g.lineTo(x + Math.cos(a) * l, y + Math.sin(a) * l); g.stroke(); }
+  paperURL = c.toDataURL();
+  return paperURL;
+}
+function styleVeil(mode) {
+  if (!map) return;
+  let v = document.getElementById('v3-veil');
+  if (!v) {
+    v = document.createElement('div'); v.id = 'v3-veil';
+    Object.assign(v.style, { position: 'absolute', inset: '0', pointerEvents: 'none', zIndex: '1', transition: 'opacity .4s' });
+    map.getCanvasContainer().appendChild(v);
+  }
+  if (mode === 'paint') Object.assign(v.style, { backgroundImage: 'url(' + paperTexture() + ')', backgroundSize: '256px', mixBlendMode: 'multiply', opacity: '0.22' });
+  else if (mode === 'ash') Object.assign(v.style, { backgroundImage: 'radial-gradient(ellipse at 50% 45%, rgba(0,0,0,0) 55%, rgba(28,20,16,.42) 100%)', backgroundSize: 'cover', mixBlendMode: 'normal', opacity: '1' });
+  else v.style.opacity = '0';
+}
 function setMode(mode) {
   state.mode = mode;
   const m = MODE[mode];
@@ -439,6 +469,7 @@ function setMode(mode) {
   Object.entries(art ? m.osm : OSM0).forEach(([k, v]) => paint('osm', k, v));   // 파주 밖 바탕도 화풍 톤으로
   applyVisibility();
   showCastle(mode === 'ash');
+  styleVeil(mode);
   document.querySelectorAll('#seg-style button').forEach((b) => b.classList.toggle('on', b.dataset.style === mode));
 }
 
