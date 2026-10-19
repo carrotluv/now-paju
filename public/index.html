@@ -68,7 +68,7 @@
 
   .wrap{display:grid;grid-template-columns:352px 1fr}
   .mapwrap{position:relative}
-  #map{position:absolute;inset:0;background:#eee9dd}
+  #map{position:absolute;inset:0;background:#eee9dd;z-index:0}   /* 지도 표식(z 900~3000)을 지도 층 안에 가둔다 — 위쪽 버튼·카드를 덮지 않게(10-19) */
   .mapbtns{position:absolute;top:12px;right:12px;z-index:1000;display:flex;gap:6px}
   .mapbtns.row2{top:53px;justify-content:flex-end}                 /* 도로 상황 줄 바로 아래 */
   .mbtn.geo{display:flex;align-items:center;gap:6px}

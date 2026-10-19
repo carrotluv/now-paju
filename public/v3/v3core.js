@@ -114,6 +114,8 @@ const ELEMENTS = [
 ];
 state.show = Object.fromEntries(ELEMENTS.map((e) => [e.k, true]));
 try { Object.assign(state.show, JSON.parse(localStorage.getItem('paju3d.show') || '{}')); } catch (e) { /* 저장소 없음 */ }
+// 지금 파주 첫 화면: 차량·열차는 실제 자료가 아닌 연출이라 끈다(지도엔 실제 자료만, 10-19). 끌 버튼도 없고 휴대폰엔 계산 부담
+state.show.car = false; state.show.train = false;
 // 지형 과장: 멀리서(줌 12 이하) 1.5배 → 가까이(줌 15.5 이상) 1배(실제 높이). 비탈 건물이 땅에 묻혀 잘려 보이는 것을 줄임
 const exagAt = (z) => EXAG - (EXAG - 1) * Math.max(0, Math.min(1, (z - 12) / 3.5));
 const ex = () => (state.show.terrain ? (map && map.terrain ? map.terrain.exaggeration : exagAt(map ? map.getZoom() : 10)) : 0);   // 현재 지형 배율(입체 끄면 0)
