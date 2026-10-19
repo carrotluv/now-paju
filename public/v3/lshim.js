@@ -75,6 +75,17 @@
   class Nothing { addTo() { return this; } remove() { return this; } setLatLng() { return this; } setRadius() { return this; } setStyle() { return this; } _show() {} _hide() {} }
 
   // ---- 표식: divIcon html을 그대로 MapLibre Marker 요소로 ----
+  const live = new Set();
+  // 많이 기울이면 수평선 너머 지점이 하늘에 떠 보인다 — 땅 위가 아닌 자리에 찍히는 표식은 숨긴다(10-19)
+  function horizonCull() {
+    if (!ML) return;
+    const t = ML.transform, tilt = ML.getPitch() > 50 && t.isPointOnMapSurface;
+    live.forEach((mk) => {
+      let show = true;
+      if (tilt) { const q = ML.project(lnglat(mk.p)); show = t.isPointOnMapSurface(q); }
+      if (mk._cull !== !show) { mk._cull = !show; mk.el.style.visibility = show ? '' : 'hidden'; }
+    });
+  }
   class Marker {
     constructor(p, o) {
       this.p = ll(p); this.o = o || {}; this._on = false; this._g = null;
@@ -94,10 +105,10 @@
         if (!this._on) return;
         if (!this.mk) this.mk = new maplibregl.Marker({ element: this.el, anchor: 'top-left' }).setLngLat(lnglat(this.p));
         this.mk.addTo(m);
-        this.el.style.zIndex = this.el.style.zIndex;
+        live.add(this);
       });
     }
-    _hide() { this._on = false; if (this.mk) this.mk.remove(); if (this.pop && openPop === this.pop) this.pop.remove(); }
+    _hide() { this._on = false; live.delete(this); if (this.mk) this.mk.remove(); if (this.pop && openPop === this.pop) this.pop.remove(); }
     remove() { if (this._g) this._g.items.delete(this); this._hide(); return this; }
     on(ev, fn) {
       if (ev === 'click') this.el.addEventListener('click', (e) => { e.stopPropagation(); fn({ target: this, originalEvent: e }); });
@@ -161,6 +172,7 @@
       window.V3.start(id, (m) => {
         ML = m;
         waitMap.splice(0).forEach((f) => f(m));
+        m.on('move', horizonCull); m.on('moveend', horizonCull);
         const go = () => { if (loaded) return; loaded = true; waitLoad.splice(0).forEach((f) => f(m)); };
         m.once('style.load', go); m.once('load', go);           // 층을 얹는 건 스타일만 읽히면 된다(타일·지형까지 기다리지 않음)
         const t = setInterval(() => { if (m.isStyleLoaded() || m.getLayer('bld')) { clearInterval(t); go(); } }, 300);

@@ -504,6 +504,12 @@ function addLabels() {
     markers.lm.forEach((m, i) => { const s = DATA.spots[i]; m.getElement().style.display = (s.tour || z > (s.st ? 13.5 : 12.5)) ? '' : 'none'; });
   };
   map.on('zoomend', upd); upd();
+  // 많이 기울이면 수평선 너머 이름표가 하늘에 떠 보인다 — 땅 위가 아닌 자리에 찍히는 이름표는 숨긴다(10-19, 지금 파주)
+  const cull = () => {
+    const t = map.transform, tilt = map.getPitch() > 50 && t.isPointOnMapSurface;
+    markers.emd.concat(markers.lm).forEach((m) => { const on = !tilt || t.isPointOnMapSurface(map.project(m.getLngLat())); m.getElement().style.visibility = on ? '' : 'hidden'; });
+  };
+  map.on('move', cull); map.on('moveend', cull);
   map.on('moveend', tidyLabels);
   setTimeout(tidyLabels, 300);
 }
