@@ -1668,7 +1668,8 @@ loadVisits();
   const hookMap=setInterval(()=>{ if(!(window.V3&&V3.map)) return; clearInterval(hookMap);
     ['dragstart','zoomstart','rotatestart','pitchstart'].forEach(ev=>V3.map.on(ev,e=>{ if(e.originalEvent&&viewSel==='over'&&!V3.touring){ viewSel=null; render(); } })); },300);
   // 지도 엔진이 준비되면 저장해 둔 그림 방식·화질을 건다
-  const ready=setInterval(()=>{ if(window.V3&&V3.map&&V3.map.loaded()){ clearInterval(ready);
+  // 스타일만 읽히면 바로 건다(타일·건물까지 기다리면 다시 열 때 도면이 잠깐 보였다가 화풍으로 바뀌었다, 10-19)
+  const ready=setInterval(()=>{ if(window.V3&&V3.map&&V3.map.getLayer('bld')){ clearInterval(ready);
     try{ localStorage.setItem('paju3d.quality',V.q); }catch(e){}
     V3.setQuality(V.q); if(V.map!=='plan') V3.setMode(V.map); } },300);
   render();
