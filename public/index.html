@@ -1099,7 +1099,7 @@ function fitRows(){
   if(avail<=0) return;
   let n=ROWS_VISIBLE, h=Math.floor(avail/n);
   if(h>84){ n=Math.ceil(avail/84); h=Math.floor(avail/n); }          // 큰 화면은 개수를 늘려 여백을 없앤다
-  if(h<48){ n=Math.max(4,Math.floor(avail/48)); h=Math.floor(avail/n); }
+  if(h<48){ n=Math.max(1,Math.floor(avail/48)); h=Math.max(48,Math.floor(avail/n)); }   // 줄은 48px 아래로 누르지 않는다 — 공간이 작으면 보이는 줄 수를 줄인다(10-19 태블릿)
   document.documentElement.style.setProperty('--rowh',h+'px');
   if(rows) rows.style.paddingTop=Math.max(0,avail-h*n)+'px';           // 남는 몇 px 때문에 다음 행이 살짝 보이던 것 제거
 }
