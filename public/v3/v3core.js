@@ -385,7 +385,23 @@ function castleData() {
       for (let k = 0; k < n; k += 2) quad(a, b, k / Math.max(n, 1), (k + 1) / Math.max(n, 1), crest);   // 24m마다 톱니
     }
   }));
-  return { wall: { type: 'FeatureCollection', features: wall }, crest: { type: 'FeatureCollection', features: crest } };
+  // 망루: 둘레를 따라 1.6km마다 네모 탑(한 변 36m)
+  const tower = [], H = 18;
+  DATA.boundary.features.forEach((f) => (f.geometry.type === 'Polygon' ? [f.geometry.coordinates] : f.geometry.coordinates).forEach((poly) => {
+    const r = poly[0]; let acc = 800;
+    for (let i = 0; i + 1 < r.length; i++) {
+      const a = r[i], b = r[i + 1], L = Math.hypot((b[0] - a[0]) * kx, (b[1] - a[1]) * ky);
+      while (acc <= L) {
+        const q = acc / L, cx = a[0] + (b[0] - a[0]) * q, cy = a[1] + (b[1] - a[1]) * q;
+        const ux = (b[0] - a[0]) * kx / L, uy = (b[1] - a[1]) * ky / L;     // 성벽 방향으로 돌린 정사각형
+        const pt = (s1, s2) => [cx + (ux * s1 - uy * s2) * H / kx, cy + (uy * s1 + ux * s2) * H / ky];
+        tower.push({ type: 'Feature', properties: {}, geometry: { type: 'Polygon', coordinates: [[pt(-1, -1), pt(1, -1), pt(1, 1), pt(-1, 1), pt(-1, -1)]] } });
+        acc += 1600;
+      }
+      acc -= L;
+    }
+  }));
+  return { wall: { type: 'FeatureCollection', features: wall }, crest: { type: 'FeatureCollection', features: crest }, tower: { type: 'FeatureCollection', features: tower } };
 }
 function showCastle(on) {
   if (!map) return;
@@ -398,9 +414,12 @@ function showCastle(on) {
     map.addLayer({ id: 'castle-line-case', type: 'line', source: 'castle-line', layout: { 'line-join': 'round' }, paint: { 'line-color': '#4a4038', 'line-width': ['interpolate', ['linear'], ['zoom'], 8, 5, 11, 8, 13, 3], 'line-opacity': ['interpolate', ['linear'], ['zoom'], 12, 0.9, 14, 0] } });
     map.addLayer({ id: 'castle-line', type: 'line', source: 'castle-line', layout: { 'line-join': 'round' }, paint: { 'line-color': '#c9bca4', 'line-width': ['interpolate', ['linear'], ['zoom'], 8, 2.5, 11, 5, 13, 1.5], 'line-dasharray': [2, 1], 'line-opacity': ['interpolate', ['linear'], ['zoom'], 12, 1, 14, 0] } });
     map.addLayer({ id: 'castle-wall', type: 'fill-extrusion', source: 'castle-wall', paint: { 'fill-extrusion-color': '#b9ad98', 'fill-extrusion-height': 90, 'fill-extrusion-base': 0, 'fill-extrusion-opacity': 1, 'fill-extrusion-vertical-gradient': true } });
+    map.addSource('castle-tower', { type: 'geojson', data: d.tower });
+    map.addLayer({ id: 'castle-tower', type: 'fill-extrusion', source: 'castle-tower', paint: { 'fill-extrusion-color': '#a89c88', 'fill-extrusion-height': 130, 'fill-extrusion-base': 0, 'fill-extrusion-vertical-gradient': true } });
+    map.addLayer({ id: 'castle-tower-top', type: 'fill-extrusion', source: 'castle-tower', paint: { 'fill-extrusion-color': '#6e5a4a', 'fill-extrusion-height': 146, 'fill-extrusion-base': 130 } });
     map.addLayer({ id: 'castle-crest', type: 'fill-extrusion', source: 'castle-crest', paint: { 'fill-extrusion-color': '#a39782', 'fill-extrusion-height': 102, 'fill-extrusion-base': 90, 'fill-extrusion-opacity': 1 } });
   }
-  ['castle-line-case', 'castle-line', 'castle-wall', 'castle-crest'].forEach((id) => map.getLayer(id) && map.setLayoutProperty(id, 'visibility', on ? 'visible' : 'none'));
+  ['castle-line-case', 'castle-line', 'castle-wall', 'castle-crest', 'castle-tower', 'castle-tower-top'].forEach((id) => map.getLayer(id) && map.setLayoutProperty(id, 'visibility', on ? 'visible' : 'none'));
 }
 
 // ---------- 화풍 막(지도 그림 위·표식 아래): 수채 동화 = 종이 결, 잿빛 성곽 = 가장자리 어둡게 ----------
