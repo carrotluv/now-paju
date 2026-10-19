@@ -1095,6 +1095,7 @@ function showStop(idx) {
     return;
   }
   n.classList.remove('next');
+  if (tour.custom && tour.stops[idx]) { const keep = tour.on; selectSpot(tour.stops[idx].l); state.sel = keep ? null : state.sel; }   // 지금 파주: 닿은 지점 건물 강조(투어 시작점 계산엔 안 쓰이게 sel은 비움)
   const st = tour.stops[idx];
   i.textContent = String(idx + 1).padStart(2, '0') + ' / ' + String(tour.stops.length).padStart(2, '0');
   n.textContent = st.l.name; d.textContent = st.l.desc;
@@ -1150,6 +1151,7 @@ function stopTour(finished) {
   document.body.classList.remove('touring');
   $('#hud').classList.remove('on');
   DATA.spots.forEach((l) => l._el && l._el.classList.remove('now'));
+  if (tour.custom) clearSpot();                            // 지금 파주: 투어가 끝나면 마지막 지점 강조도 지운다
   if (finished) overview();
 }
 function jumpStop(d) {
