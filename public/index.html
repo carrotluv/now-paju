@@ -1177,7 +1177,8 @@ SPOTS.forEach(s=>{const o=document.createElement('option');o.value=s.id;o.textCo
 jumpSel.onchange=()=>{
   if(jumpSel.value==='__all'){
     if(sel){ sel=null; renderNodes(); renderList(); }
-    map.flyToBounds(pajuBounds,{duration:.7});
+    if(window.V3&&V3.map){ V3.clearHighlight(); document.getElementById('mv-over').click(); }   // 3D 지도: 보기 줄 '전체 조감'과 같은 시점·표시
+    else map.flyToBounds(pajuBounds,{duration:.7});
     return;
   }
   if(jumpSel.value) select(jumpSel.value,{fly:true});
