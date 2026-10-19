@@ -437,6 +437,14 @@ export default {
       return json(await busNear(env, ctx, ...q));
     }
     if (url.pathname === '/festival' || url.pathname.startsWith('/festival/')) return festivalGate(request, env, url);
+    // v3 지도 자료·엔진(건물·지형 타일 약 25MB)은 거의 안 바뀐다 — 하루는 브라우저에 두고 바로 쓰게(다시 열 때 수십 번 왕복 없앰, 10-19)
+    if (/^\/(v3\/(data|lib)|3d\/(data|assets))\//.test(url.pathname)) {
+      const r = await env.ASSETS.fetch(request);
+      if (!r.ok) return r;
+      const h = new Headers(r.headers);
+      h.set('cache-control', 'public, max-age=86400, stale-while-revalidate=604800');
+      return new Response(r.body, { status: r.status, headers: h });
+    }
     if (!url.pathname.startsWith('/api/')) return env.ASSETS.fetch(request);
     try {
       if (url.pathname === '/api/cctv' || url.pathname === '/api/traffic') {
