@@ -1257,7 +1257,12 @@ window.V3 = {
   setMode, setQuality, overview, startTour, stopTour: () => stopTour(true),
   get tourInfo() { return { s: Math.round(tour.s), L: Math.round(tour.L), cur: tour.cur, stops: (tour.stops || []).map((x) => x.l.name), ss: (tour.stops || []).map((x) => Math.round(x.s)), paused: tour.paused }; },
   jumpStop,
-  highlight: (o) => selectSpot({ name: o.name, lon: o.lon, lat: o.lat }),   // 고른 지점의 건물을 노랗게(넓은 곳은 둘레 원)
+  highlight: (o) => {                                     // 고른 지점의 건물을 노랗게(넓은 곳은 둘레 원)
+    // 둘레 원이 나무 그림에 가리지 않게 나무 위·건물 아래로(지금 파주, 10-19)
+    ['sel-fill', 'sel-ring'].forEach((id) => { if (map.getLayer(id) && map.getLayer('bridge')) map.moveLayer(id, 'bridge'); });
+    if (map.getLayer('sel-ring')) map.setPaintProperty('sel-ring', 'line-width', ['interpolate', ['linear'], ['zoom'], 12, 2.5, 16, 4.5]);
+    selectSpot({ name: o.name, lon: o.lon, lat: o.lat });
+  },
   clearHighlight: () => clearSpot(),
   setTourStops: (list) => { tour.custom = list; tour.L = 0; state.sel = null; },   // [{name, desc, lon, lat}] — 다음 startTour 때 경로를 새로 만든다 quality: () => (qualityRatio(), state.quality),
 };
