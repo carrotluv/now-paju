@@ -1634,7 +1634,12 @@ loadVisits();
   const _renderList=window.renderList;
   window.renderList=function(){ const r=_renderList.apply(this,arguments); fitRows(); return r; };
   const _select=window.select;
-  window.select=function(){ viewSel=null; render(); return _select.apply(this,arguments); };
+  window.select=function(){
+    viewSel=null; render();
+    const r=_select.apply(this,arguments);
+    try{ if(window.V3&&V3.map){ const sp=SPOTS.find(x=>x.id===sel); if(sp) V3.highlight({name:sp.n,lon:sp.lng,lat:sp.lat}); else V3.clearHighlight(); } }catch(e){}   // 고른 지점 건물 강조(v3)
+    return r;
+  };
   let lastTour=false;
   setInterval(()=>{ const t=!!(window.V3&&V3.touring); if(t!==lastTour){ lastTour=t; if(!t&&viewSel==='tour') viewSel=null; render(); } },400);
   const hookMap=setInterval(()=>{ if(!(window.V3&&V3.map)) return; clearInterval(hookMap);

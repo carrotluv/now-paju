@@ -1257,6 +1257,8 @@ window.V3 = {
   setMode, setQuality, overview, startTour, stopTour: () => stopTour(true),
   get tourInfo() { return { s: Math.round(tour.s), L: Math.round(tour.L), cur: tour.cur, stops: (tour.stops || []).map((x) => x.l.name), ss: (tour.stops || []).map((x) => Math.round(x.s)), paused: tour.paused }; },
   jumpStop,
+  highlight: (o) => selectSpot({ name: o.name, lon: o.lon, lat: o.lat }),   // 고른 지점의 건물을 노랗게(넓은 곳은 둘레 원)
+  clearHighlight: () => clearSpot(),
   setTourStops: (list) => { tour.custom = list; tour.L = 0; state.sel = null; },   // [{name, desc, lon, lat}] — 다음 startTour 때 경로를 새로 만든다 quality: () => (qualityRatio(), state.quality),
 };
 })();
