@@ -746,7 +746,9 @@ function qualityRatio() {
   try { q = localStorage.getItem('paju3d.quality') || 'high'; } catch (e) { /* 저장소 없음 */ }
   state.quality = q;
   const d = window.devicePixelRatio || 1;
-  return Math.min(4, d * ({ normal: 1, high: 1.5, max: 2 }[q] || 1.5));
+  // 손가락 화면(휴대폰·태블릿)은 화소 배율이 3이라 그대로 곱하면 4배로 그려 무겁다 — 보통 1.5·선명 2까지만(10-19 지금 파주)
+  const cap = window.matchMedia && matchMedia('(pointer: coarse)').matches ? (q === 'normal' ? 1.5 : 2) : 4;
+  return Math.min(cap, d * ({ normal: 1, high: 1.5, max: 2 }[q] || 1.5));
 }
 function saveShow() { try { localStorage.setItem('paju3d.show', JSON.stringify(state.show)); } catch (e) { /* 저장소 없음 */ } }
 function panelPad() { return window.innerWidth > 760 ? { top: 40, bottom: 40, left: 40, right: 40 } : { top: 20, bottom: 20, left: 12, right: 12 }; }   // 지금 파주는 패널이 지도 밖

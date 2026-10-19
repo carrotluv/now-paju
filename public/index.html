@@ -1573,6 +1573,7 @@ loadVisits();
     if(o.map&&(o.map==='plan'||ARTS.some(x=>x[0]===o.map))) V.map=o.map;
     if(o.art&&ARTS.some(x=>x[0]===o.art)) V.art=o.art; else if(V.map!=='plan') V.art=V.map;
     if(o.q==='normal') V.q='normal';
+    if(!o.q&&window.matchMedia&&matchMedia('(pointer: coarse)').matches) V.q='normal';   // 휴대폰은 처음엔 보통(고른 적이 없을 때)
   }catch(e){}
   const save=()=>{ try{ localStorage.setItem('nowpaju.view', JSON.stringify({map:V.map,art:V.art,q:V.q})); }catch(e){} };
   let viewSel='over', menu=false;                            // 보기 줄 선택 표시: 'over'·'tour'·null(지도를 움직이거나 지점을 고름)
