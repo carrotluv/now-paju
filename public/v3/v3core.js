@@ -439,6 +439,20 @@ function paperTexture() {
   paperURL = c.toDataURL();
   return paperURL;
 }
+// 수채 동화 물: 물감 번짐(밝은 붓질 + 가장자리 진한 결) 무늬
+function waterWash() {
+  const S = 128, c = mkCanvas(S, S), g = c.getContext('2d');
+  g.fillStyle = '#68b6d8'; g.fillRect(0, 0, S, S);
+  let seed = 11; const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+  for (let i = 0; i < 26; i++) {
+    const x = rnd() * S, y = rnd() * S, w = 18 + rnd() * 40, h = 3 + rnd() * 5;
+    g.fillStyle = rnd() < 0.6 ? 'rgba(255,255,255,.16)' : 'rgba(40,110,160,.12)';
+    g.beginPath(); g.ellipse(x, y, w, h, -0.15, 0, Math.PI * 2); g.fill();
+    g.beginPath(); g.ellipse(x - S, y, w, h, -0.15, 0, Math.PI * 2); g.fill();      // 이음매 없이 이어지게
+    g.beginPath(); g.ellipse(x + S, y, w, h, -0.15, 0, Math.PI * 2); g.fill();
+  }
+  return g.getImageData(0, 0, S, S);
+}
 function styleVeil(mode) {
   if (!map) return;
   let v = document.getElementById('v3-veil');
@@ -460,6 +474,7 @@ function setMode(mode) {
   if (m.lc) paint('landcover', 'fill-color', ['match', ['get', 'k'], 'forest', m.lc.forest, 'park', m.lc.park, 'grass', m.lc.grass, 'wetland', m.lc.wetland, 'farm', m.lc.farm, 'industrial', m.lc.industrial, m.lc.urban]);
   if (m.hs) { paint('hillshade', 'hillshade-exaggeration', m.hs.ex); paint('hillshade', 'hillshade-shadow-color', m.hs.shadow); paint('hillshade', 'hillshade-highlight-color', m.hs.highlight); paint('hillshade', 'hillshade-accent-color', m.hs.accent); }
   paint('water', 'fill-color', m.water);
+  if (map.getLayer('water')) map.setPaintProperty('water', 'fill-pattern', mode === 'paint' && map.hasImage('pat-water-paint') ? 'pat-water-paint' : undefined);   // 수채 동화만 물감 번짐
   paint('water-edge', 'line-color', m.waterEdge || shade(m.water, -0.22));
   paint('water', 'fill-opacity', mode === 'sat' ? 0 : 1);
   paint('waterline', 'line-color', m.wline);
@@ -1179,6 +1194,7 @@ async function main(container, onReady) {
       map.addImage('tree1-' + k, treeIcon(m.leaf[1], shade(m.leaf[1], -0.25)), { pixelRatio: 4 });
       map.addImage('tree2-' + k, treeIcon(m.leaf[2], shade(m.leaf[2], -0.3), 'pine'), { pixelRatio: 4 });
     });
+    map.addImage('pat-water-paint', waterWash(), { pixelRatio: 2 });
     map.addImage('pat-farm', groundPattern('farm'), { pixelRatio: 2 });
     map.addImage('pat-green', groundPattern('green'), { pixelRatio: 2 });
     buildPanel();
