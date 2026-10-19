@@ -64,6 +64,7 @@ Object.assign(MODE, {
     lc: { forest: '#465f35', park: '#6a8a4a', grass: '#879c64', wetland: '#738f7b', farm: '#a3a274', urban: '#b3aea2', industrial: '#a9a6a0' },
     hs: { shadow: '#3c4030', highlight: '#f2efe2', accent: '#5a6046', ex: 0.55 },
     sky: { 'sky-color': '#4f86c6', 'horizon-color': '#dbe6ee', 'fog-color': '#d3dde4', 'sky-horizon-blend': 0.6, 'horizon-fog-blend': 0.55, 'fog-ground-blend': 0.08 },
+    waterEdge: '#6f8a8c', center: '#e2c25a',
     osm: { 'raster-saturation': -0.7, 'raster-opacity': 0.8, 'raster-contrast': -0.05, 'raster-brightness-min': 0.12, 'raster-brightness-max': 0.88, 'raster-hue-rotate': 0 },
     win: '#6f8aa3', lit: 0, leaf: ['#4a6a34', '#577a3c', '#3d5c2c'], light: { color: '#fff6ea', intensity: 0.46, position: [1.3, 215, 46] },
     wall: ['#d4cfc4', '#d8c4a8', '#e6e3dc', '#d7d4cd', '#b7c2cc', '#e1d9c8', '#c6c9cc', '#d3cdbb'], roof: ['#99958d', '#8b5b45', '#b5b1a9', '#9fa2a5', '#8995a1', '#a3a08f', '#8d9aa5', '#c2c7c6'] },
@@ -71,6 +72,7 @@ Object.assign(MODE, {
     lc: { forest: '#5d9d4a', park: '#7dbb5a', grass: '#a2cd6f', wetland: '#8cc4a4', farm: '#dccf86', urban: '#e7ddc4', industrial: '#ddd6c6' },
     hs: { shadow: '#4f7a3e', highlight: '#fffbe8', accent: '#7fa35e', ex: 0.5 },
     sky: { 'sky-color': '#4f9fe3', 'horizon-color': '#f6f2e2', 'fog-color': '#e9f1f2', 'sky-horizon-blend': 0.6, 'horizon-fog-blend': 0.55, 'fog-ground-blend': 0.15 },
+    waterEdge: '#a8d9ea',
     osm: { 'raster-saturation': -0.35, 'raster-opacity': 0.7, 'raster-contrast': -0.2, 'raster-brightness-min': 0.3, 'raster-brightness-max': 1, 'raster-hue-rotate': 0 },
     win: '#6f91b0', lit: 0, leaf: ['#5ea24b', '#7cbc5c', '#4e9142'], light: { color: '#fff3dc', intensity: 0.32, position: [1.2, 200, 38] },
     wall: ['#efe7d8', '#f5ead4', '#f7f2e6', '#f3dfc6', '#e4edf1', '#f0f1de', '#e8e4da', '#f1e6c6'], roof: ['#c9785a', '#c4513d', '#d98263', '#3f8f8b', '#5c87b6', '#6f9f5a', '#8aa0b3', '#b98c4f'] },
@@ -78,6 +80,7 @@ Object.assign(MODE, {
     lc: { forest: '#3d4d32', park: '#55643e', grass: '#72764d', wetland: '#5e6a59', farm: '#978c60', urban: '#8b8478', industrial: '#827e77' },
     hs: { shadow: '#2b2830', highlight: '#e8c9a8', accent: '#594a3b', ex: 0.6 },
     sky: { 'sky-color': '#2c323d', 'horizon-color': '#d98a55', 'fog-color': '#8d857e', 'sky-horizon-blend': 0.7, 'horizon-fog-blend': 0.7, 'fog-ground-blend': 0.15 },
+    waterEdge: '#77878a',
     osm: { 'raster-saturation': -0.9, 'raster-opacity': 0.85, 'raster-contrast': 0.05, 'raster-brightness-min': 0.05, 'raster-brightness-max': 0.62, 'raster-hue-rotate': 25 },
     win: '#3a3a40', lit: 0.12, leaf: ['#4a5638', '#5a6444', '#3e4a30'], light: { color: '#eadfd6', intensity: 0.42, position: [1.4, 250, 58] },
     wall: ['#aaa69e', '#b8b0a2', '#b2aea6', '#aca69a', '#a3a3a0', '#b4ae9f', '#9a9893', '#a9a395'], roof: ['#7a6a5c', '#8a5a44', '#6e665e', '#74584a', '#6b6560', '#7a6650', '#5f5f5f', '#80705a'] },
@@ -408,7 +411,7 @@ function setMode(mode) {
   if (m.lc) paint('landcover', 'fill-color', ['match', ['get', 'k'], 'forest', m.lc.forest, 'park', m.lc.park, 'grass', m.lc.grass, 'wetland', m.lc.wetland, 'farm', m.lc.farm, 'industrial', m.lc.industrial, m.lc.urban]);
   if (m.hs) { paint('hillshade', 'hillshade-exaggeration', m.hs.ex); paint('hillshade', 'hillshade-shadow-color', m.hs.shadow); paint('hillshade', 'hillshade-highlight-color', m.hs.highlight); paint('hillshade', 'hillshade-accent-color', m.hs.accent); }
   paint('water', 'fill-color', m.water);
-  paint('water-edge', 'line-color', shade(m.water, -0.22));
+  paint('water-edge', 'line-color', m.waterEdge || shade(m.water, -0.22));
   paint('water', 'fill-opacity', mode === 'sat' ? 0 : 1);
   paint('waterline', 'line-color', m.wline);
   paint('waterline', 'line-opacity', mode === 'sat' ? 0 : 1);
@@ -426,6 +429,13 @@ function setMode(mode) {
   if (map.getLayer('bld-ill')) map.setPaintProperty('bld-ill', 'fill-extrusion-pattern', ['concat', art ? 'win-' + mode + '-' : 'win', ['to-string', ['get', 'u']]]);
   if (map.getLayer('trees')) map.setLayoutProperty('trees', 'icon-image', ['match', ['get', 'v'], 0, art ? 'tree0-' + mode : 'tree0', 1, art ? 'tree1-' + mode : 'tree1', art ? 'tree2-' + mode : 'tree2']);
   map.setLight(art ? { anchor: 'map', ...m.light } : LIGHT0);
+  // 실사풍: 큰 길(등급 1~3)에 노란 중앙선 점선 — 3D 화풍판 실사풍과 같은 색
+  if (m.center && !map.getLayer('road-center') && map.getLayer('road')) {
+    map.addLayer({ id: 'road-center', type: 'line', source: 'roads', minzoom: 14, filter: ['<=', ['get', 'r'], 3],
+      layout: { 'line-cap': 'butt', 'line-join': 'round' },
+      paint: { 'line-color': m.center, 'line-width': ['interpolate', ['linear'], ['zoom'], 14, 0.6, 17, 1.6], 'line-dasharray': [3, 3], 'line-opacity': 0.9 } }, map.getLayer('bridge') ? 'bridge' : undefined);
+  }
+  if (map.getLayer('road-center')) map.setLayoutProperty('road-center', 'visibility', m.center ? 'visible' : 'none');
   Object.entries(art ? m.osm : OSM0).forEach(([k, v]) => paint('osm', k, v));   // 파주 밖 바탕도 화풍 톤으로
   applyVisibility();
   showCastle(mode === 'ash');
@@ -456,6 +466,8 @@ function applyVisibility() {
     if (id === 'bld') return !win || state.color === 'year';
     if (id === 'bld-ill') return win && state.color !== 'year';
     if (id === 'landcover-pat') return mode === 'illust' || mode === 'paint';
+    if (id === 'road-center') return !!(MODE[mode] && MODE[mode].center);   // 실사풍만
+    if (id.startsWith('castle-')) return mode === 'ash';                        // 잿빛 성곽만
     if (id === 'water-edge') return mode !== 'sat';
     return true;
   };
