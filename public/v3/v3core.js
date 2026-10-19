@@ -775,7 +775,8 @@ function overviewCamera() {
   return cam;
 }
 function overview() {
-  map.flyTo({ ...overviewCamera(), duration: 2800, essential: true });
+  const still = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;   // 동작 줄이기: 바로 옮긴다
+  map.flyTo({ ...overviewCamera(), duration: still ? 0 : 2800, essential: true });
 }
 // 명소 선택: 패널을 뺀 지도 영역 정중앙에 두고 같은 각도(기울기 55°, 북쪽 기준 -15°)로 멈춤
 const WIDE = /산$|호수|출판도시|LG|평화누리|헤이리|습지|수목원|프로방스/;   // 넓은 곳은 한 단계 멀리
