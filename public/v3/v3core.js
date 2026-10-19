@@ -64,18 +64,28 @@ Object.assign(MODE, {
     lc: { forest: '#465f35', park: '#6a8a4a', grass: '#879c64', wetland: '#738f7b', farm: '#a3a274', urban: '#b3aea2', industrial: '#a9a6a0' },
     hs: { shadow: '#3c4030', highlight: '#f2efe2', accent: '#5a6046', ex: 0.55 },
     sky: { 'sky-color': '#4f86c6', 'horizon-color': '#dbe6ee', 'fog-color': '#c6d3dd', 'sky-horizon-blend': 0.6, 'horizon-fog-blend': 0.55, 'fog-ground-blend': 0.2 },
+    osm: { 'raster-saturation': -0.7, 'raster-opacity': 0.8, 'raster-contrast': -0.05, 'raster-brightness-min': 0.12, 'raster-brightness-max': 0.88, 'raster-hue-rotate': 0 },
+    win: '#6f8aa3', lit: 0, leaf: ['#4a6a34', '#577a3c', '#3d5c2c'], light: { color: '#fff6ea', intensity: 0.38, position: [1.3, 215, 42] },
     wall: ['#d4cfc4', '#d8c4a8', '#e6e3dc', '#d7d4cd', '#b7c2cc', '#e1d9c8', '#c6c9cc', '#d3cdbb'], roof: ['#99958d', '#8b5b45', '#b5b1a9', '#9fa2a5', '#8995a1', '#a3a08f', '#8d9aa5', '#c2c7c6'] },
   paint: { bg: '#e9f1f2', land: '#b6d57c', water: '#68b6d8', wline: '#7cc0de', road: '#f7f1e3', roadMajor: '#f4ecd8', casing: '#d4c39d', mask: '#f3f1e4', maskOp: 0.45, bridge: '#f3e8d2',
     lc: { forest: '#5d9d4a', park: '#7dbb5a', grass: '#a2cd6f', wetland: '#8cc4a4', farm: '#dccf86', urban: '#e7ddc4', industrial: '#ddd6c6' },
     hs: { shadow: '#4f7a3e', highlight: '#fffbe8', accent: '#7fa35e', ex: 0.5 },
     sky: { 'sky-color': '#4f9fe3', 'horizon-color': '#f6f2e2', 'fog-color': '#e9f1f2', 'sky-horizon-blend': 0.6, 'horizon-fog-blend': 0.55, 'fog-ground-blend': 0.15 },
+    osm: { 'raster-saturation': -0.35, 'raster-opacity': 0.7, 'raster-contrast': -0.2, 'raster-brightness-min': 0.3, 'raster-brightness-max': 1, 'raster-hue-rotate': 0 },
+    win: '#6f91b0', lit: 0, leaf: ['#5ea24b', '#7cbc5c', '#4e9142'], light: { color: '#fff3dc', intensity: 0.32, position: [1.2, 200, 38] },
     wall: ['#efe7d8', '#f5ead4', '#f7f2e6', '#f3dfc6', '#e4edf1', '#f0f1de', '#e8e4da', '#f1e6c6'], roof: ['#c9785a', '#c4513d', '#d98263', '#3f8f8b', '#5c87b6', '#6f9f5a', '#8aa0b3', '#b98c4f'] },
   ash: { bg: '#a3826c', land: '#8c876c', water: '#4c6470', wline: '#5d7480', road: '#bdb095', roadMajor: '#b4a78c', casing: '#6b604f', mask: '#8f8476', maskOp: 0.5, bridge: '#b8b1a3',
     lc: { forest: '#3d4d32', park: '#55643e', grass: '#72764d', wetland: '#5e6a59', farm: '#978c60', urban: '#8b8478', industrial: '#827e77' },
     hs: { shadow: '#2b2830', highlight: '#e8c9a8', accent: '#594a3b', ex: 0.6 },
     sky: { 'sky-color': '#2c323d', 'horizon-color': '#e0864e', 'fog-color': '#a3826c', 'sky-horizon-blend': 0.7, 'horizon-fog-blend': 0.6, 'fog-ground-blend': 0.3 },
-    wall: ['#b3aa98', '#c7b9a0', '#b8b1a3', '#b5a993', '#a7a59e', '#bdb39c', '#9c9890', '#b0a68e'], roof: ['#94503a', '#a3523a', '#8c4a36', '#7d4535', '#6b6560', '#7f5a3e', '#5f5f5f', '#8a6a45'] },
+    osm: { 'raster-saturation': -0.9, 'raster-opacity': 0.85, 'raster-contrast': 0.05, 'raster-brightness-min': 0.05, 'raster-brightness-max': 0.62, 'raster-hue-rotate': 25 },
+    win: '#3a3a40', lit: 0.12, leaf: ['#4a5638', '#5a6444', '#3e4a30'], light: { color: '#ffd2ac', intensity: 0.45, position: [1.4, 250, 62] },
+    wall: ['#b3aa98', '#c7b9a0', '#b8b1a3', '#b5a993', '#a7a59e', '#bdb39c', '#9c9890', '#b0a68e'], roof: ['#7a6a5c', '#8a5a44', '#6e665e', '#74584a', '#6b6560', '#7a6650', '#5f5f5f', '#80705a'] },
 });
+const ART = ['real', 'paint', 'ash'];
+const WALL_IDX = { 2: 0, 1: 1, 3: 2, 4: 3, 5: 4, 6: 5, 7: 6, 0: 7 };   // styleCol과 같은 용도 순서
+const OSM0 = { 'raster-saturation': -0.85, 'raster-opacity': 0.75, 'raster-contrast': -0.15, 'raster-brightness-min': 0.2, 'raster-brightness-max': 1, 'raster-hue-rotate': 0 };   // v3 원래 톤
+const LIGHT0 = { anchor: 'viewport', color: '#ffffff', intensity: 0.5, position: [1.15, 210, 30] };   // MapLibre 기본(도면·일러스트)
 const styleCol = (arr) => ['match', ['get', 'u'], 2, arr[0], 1, arr[1], 3, arr[2], 4, arr[3], 5, arr[4], 6, arr[5], 7, arr[6], arr[7]];
 // 지금 모드가 화풍이면(용도 색 기준일 때) 건물 벽·지붕을 화풍 색으로
 const mWall = (f) => { const m = MODE[state.mode]; return m && m.wall && state.color !== 'year' ? styleCol(m.wall) : f(); };
@@ -162,9 +172,10 @@ function shade(hex, k) {
   const f = (v) => Math.max(0, Math.min(255, Math.round(k < 0 ? v * (1 + k) : v + (255 - v) * k)));
   return '#' + [n >> 16 & 255, n >> 8 & 255, n & 255].map(f).map((v) => v.toString(16).padStart(2, '0')).join('');
 }
-function windowPattern(u) {
+function windowPattern(u, pal) {
   // 128px 한 장 = 4개 층(층당 32px), 지도에는 pixelRatio 4로 넣어 화면 크기는 그대로·세밀도만 4배
-  const s = USE[u], S = 128, c = mkCanvas(S, S), g = c.getContext('2d');
+  //   pal(화풍): 벽·유리 색을 바꾸고, lit 비율만큼 창에 불을 켠다(잿빛 성곽)
+  const s = pal ? { ...USE[u], wall: pal.wall, win: pal.win } : USE[u], S = 128, c = mkCanvas(S, S), g = c.getContext('2d');
   g.fillStyle = s.wall; g.fillRect(0, 0, S, S);
   if (u === 6 || u === 7) {                                                   // 공장·축사: 골강판 세로줄 + 높은 띠창
     g.fillStyle = shade(s.wall, -0.07);
@@ -196,6 +207,10 @@ function windowPattern(u) {
       g.fillStyle = shade(s.win, -0.35); g.fillRect(x0 + Math.floor(ww / 2), wy, 1, wh);  // 가운데 창살
       if (u !== 4) { g.fillStyle = shade(s.wall, 0.45); g.fillRect(x0 - 2, wy + wh + 1, ww + 4, 2); }  // 창턱
       if (u === 2) { g.fillStyle = 'rgba(255,255,255,.55)'; g.fillRect(x0 - 3, wy + wh - 4, ww + 6, 1); }  // 발코니 난간
+      if (pal && pal.lit && ((r * 7 + k * 13 + u * 3) % 20) < pal.lit * 20) {                           // 불 켜진 창(고정 무늬)
+        const lg = g.createLinearGradient(0, wy, 0, wy + wh); lg.addColorStop(0, '#ffe2a8'); lg.addColorStop(1, '#f0a050');
+        g.fillStyle = lg; g.fillRect(x0, wy, ww, wh);
+      }
     }
   }
   return g.getImageData(0, 0, S, S);
@@ -375,10 +390,14 @@ function showCastle(on) {
     const d = castleData();
     map.addSource('castle-wall', { type: 'geojson', data: d.wall });
     map.addSource('castle-crest', { type: 'geojson', data: d.crest });
+    // 멀리서도 성곽이 보이게: 경계를 따라 굵은 돌담 선(가까이 오면 가늘어지고 3D 벽이 대신한다)
+    map.addSource('castle-line', { type: 'geojson', data: DATA.boundary });
+    map.addLayer({ id: 'castle-line-case', type: 'line', source: 'castle-line', layout: { 'line-join': 'round' }, paint: { 'line-color': '#4a4038', 'line-width': ['interpolate', ['linear'], ['zoom'], 8, 5, 11, 8, 13, 3], 'line-opacity': ['interpolate', ['linear'], ['zoom'], 12, 0.9, 14, 0] } });
+    map.addLayer({ id: 'castle-line', type: 'line', source: 'castle-line', layout: { 'line-join': 'round' }, paint: { 'line-color': '#c9bca4', 'line-width': ['interpolate', ['linear'], ['zoom'], 8, 2.5, 11, 5, 13, 1.5], 'line-dasharray': [2, 1], 'line-opacity': ['interpolate', ['linear'], ['zoom'], 12, 1, 14, 0] } });
     map.addLayer({ id: 'castle-wall', type: 'fill-extrusion', source: 'castle-wall', paint: { 'fill-extrusion-color': '#b9ad98', 'fill-extrusion-height': 90, 'fill-extrusion-base': 0, 'fill-extrusion-opacity': 1, 'fill-extrusion-vertical-gradient': true } });
     map.addLayer({ id: 'castle-crest', type: 'fill-extrusion', source: 'castle-crest', paint: { 'fill-extrusion-color': '#a39782', 'fill-extrusion-height': 102, 'fill-extrusion-base': 90, 'fill-extrusion-opacity': 1 } });
   }
-  ['castle-wall', 'castle-crest'].forEach((id) => map.getLayer(id) && map.setLayoutProperty(id, 'visibility', on ? 'visible' : 'none'));
+  ['castle-line-case', 'castle-line', 'castle-wall', 'castle-crest'].forEach((id) => map.getLayer(id) && map.setLayoutProperty(id, 'visibility', on ? 'visible' : 'none'));
 }
 function setMode(mode) {
   state.mode = mode;
@@ -403,6 +422,11 @@ function setMode(mode) {
   paint('bld-far', 'fill-extrusion-color', selColor(mWall(farColor)));
   paint('bridge', 'fill-extrusion-color', ['case', ['==', ['get', 'k'], 1], '#c6ccd4', m.bridge]);
   map.setSky(m.sky);
+  const art = ART.includes(mode);
+  if (map.getLayer('bld-ill')) map.setPaintProperty('bld-ill', 'fill-extrusion-pattern', ['concat', art ? 'win-' + mode + '-' : 'win', ['to-string', ['get', 'u']]]);
+  if (map.getLayer('trees')) map.setLayoutProperty('trees', 'icon-image', ['match', ['get', 'v'], 0, art ? 'tree0-' + mode : 'tree0', 1, art ? 'tree1-' + mode : 'tree1', art ? 'tree2-' + mode : 'tree2']);
+  map.setLight(art ? { anchor: 'map', ...m.light } : LIGHT0);
+  Object.entries(art ? m.osm : OSM0).forEach(([k, v]) => paint('osm', k, v));   // 파주 밖 바탕도 화풍 톤으로
   applyVisibility();
   showCastle(mode === 'ash');
   document.querySelectorAll('#seg-style button').forEach((b) => b.classList.toggle('on', b.dataset.style === mode));
@@ -428,9 +452,10 @@ function applyVisibility() {
   const modeOk = (id) => {
     if (id === 'sat') return mode === 'sat';
     if (['osm', 'land', 'landcover', 'hillshade'].includes(id)) return mode !== 'sat';
-    if (id === 'bld') return mode !== 'illust' || state.color === 'year';
-    if (id === 'bld-ill') return mode === 'illust' && state.color !== 'year';
-    if (id === 'landcover-pat') return mode === 'illust';
+    const win = mode === 'illust' || ART.includes(mode);       // 일러스트·화풍은 창 무늬 건물
+    if (id === 'bld') return !win || state.color === 'year';
+    if (id === 'bld-ill') return win && state.color !== 'year';
+    if (id === 'landcover-pat') return mode === 'illust' || mode === 'paint';
     if (id === 'water-edge') return mode !== 'sat';
     return true;
   };
@@ -1079,6 +1104,13 @@ async function main(container, onReady) {
     map.addImage('tree0', treeIcon('#6fb556', '#468c3c'), { pixelRatio: 4 });
     map.addImage('tree1', treeIcon('#8cc35c', '#5a9a45'), { pixelRatio: 4 });
     map.addImage('tree2', treeIcon('#4f9a55', '#2f7040', 'pine'), { pixelRatio: 4 });
+    ART.forEach((k) => {
+      const m = MODE[k];
+      USE_ORDER.forEach((u) => map.addImage('win-' + k + '-' + u, windowPattern(u, { wall: m.wall[WALL_IDX[u]], win: m.win, lit: m.lit }), { pixelRatio: 4 }));
+      map.addImage('tree0-' + k, treeIcon(m.leaf[0], shade(m.leaf[0], -0.25)), { pixelRatio: 4 });
+      map.addImage('tree1-' + k, treeIcon(m.leaf[1], shade(m.leaf[1], -0.25)), { pixelRatio: 4 });
+      map.addImage('tree2-' + k, treeIcon(m.leaf[2], shade(m.leaf[2], -0.3), 'pine'), { pixelRatio: 4 });
+    });
     map.addImage('pat-farm', groundPattern('farm'), { pixelRatio: 2 });
     map.addImage('pat-green', groundPattern('green'), { pixelRatio: 2 });
     buildPanel();
