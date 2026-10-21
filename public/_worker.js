@@ -567,10 +567,17 @@ const worker = {
 // pajulab.org/now-paju/… 경로 라우트 — 접두사를 떼고 같은 처리를 한 뒤, 돌려보내는 주소(Location)엔 접두사를 다시 붙인다(10-21).
 //   화면 코드는 상대 경로라 now-paju.pajulab.workers.dev(접두사 없음)와 둘 다 그대로 돈다
 const PREFIX = '/now-paju';
+const HOME = 'https://pajulab.org';
 export default {
   scheduled: (event, env, ctx) => worker.scheduled(event, env, ctx),
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
+    // 옛 주소(now-paju.pajulab.workers.dev)로 페이지를 열면 pajulab.org/now-paju/로 옮긴다(10-21).
+    //   이미 열려 있던 화면의 자료 요청(fetch·스크립트)은 그대로 답해 갑자기 깨지지 않게 한다
+    if (url.hostname.endsWith('.workers.dev') && request.headers.get('sec-fetch-mode') === 'navigate') {
+      const p = url.pathname.startsWith(PREFIX + '/') ? url.pathname.slice(PREFIX.length) : url.pathname;
+      return Response.redirect(HOME + PREFIX + p + url.search, 301);
+    }
     if (url.pathname === PREFIX) return Response.redirect(url.origin + PREFIX + '/' + url.search, 301);
     if (!url.pathname.startsWith(PREFIX + '/')) return worker.fetch(request, env, ctx);
     url.pathname = url.pathname.slice(PREFIX.length);
