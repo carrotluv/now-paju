@@ -475,11 +475,11 @@ function initCamDrag() {
 async function loadLive() {
   $('#upd').textContent = '갱신 중';
   const tasks = [
-    Promise.all([getJSON('/api/summary'), getJSON('/api/spot/200').catch(() => null)]).then(([s, sp]) => renderCrowd(s, sp)),
-    getJSON('/api/weather?pts=' + encodeURIComponent(VENUE[1].toFixed(4) + ',' + VENUE[0].toFixed(4))).then(renderWx),
-    getJSON('/api/parking').then(renderParking),
-    getJSON('/api/cctv').then(renderCams),
-    getJSON('/api/traffic').then((t) => {
+    Promise.all([getJSON('../api/summary'), getJSON('../api/spot/200').catch(() => null)]).then(([s, sp]) => renderCrowd(s, sp)),
+    getJSON('../api/weather?pts=' + encodeURIComponent(VENUE[1].toFixed(4) + ',' + VENUE[0].toFixed(4))).then(renderWx),
+    getJSON('../api/parking').then(renderParking),
+    getJSON('../api/cctv').then(renderCams),
+    getJSON('../api/traffic').then((t) => {
       ROADS = t.roads || [];
       const G = t.grades || {}, GCV = { 1: 75, 2: 45, 3: 20 };
       LINK_SPD = Object.fromEntries(Object.entries(t.links || {}).map(([k, v]) => [k, GCV[G[k]] ?? v]));
@@ -505,9 +505,9 @@ async function startFestival() {
   // 축제 바꾸기: 끝나고 3일 뒤까지인 축제가 둘 이상일 때만 — 지금 파주 머리말 축제 버튼과 같은 기간(10-15 사용자 "3일 뒤면 사라지게")
   { const kst = new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10);
     const open = Object.entries(FESTS).filter(([, f]) => kst <= new Date(Date.parse(f.end) + 3 * 864e5).toISOString().slice(0, 10)).sort((a, b) => a[1].start.localeCompare(b[1].start));
-    if (open.length > 1) $('#fsw').innerHTML = open.map(([k, f]) => `<a href="/festival/${k === 'jangdan' ? '' : '?f=' + k}"${k === FKEY ? ' class="on" aria-current="page"' : ''}>${esc(f.name.replace(/축제$/, ''))}</a>`).join(''); }
+    if (open.length > 1) $('#fsw').innerHTML = open.map(([k, f]) => `<a href="./${k === 'jangdan' ? '' : '?f=' + k}"${k === FKEY ? ' class="on" aria-current="page"' : ''}>${esc(f.name.replace(/축제$/, ''))}</a>`).join(''); }
   dayChip();
-  const [fd, rg] = await Promise.all([getJSON(BASE + 'fdata.json'), getJSON('/paju_roads.json')]);
+  const [fd, rg] = await Promise.all([getJSON(BASE + 'fdata.json'), getJSON('../paju_roads.json')]);
   FD = fd; CENTER = fd.center; R = fd.radius;
   ROADGEO = rg.roads || []; LINKMAP = rg.map || {}; ROADSIB = rg.sib || {};
   const v = (fd.landmarks || []).find((l) => /임진각/.test(l.name));

@@ -417,7 +417,7 @@ async function busNear(env, ctx, w, s, e, n) {
   return { at, routes: pick.length, buses: out, limited, nokey: false };
 }
 
-export default {
+const worker = {
   async scheduled(event, env, ctx) {            // 5분마다: 경기도 전체 소통을 추려 KV에 저장 + 주차장 빈자리 기록
     if (CLOSED) return;
     ctx.waitUntil(ggRefresh(env).catch(() => {}));
@@ -562,4 +562,26 @@ export default {
       return json({ error: 'upstream unavailable', detail: String(e && e.message || e).slice(0, 300) }, 503);
     }
   }
+};
+
+// pajulab.org/now-paju/… 경로 라우트 — 접두사를 떼고 같은 처리를 한 뒤, 돌려보내는 주소(Location)엔 접두사를 다시 붙인다(10-21).
+//   화면 코드는 상대 경로라 now-paju.pajulab.workers.dev(접두사 없음)와 둘 다 그대로 돈다
+const PREFIX = '/now-paju';
+export default {
+  scheduled: (event, env, ctx) => worker.scheduled(event, env, ctx),
+  async fetch(request, env, ctx) {
+    const url = new URL(request.url);
+    if (url.pathname === PREFIX) return Response.redirect(url.origin + PREFIX + '/' + url.search, 301);
+    if (!url.pathname.startsWith(PREFIX + '/')) return worker.fetch(request, env, ctx);
+    url.pathname = url.pathname.slice(PREFIX.length);
+    const r = await worker.fetch(new Request(url, request), env, ctx);
+    const loc = r.headers.get('location');
+    if (!loc) return r;
+    const to = new URL(loc, url);
+    if (to.origin !== url.origin || to.pathname.startsWith(PREFIX + '/')) return r;
+    to.pathname = PREFIX + to.pathname;
+    const res = new Response(r.body, r);
+    res.headers.set('location', to.href);
+    return res;
+  },
 };

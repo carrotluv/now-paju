@@ -4,5 +4,7 @@
   "compatibility_date": "2026-08-01",
   "assets": { "directory": "./public", "binding": "ASSETS", "run_worker_first": true },
   "triggers": { "crons": ["*/5 * * * *"] },
+  "routes": [{ "pattern": "pajulab.org/now-paju*", "zone_name": "pajulab.org" }],   // pajulab.org/now-paju/ (10-21)
+  "workers_dev": true,
   "kv_namespaces": [{ "binding": "STATS", "id": "763b6ab1c9d04e85a9750adf3e4cddff" }]
 }

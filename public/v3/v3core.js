@@ -4,7 +4,7 @@
 (function () {
 /* 파주 3D 맵 — MapLibre GL 5 + 브이월드 건물 + OSM + Mapterhorn 지형 */
 
-const BASE = '/v3/';
+const BASE = new URL('v3/', location.href).href;   // 문서 기준 절대 주소 — /now-paju/ 아래에서도 돌고, 지형 타일은 MapLibre 작업 스레드가 받으니 절대 주소여야 한다(10-21)
 const EXAG = 1.5;                       // 지형 과장 배율
 const NOEL = document.createElement('div');
 const $ = (s) => document.querySelector(s) || NOEL;   // 지금 파주에 없는 v3 패널 요소는 빈 칸으로
