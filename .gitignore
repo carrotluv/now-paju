@@ -1,0 +1,7 @@
+# 로컬 wrangler dev 상태·비밀 파일은 올리지 않는다(10-22)
+.wrangler/
+.dev.vars*
+.env*
+*.local.txt
+node_modules/
+.DS_Store
