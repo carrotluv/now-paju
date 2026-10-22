@@ -62,6 +62,10 @@
   .legend{margin-left:auto;display:flex;gap:15px;font-size:13px;line-height:20px;font-weight:500;color:var(--ink);align-items:flex-end;flex-wrap:wrap}
   .legend i{width:12px;height:12px;border-radius:50%;display:inline-block;margin-right:6px;vertical-align:-1px}
   .asof{font-weight:500;font-size:13px;color:var(--ink);border-left:1px solid var(--hair);padding-left:15px}
+  .home{display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 12px;border:1.5px solid var(--hair);border-radius:var(--radius);background:var(--float-bg);color:var(--ink);font-size:13px;font-weight:700;line-height:20px;text-decoration:none;white-space:nowrap;flex:none}
+  .home:hover{background:var(--hover)}
+  .home svg{flex:none;color:var(--sub)}
+  .home .h-s{display:none}
 
   .banner{padding:7px 24px;font-size:14px;line-height:20px;font-weight:400;border-bottom:1px solid var(--hair);background:var(--banner)}
   .banner b{font-weight:700}
@@ -347,6 +351,8 @@
     .legend{margin-left:auto;gap:0}
     .legend>span:not(.asof){display:none}       /* 색 설명은 리스트 배지로 충분 */
     .asof{border-left:0;padding-left:0;font-size:12px}
+    .home{height:40px;padding:0 10px;gap:5px}
+    .home .h-l{display:none} .home .h-s{display:inline}
     .tabs{order:3;width:auto;flex:1 1 calc(100% - 96px);min-width:0}   /* 로고 옆엔 못 들어가 둘째 줄로, 축제 탭과 한 줄 */
     .fests{order:3;flex:0 0 auto;align-self:stretch}
     .fsep,.flab{display:none}                        /* 휴대폰은 '축제' 버튼 하나라 묶음 글자가 필요 없다 */
@@ -486,6 +492,11 @@
     <span><i style="background:var(--s4)"></i>혼잡</span>
     <span class="asof num" id="asof">불러오는 중…</span>
   </div>
+  <!-- 파주랩 첫 화면(pajulab.org)으로 — 대시보드와 함께 쓰는 대표 주소(10-22) -->
+  <a class="home" href="https://pajulab.org/" title="파주랩 첫 화면으로" aria-label="파주랩 첫 화면으로">
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-5h4v5"/></svg>
+    <span class="h-l">파주랩 처음으로</span><span class="h-s">처음</span>
+  </a>
 </header>
 <div class="banner" id="banner"></div>
 
