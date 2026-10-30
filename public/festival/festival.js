@@ -59,6 +59,7 @@ const FESTS = {
 };
 const FKEY = new URLSearchParams(location.search).get('f') === 'ginseng' ? 'ginseng' : 'jangdan';
 const FEST = FESTS[FKEY];
+maplibregl.Marker.prototype._updateOpacity = function () {};   // 표식마다 GPU 깊이값을 읽는 지형 가려짐 판정 끔 — 끊김 주원인(10-30, v3core.js 참고)
 const BASE = location.href.replace(/[#?].*$/, '').replace(/[^/]*$/, '');
 const $ = (s) => document.querySelector(s);
 const fmt = (n) => Number(n).toLocaleString('ko-KR');

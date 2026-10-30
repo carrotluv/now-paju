@@ -4,6 +4,9 @@
 (function () {
 /* 파주 3D 맵 — MapLibre GL 5 + 브이월드 건물 + OSM + Mapterhorn 지형 */
 
+// 지형을 켜면 표식마다 100ms에 한 번 GPU 깊이값을 읽어(readPixels) 산 뒤에 가려졌는지 본다 — 표식 수십 개면 그릴 때마다 GPU를 기다려
+//   회전 24fps·1초 넘는 멈춤의 주원인이었다(10-30 측정). 가려짐 흐리게 하기는 포기하고 끈다(표식 위치·수평선 숨김은 그대로)
+maplibregl.Marker.prototype._updateOpacity = function () {};
 const BASE = new URL('v3/', location.href).href;   // 문서 기준 절대 주소 — /now-paju/ 아래에서도 돌고, 지형 타일은 MapLibre 작업 스레드가 받으니 절대 주소여야 한다(10-21)
 const EXAG = 1.5;                       // 지형 과장 배율
 const NOEL = document.createElement('div');
@@ -748,16 +751,21 @@ function qualityRatio() {
   try { q = localStorage.getItem('paju3d.quality') || 'high'; } catch (e) { /* 저장소 없음 */ }
   state.quality = q;
   const d = window.devicePixelRatio || 1;
-  // 손가락 화면(휴대폰·태블릿)은 화소 배율이 3이라 그대로 곱하면 4배로 그려 무겁다 — 보통 1.5·선명 2까지만(10-19 지금 파주)
-  const cap = window.matchMedia && matchMedia('(pointer: coarse)').matches ? (q === 'normal' ? 1.5 : 2) : 4;
+  // 화소 배율이 높은 화면은 그대로 곱하면 3~4배로 그려 무겁다 — 보통 1.5·선명 2까지만(10-19 휴대폰, 10-30 PC도 같게: 맥북 선명이 3배였다)
+  const cap = q === 'normal' ? 1.5 : 2;
   return Math.min(cap, d * ({ normal: 1, high: 1.5, max: 2 }[q] || 1.5));
 }
 function saveShow() { try { localStorage.setItem('paju3d.show', JSON.stringify(state.show)); } catch (e) { /* 저장소 없음 */ } }
 function panelPad() { return window.innerWidth > 760 ? { top: 40, bottom: 40, left: 40, right: 40 } : { top: 20, bottom: 20, left: 12, right: 12 }; }   // 지금 파주는 패널이 지도 밖
 // 전체 조감: 파주 경계가 패널을 뺀 영역 한가운데·여백 고르게 오도록 화면에 실제로 투영해 보며 맞춤(보이지 않게 계산 후 되돌림)
+// 전체 조감 시점은 지도 크기로만 정해진다 — 경계 점을 다 투영해 네 번 맞추면 누를 때마다 1.5초 멈춰서(10-30 측정) 점을 솎고 결과를 재사용
+let ovCam = null, ovKey = '';
 function overviewCamera() {
+  const key = map.getCanvas().clientWidth + 'x' + map.getCanvas().clientHeight;
+  if (ovCam && ovKey === key) return { ...ovCam };
   const prev = { center: map.getCenter(), zoom: map.getZoom(), pitch: map.getPitch(), bearing: map.getBearing(), padding: map.getPadding() };
-  const ring = DATA.boundary.features[0].geometry.coordinates[0][0];
+  const all = DATA.boundary.features[0].geometry.coordinates[0][0], step = Math.ceil(all.length / 240);
+  const ring = all.filter((p, i) => i % step === 0);
   const pad = spotPad(), W = map.getCanvas().clientWidth, Hh = map.getCanvas().clientHeight;
   const c0 = map.cameraForBounds([[pajuBox[0] + 0.08, pajuBox[1] + 0.08], [pajuBox[2] - 0.08, pajuBox[3] - 0.08]], { padding: pad, bearing: -14 });
   const cam = { center: [c0.center.lng, c0.center.lat], zoom: c0.zoom, pitch: 55, bearing: -14, padding: pad };
@@ -772,7 +780,8 @@ function overviewCamera() {
     cam.zoom += Math.log2(1 / fill) * 0.9;
   }
   map.jumpTo(prev);
-  return cam;
+  ovCam = cam; ovKey = key;
+  return { ...cam };
 }
 function overview() {
   const still = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;   // 동작 줄이기: 바로 옮긴다
