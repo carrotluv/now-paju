@@ -52,6 +52,7 @@ const MODE = {
     lc: { forest: '#9fcb80', park: '#a9d58c', grass: '#c3e2a2', wetland: '#b9dcc5', farm: '#e6dcaf', urban: '#efe5d0', industrial: '#e4dccb' },
     hs: { shadow: '#5b7a48', highlight: '#fffbe8', accent: '#7fa35e', ex: 0.5 },
     sky: { 'sky-color': '#6fa9df', 'horizon-color': '#d8ecf6', 'fog-color': '#e7eef0', 'sky-horizon-blend': 0.6, 'horizon-fog-blend': 0.55, 'fog-ground-blend': 0.8 },
+    center: '#f0cf7a', shore: '#f6eed8', ripple: 0.34, shadow: ['#4c5a50', 0.24], light: { color: '#fff6e6', intensity: 0.42, position: [1.2, 215, 40] },
   },
   sat: {
     bg: '#2a3138', land: '#000000', water: '#3f6f8f', wline: '#5f8fb0', road: '#ffffff', roadMajor: '#ffe7b0',
@@ -67,7 +68,7 @@ Object.assign(MODE, {
     lc: { forest: '#465f35', park: '#6a8a4a', grass: '#879c64', wetland: '#738f7b', farm: '#a3a274', urban: '#b3aea2', industrial: '#a9a6a0' },
     hs: { shadow: '#3c4030', highlight: '#f2efe2', accent: '#5a6046', ex: 0.55 },
     sky: { 'sky-color': '#4f86c6', 'horizon-color': '#dbe6ee', 'fog-color': '#d3dde4', 'sky-horizon-blend': 0.6, 'horizon-fog-blend': 0.55, 'fog-ground-blend': 0.08 },
-    waterEdge: '#6f8a8c', center: '#e2c25a', bnd: ['#4d5257', '#f2f0ea'],
+    waterEdge: '#6f8a8c', center: '#e2c25a', bnd: ['#4d5257', '#f2f0ea'], shore: '#b5ae94', ripple: 0.12, shadow: ['#23272b', 0.3],
     osm: { 'raster-saturation': -0.7, 'raster-opacity': 0.8, 'raster-contrast': -0.05, 'raster-brightness-min': 0.12, 'raster-brightness-max': 0.88, 'raster-hue-rotate': 0 },
     win: '#6f8aa3', lit: 0, leaf: ['#4a6a34', '#577a3c', '#3d5c2c'], light: { color: '#fff6ea', intensity: 0.46, position: [1.3, 215, 46] },
     wall: ['#d4cfc4', '#d8c4a8', '#e6e3dc', '#d7d4cd', '#b7c2cc', '#e1d9c8', '#c6c9cc', '#d3cdbb'], roof: ['#99958d', '#8b5b45', '#b5b1a9', '#9fa2a5', '#8995a1', '#a3a08f', '#8d9aa5', '#c2c7c6'] },
@@ -75,7 +76,7 @@ Object.assign(MODE, {
     lc: { forest: '#5d9d4a', park: '#7dbb5a', grass: '#a2cd6f', wetland: '#8cc4a4', farm: '#dccf86', urban: '#e7ddc4', industrial: '#ddd6c6' },
     hs: { shadow: '#4f7a3e', highlight: '#fffbe8', accent: '#7fa35e', ex: 0.5 },
     sky: { 'sky-color': '#4f9fe3', 'horizon-color': '#f6f2e2', 'fog-color': '#e9f1f2', 'sky-horizon-blend': 0.6, 'horizon-fog-blend': 0.55, 'fog-ground-blend': 0.15 },
-    waterEdge: '#a8d9ea', bnd: ['#e0793a', '#ffffff'],
+    waterEdge: '#a8d9ea', bnd: ['#e0793a', '#ffffff'], center: '#e8c56a', shore: '#f4ecd2', ripple: 0.22, shadow: ['#3f6a78', 0.26],
     osm: { 'raster-saturation': -0.35, 'raster-opacity': 0.7, 'raster-contrast': -0.2, 'raster-brightness-min': 0.3, 'raster-brightness-max': 1, 'raster-hue-rotate': 0 },
     win: '#6f91b0', lit: 0, leaf: ['#5ea24b', '#7cbc5c', '#4e9142'], light: { color: '#fff3dc', intensity: 0.32, position: [1.2, 200, 38] },
     wall: ['#efe7d8', '#f5ead4', '#f7f2e6', '#f3dfc6', '#e4edf1', '#f0f1de', '#e8e4da', '#f1e6c6'], roof: ['#c9785a', '#c4513d', '#d98263', '#3f8f8b', '#5c87b6', '#6f9f5a', '#8aa0b3', '#b98c4f'] },
@@ -83,7 +84,7 @@ Object.assign(MODE, {
     lc: { forest: '#3d4d32', park: '#55643e', grass: '#72764d', wetland: '#5e6a59', farm: '#978c60', urban: '#8b8478', industrial: '#827e77' },
     hs: { shadow: '#2b2830', highlight: '#e8c9a8', accent: '#594a3b', ex: 0.6 },
     sky: { 'sky-color': '#2c323d', 'horizon-color': '#d98a55', 'fog-color': '#8d857e', 'sky-horizon-blend': 0.7, 'horizon-fog-blend': 0.7, 'fog-ground-blend': 0.15 },
-    waterEdge: '#77878a', bnd: ['#5a4a3c', '#c9bca4'],
+    waterEdge: '#77878a', bnd: ['#5a4a3c', '#c9bca4'], center: '#c9b88f', shore: '#8f8672', ripple: 0.12, shadow: ['#1c1714', 0.34],
     osm: { 'raster-saturation': -0.9, 'raster-opacity': 0.85, 'raster-contrast': 0.05, 'raster-brightness-min': 0.05, 'raster-brightness-max': 0.62, 'raster-hue-rotate': 25 },
     win: '#3a3a40', lit: 0.12, leaf: ['#4a5638', '#5a6444', '#3e4a30'], light: { color: '#eadfd6', intensity: 0.42, position: [1.4, 250, 58] },
     wall: ['#aaa69e', '#b8b0a2', '#b2aea6', '#aca69a', '#a3a3a0', '#b4ae9f', '#9a9893', '#a9a395'], roof: ['#7a6a5c', '#8a5a44', '#6e665e', '#74584a', '#6b6560', '#7a6650', '#5f5f5f', '#80705a'] },
@@ -100,13 +101,13 @@ const state = { mode: 'plan', useOn: new Set(USE_ORDER), color: 'use', yearOn: n
 try { if (localStorage.getItem('paju3d.color') === 'year') state.color = 'year'; } catch (e) { /* 저장소 없음 */ }
 // 표시 요소 체크 칸: 키 → 이름·지도 층
 const ELEMENTS = [
-  { k: 'bld', name: '건물', layers: ['bld', 'bld-far', 'bld-ill', 'bld-roof'] },
+  { k: 'bld', name: '건물', layers: ['bld', 'bld-far', 'bld-ill', 'bld-roof', 'bld-roof-far', 'bld-roof-ill', 'bld-sel', 'bld-shadow', 'bld-shadow-hi'] },
   { k: 'tree', name: '나무', layers: ['trees'] },
   { k: 'bridge', name: '다리', layers: ['bridge'] },
   { k: 'road', name: '도로', layers: ['road', 'road-case', 'road-center'] },
   { k: 'rail', name: '철도', layers: ['rail-base', 'rail-dash', 'rail-tunnel'] },
-  { k: 'water', name: '하천·호수', layers: ['water', 'waterline', 'water-edge'] },
-  { k: 'green', name: '숲·농지', layers: ['landcover', 'landcover-pat'] },
+  { k: 'water', name: '하천·호수', layers: ['water', 'waterline', 'water-edge', 'water-shore'] },
+  { k: 'green', name: '숲·농지', layers: ['landcover', 'landcover-pat', 'landcover-edge'] },
   { k: 'shade', name: '산 음영', layers: ['hillshade'] },
   { k: 'terrain', name: '지형 입체', layers: [] },
   { k: 'bnd', name: '시·읍면동 경계', layers: ['bnd', 'bnd-case', 'emd-line'] },
@@ -180,14 +181,26 @@ function shade(hex, k) {
   const f = (v) => Math.max(0, Math.min(255, Math.round(k < 0 ? v * (1 + k) : v + (255 - v) * k)));
   return '#' + [n >> 16 & 255, n >> 8 & 255, n & 255].map(f).map((v) => v.toString(16).padStart(2, '0')).join('');
 }
+const lcg = (seed) => () => ((seed = (seed * 16807) % 2147483647) / 2147483647);   // 같은 그림이 나오게 씨앗을 고정한 난수
+// 벽 얼룩·잔점: 어느 벽이든 희미하게 얹어 단색 판처럼 보이지 않게
+function grain(g, S, rnd, n, a) {
+  for (let i = 0; i < n; i++) {
+    g.fillStyle = rnd() < 0.55 ? `rgba(70,55,40,${a})` : `rgba(255,255,255,${a})`;
+    g.beginPath(); g.arc(rnd() * S, rnd() * S, 0.6 + rnd() * 1.4, 0, Math.PI * 2); g.fill();
+  }
+}
 function windowPattern(u, pal) {
   // 128px 한 장 = 4개 층(층당 32px), 지도에는 pixelRatio 4로 넣어 화면 크기는 그대로·세밀도만 4배
   //   pal(화풍): 벽·유리 색을 바꾸고, lit 비율만큼 창에 불을 켠다(잿빛 성곽)
   const s = pal ? { ...USE[u], wall: pal.wall, win: pal.win } : USE[u], S = 128, c = mkCanvas(S, S), g = c.getContext('2d');
+  const rnd = lcg(u * 131 + 7);
   g.fillStyle = s.wall; g.fillRect(0, 0, S, S);
+  grain(g, S, rnd, 90, 0.05);
   if (u === 6 || u === 7) {                                                   // 공장·축사: 골강판 세로줄 + 높은 띠창
     g.fillStyle = shade(s.wall, -0.07);
     for (let x = 0; x < S; x += 6) g.fillRect(x, 0, 2, S);
+    g.fillStyle = shade(s.wall, 0.3);
+    for (let x = 2; x < S; x += 6) g.fillRect(x, 0, 1, S);
     for (let r = 0; r < 4; r += 2) {
       const y = r * 32;
       g.fillStyle = shade(s.win, -0.4); g.fillRect(6, y + 9, S - 12, 12);
@@ -212,8 +225,15 @@ function windowPattern(u, pal) {
       g.fillStyle = gr; g.fillRect(x0, wy, ww, wh);
       g.fillStyle = 'rgba(255,255,255,.28)';                                        // 유리 반사 사선
       g.beginPath(); g.moveTo(x0 + ww * 0.15, wy + wh); g.lineTo(x0 + ww * 0.45, wy); g.lineTo(x0 + ww * 0.62, wy); g.lineTo(x0 + ww * 0.32, wy + wh); g.fill();
+      // 집집마다 다른 창: 커튼·블라인드·어두운 방을 고정 무늬로 섞는다(업무 건물은 유리벽이라 뺀다)
+      const look = u === 4 ? 9 : (r * 5 + k * 3 + u) % 6;
+      if (look === 0) { g.fillStyle = 'rgba(255,240,214,.82)'; g.fillRect(x0, wy, Math.ceil(ww * 0.42), wh); }                       // 한쪽 커튼
+      else if (look === 1) { g.fillStyle = 'rgba(244,238,226,.8)'; g.fillRect(x0, wy, ww, Math.ceil(wh * 0.4)); }                     // 블라인드
+      else if (look === 3) { g.fillStyle = 'rgba(38,50,66,.26)'; g.fillRect(x0, wy, ww, wh); }                                        // 어두운 방
+      else if (look === 4) { g.fillStyle = 'rgba(214,178,150,.75)'; g.fillRect(x0 + Math.floor(ww * 0.58), wy, Math.ceil(ww * 0.42), wh); }   // 반대쪽 커튼
       g.fillStyle = shade(s.win, -0.35); g.fillRect(x0 + Math.floor(ww / 2), wy, 1, wh);  // 가운데 창살
       if (u !== 4) { g.fillStyle = shade(s.wall, 0.45); g.fillRect(x0 - 2, wy + wh + 1, ww + 4, 2); }  // 창턱
+      if (u !== 4) { g.fillStyle = 'rgba(70,55,40,.1)'; g.fillRect(x0 - 1, wy + wh + 3, ww + 2, 2); }   // 창턱 밑 그늘
       if (u === 2) { g.fillStyle = 'rgba(255,255,255,.55)'; g.fillRect(x0 - 3, wy + wh - 4, ww + 6, 1); }  // 발코니 난간
       if (pal && pal.lit && ((r * 7 + k * 13 + u * 3) % 20) < pal.lit * 20) {                           // 불 켜진 창(고정 무늬)
         const lg = g.createLinearGradient(0, wy, 0, wy + wh); lg.addColorStop(0, '#ffe2a8'); lg.addColorStop(1, '#f0a050');
@@ -225,37 +245,130 @@ function windowPattern(u, pal) {
 }
 function treeIcon(body, dark, kind) {
   // 96x120 = 화면 24x30 (pixelRatio 4)
-  const c = mkCanvas(96, 120), g = c.getContext('2d');
-  g.fillStyle = 'rgba(40,60,30,.2)'; g.beginPath(); g.ellipse(48, 113, 24, 6, 0, 0, Math.PI * 2); g.fill();
-  const trunk = g.createLinearGradient(42, 0, 54, 0); trunk.addColorStop(0, '#7a5a3c'); trunk.addColorStop(1, '#9b7650');
-  g.fillStyle = trunk; g.fillRect(43, 70, 10, 42);
+  const c = mkCanvas(96, 120), g = c.getContext('2d'), rnd = lcg(kind === 'pine' ? 41 : kind === 'tall' ? 53 : body.charCodeAt(3) * 17 + 3);
+  g.fillStyle = 'rgba(40,60,30,.2)'; g.beginPath(); g.ellipse(53, 113, 25, 6, -0.08, 0, Math.PI * 2); g.fill();   // 그림자는 해 반대쪽으로 살짝
+  const trunk = g.createLinearGradient(42, 0, 54, 0); trunk.addColorStop(0, '#6b4e34'); trunk.addColorStop(0.45, '#9b7650'); trunk.addColorStop(1, '#6f5238');
+  g.fillStyle = trunk; g.beginPath(); g.moveTo(43, 72); g.lineTo(53, 72); g.lineTo(55, 113); g.lineTo(41, 113); g.fill();
   const blob = (x, y, r, col) => { g.fillStyle = col; g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill(); };
-  if (kind === 'pine') {                                                       // 침엽수: 세 겹 원뿔
-    for (let i = 0; i < 3; i++) {
-      const y0 = 18 + i * 22, w = 22 + i * 9;
-      g.fillStyle = dark; g.beginPath(); g.moveTo(48, y0 - 6); g.lineTo(48 + w, y0 + 34); g.lineTo(48 - w, y0 + 34); g.fill();
-      g.fillStyle = body; g.beginPath(); g.moveTo(48, y0 - 6); g.lineTo(48 + w * 0.15, y0 + 32); g.lineTo(48 - w, y0 + 32); g.fill();
+  if (kind === 'pine') {                                                       // 침엽수: 네 겹 원뿔, 가지 끝을 들쭉날쭉하게
+    for (let i = 0; i < 4; i++) {
+      const y0 = 12 + i * 18, w = 15 + i * 9, h = 30, n = 7;
+      for (const [col, cut] of [[dark, 1], [body, 0.2]]) {
+        g.fillStyle = col; g.beginPath(); g.moveTo(48, y0 - 6);
+        for (let k = 0; k <= n; k++) { const q = k / n, x = 48 + w * (cut - q * (cut + 1)); g.lineTo(x, y0 + h - (k % 2 ? 0 : 5)); }
+        g.fill();
+      }
+      for (let k = 0; k < 5; k++) { const x = 48 - w * rnd() * 0.8; blob(x, y0 + 8 + rnd() * 14, 1.3, shade(body, 0.28)); }
     }
-    g.strokeStyle = shade(dark, -0.35); g.lineWidth = 2; g.beginPath(); g.moveTo(48, 12); g.lineTo(79, 86); g.stroke();
     return g.getImageData(0, 0, 96, 120);
   }
-  blob(48, 50, 34, dark); blob(34, 60, 22, dark); blob(63, 60, 22, dark);
-  blob(44, 42, 26, body); blob(60, 50, 18, body); blob(32, 54, 16, body);
-  blob(38, 32, 10, shade(body, 0.3)); blob(56, 38, 6, shade(body, 0.22));
-  g.strokeStyle = shade(dark, -0.35); g.lineWidth = 2.2; g.beginPath(); g.arc(48, 50, 34, 0.25, Math.PI - 0.25); g.stroke();
+  // 활엽수: 잎덩이 여러 개를 그늘 → 몸통 → 빛 순서로 겹쳐 그린다
+  const tall = kind === 'tall', rx = tall ? 21 : 33, ry = tall ? 38 : 31, cy = tall ? 44 : 46, clumps = [[48, cy, rx * 0.72]];
+  for (let i = 0; i < 9; i++) {                                                // 가운데 큰 덩이 둘레로 잎덩이 아홉 개
+    const a = (i + rnd() * 0.5) / 9 * Math.PI * 2;
+    clumps.push([48 + Math.cos(a) * rx * 0.68, cy + Math.sin(a) * ry * 0.68, (tall ? 11 : 13) + rnd() * 5]);
+  }
+  clumps.forEach(([x, y, r]) => blob(x + 2.5, y + 3.5, r + 1.5, dark));
+  clumps.forEach(([x, y, r]) => blob(x - 0.5, y - 1, r, body));
+  clumps.slice(1).filter(([x, y]) => x + y < 48 + cy + 6).forEach(([x, y, r]) => blob(x - 3, y - 3.5, r * 0.6, shade(body, 0.16)));
+  blob(40, cy - ry * 0.34, rx * 0.34, shade(body, 0.12));
+  for (let i = 0; i < 16; i++) {                                               // 잎 점
+    const a = rnd() * Math.PI * 2, q = Math.sqrt(rnd()), x = 48 + Math.cos(a) * rx * 0.9 * q, y = cy + Math.sin(a) * ry * 0.9 * q;
+    blob(x, y, 1.3, x + y < 48 + cy ? shade(body, 0.32) : shade(dark, -0.1));
+  }
   return g.getImageData(0, 0, 96, 120);
+}
+// 지붕 무늬(건물 용도별): 96px = 화면 32px. i%3 번호마다 색·결을 조금씩 달리한다
+function roofPattern(u, col, v) {
+  const S = 96, c = mkCanvas(S, S), g = c.getContext('2d'), rnd = lcg(u * 97 + v * 13 + 5);
+  const base = shade(col, [-0.05, 0, 0.07][v]);
+  g.fillStyle = base; g.fillRect(0, 0, S, S);
+  const flat = (seam, spots) => {
+    grain(g, S, rnd, spots, 0.07);
+    for (let i = 0; i < 4; i++) { g.fillStyle = 'rgba(70,60,50,.05)'; g.beginPath(); g.ellipse(rnd() * S, rnd() * S, 10 + rnd() * 14, 6 + rnd() * 8, rnd() * 3, 0, Math.PI * 2); g.fill(); }   // 빗물 얼룩
+    g.fillStyle = 'rgba(60,50,40,.09)';
+    for (let k = 0; k < S; k += seam) { g.fillRect(k, 0, 1, S); g.fillRect(0, k, S, 1); }
+  };
+  const unit = (x, y, w, h) => {                                               // 옥상 설비: 그늘 + 윗면
+    g.fillStyle = 'rgba(40,40,45,.26)'; g.fillRect(x + 2, y + 2, w, h);
+    g.fillStyle = shade(base, 0.32); g.fillRect(x, y, w, h);
+    g.fillStyle = 'rgba(40,40,45,.2)'; g.fillRect(x, y + h - 1, w, 1); g.fillRect(x + w - 1, y, 1, h);
+  };
+  if (u === 1 || (u === 0 && v === 0)) {                                       // 단독주택: 어긋나게 얹은 기와
+    for (let y = 0, row = 0; y < S; y += 8, row++) {
+      for (let x = row % 2 ? -6 : 0; x < S; x += 12) { g.fillStyle = shade(base, (rnd() - 0.5) * 0.14); g.fillRect(x, y, 12, 8); }
+      g.fillStyle = 'rgba(50,30,20,.2)'; g.fillRect(0, y + 7, S, 1);
+      g.fillStyle = 'rgba(255,255,255,.1)'; g.fillRect(0, y, S, 1);
+    }
+  } else if (u === 6 || u === 7) {                                             // 공장·축사: 골강판
+    for (let x = 0; x < S; x += 8) { g.fillStyle = shade(base, -0.07); g.fillRect(x, 0, 2, S); g.fillStyle = shade(base, 0.22); g.fillRect(x + 3, 0, 1, S); }
+    for (let i = 0; i < 3; i++) { g.fillStyle = u === 7 ? 'rgba(120,75,35,.08)' : 'rgba(90,80,70,.06)'; g.fillRect(rnd() * S, rnd() * S, 8 + rnd() * 16, 20 + rnd() * 30); }   // 녹 자국
+  } else if (u === 5) {                                                        // 공공: 큰 판 지붕
+    flat(24, 80);
+  } else {                                                                     // 공동주택·상가·업무: 평평한 옥상 + 설비
+    flat(48, 120);
+    if (u === 3 || v !== 2) unit(16 + v * 18, 14, 13, 10);
+    if (u !== 0) unit(58 - v * 8, 62, 9, 14);
+  }
+  return g.getImageData(0, 0, S, S);
 }
 // 일러스트 땅 무늬(반투명, 바탕색 위에 겹침)
 function groundPattern(kind) {
-  const c = mkCanvas(64, 64), g = c.getContext('2d');
-  if (kind === 'farm') {                                                       // 논밭 이랑
-    g.strokeStyle = 'rgba(92,120,58,.22)'; g.lineWidth = 2;
-    for (let i = -64; i < 128; i += 10) { g.beginPath(); g.moveTo(i, 64); g.lineTo(i + 64, 0); g.stroke(); }
-  } else {                                                                     // 숲·공원 잎 점
-    const pts = [[8, 10], [30, 6], [52, 14], [18, 30], [42, 34], [60, 44], [10, 50], [34, 56], [50, 60]];
-    pts.forEach(([x, y], i) => { g.fillStyle = i % 2 ? 'rgba(46,96,44,.16)' : 'rgba(255,255,230,.18)'; g.beginPath(); g.arc(x, y, i % 3 ? 4 : 5, 0, Math.PI * 2); g.fill(); });
+  const S = { farm: 256, forest: 128, green: 96, land: 128 }[kind], c = mkCanvas(S, S), g = c.getContext('2d'), rnd = lcg(S + kind.length);
+  const wrap = (x, y, r, draw) => { for (const dx of x < r ? [0, S] : x > S - r ? [0, -S] : [0]) for (const dy of y < r ? [0, S] : y > S - r ? [0, -S] : [0]) draw(x + dx, y + dy); };   // 이음매 없이
+  const dot = (x, y, r, col) => wrap(x, y, r, (a, b) => { g.fillStyle = col; g.beginPath(); g.arc(a, b, r, 0, Math.PI * 2); g.fill(); });
+  if (kind === 'farm') {                                                       // 논: 둑으로 나뉜 다랑이, 판마다 벼 빛깔과 이랑 방향이 조금 다르다
+    const rows = [0, 44, 98, 136, 196, 256];
+    for (let r = 0; r < 5; r++) {
+      const cuts = [0, 40 + rnd() * 60, 120 + rnd() * 70, 256];
+      for (let k = 0; k < 3; k++) {
+        const x = cuts[k], y = rows[r], w = cuts[k + 1] - x, h = rows[r + 1] - y, t = rnd();
+        g.fillStyle = t < 0.34 ? 'rgba(255,250,205,.14)' : t < 0.67 ? 'rgba(112,126,50,.08)' : 'rgba(176,136,48,.09)';
+        g.fillRect(x, y, w, h);
+        g.save(); g.beginPath(); g.rect(x, y, w, h); g.clip();
+        g.strokeStyle = 'rgba(92,110,50,.16)'; g.lineWidth = 1;
+        const flip = (r + k) % 2 === 0;
+        for (let q = 4; q < (flip ? h : w); q += 7) { g.beginPath(); if (flip) { g.moveTo(x, y + q); g.lineTo(x + w, y + q); } else { g.moveTo(x + q, y); g.lineTo(x + q, y + h); } g.stroke(); }
+        g.restore();
+        g.fillStyle = 'rgba(96,104,54,.22)'; g.fillRect(x, y + h - 3, w, 1); g.fillRect(x + w - 1, y, 1, h);   // 둑 그늘
+        g.fillStyle = 'rgba(255,250,226,.42)'; g.fillRect(x, y, w, 2); g.fillRect(x, y, 2, h);                  // 둑 윗면
+      }
+    }
+  } else if (kind === 'forest') {                                              // 숲: 나무 윗머리가 몽글몽글 이어진 결
+    for (let i = 0; i < 80; i++) {
+      const x = rnd() * S, y = rnd() * S, r = 5 + rnd() * 4.5;
+      wrap(x, y, r, (a, b) => {
+        const gr = g.createRadialGradient(a - r * 0.3, b - r * 0.35, 0, a, b, r);
+        gr.addColorStop(0, 'rgba(255,255,214,.13)'); gr.addColorStop(0.5, 'rgba(255,255,214,0)'); gr.addColorStop(0.72, 'rgba(24,62,34,0)'); gr.addColorStop(1, 'rgba(24,62,34,.07)');
+        g.fillStyle = gr; g.beginPath(); g.arc(a, b, r, 0, Math.PI * 2); g.fill();
+      });
+    }
+  } else if (kind === 'green') {                                               // 공원·풀밭: 풀 포기
+    g.lineWidth = 1.2;
+    for (let i = 0; i < 44; i++) {
+      const x = 3 + rnd() * (S - 6), y = 4 + rnd() * (S - 8);
+      g.strokeStyle = i % 3 ? 'rgba(46,96,44,.2)' : 'rgba(255,255,226,.28)';
+      g.beginPath(); g.moveTo(x - 2.4, y - 3); g.lineTo(x, y + 2); g.lineTo(x + 2.4, y - 3); g.stroke();
+    }
+  } else {                                                                     // 빈 땅: 흙 알갱이
+    for (let i = 0; i < 150; i++) dot(rnd() * S, rnd() * S, 0.6 + rnd() * 1.1, i % 3 ? 'rgba(110,88,58,.09)' : 'rgba(255,255,244,.2)');
   }
-  return g.getImageData(0, 0, 64, 64);
+  return g.getImageData(0, 0, S, S);
+}
+// 폴리곤들의 바깥 선: 자료를 나눈 자리(두 조각이 같이 쓰는 변)는 빼고 이어서 돌려준다 — 강 한가운데 이음선이 보이지 않게
+function outline(features) {
+  const key = (a, b) => (a[0] < b[0] || (a[0] === b[0] && a[1] < b[1]) ? a + '|' + b : b + '|' + a), n = new Map();
+  const rings = features.flatMap((f) => f.geometry.coordinates), lines = [];
+  rings.forEach((r) => { for (let i = 0; i + 1 < r.length; i++) { const k = key(r[i], r[i + 1]); n.set(k, (n.get(k) || 0) + 1); } });
+  rings.forEach((r) => {
+    let cur = null;
+    for (let i = 0; i + 1 < r.length; i++) {
+      if (n.get(key(r[i], r[i + 1])) > 1) { cur = null; continue; }
+      if (!cur) { cur = [r[i]]; lines.push(cur); }
+      cur.push(r[i + 1]);
+    }
+  });
+  return { type: 'Feature', properties: {}, geometry: { type: 'MultiLineString', coordinates: lines } };
 }
 
 // 공원·숲 안에 나무 점 뿌리기
@@ -278,7 +391,7 @@ function makeTrees(landcover) {
       tries++;
       const x = x0 + (x1 - x0) * rand(), y = y0 + (y1 - y0) * rand();
       if (!inRing(x, y, ring)) continue;
-      pts.push({ type: 'Feature', properties: { v: f.properties.k === 'forest' && rand() < 0.35 ? 2 : (rand() < 0.5 ? 0 : 1), s: 0.75 + rand() * 0.5 }, geometry: { type: 'Point', coordinates: [x, y] } });
+      pts.push({ type: 'Feature', properties: { v: f.properties.k === 'forest' && rand() < 0.35 ? 2 : (rand() < 0.2 ? 3 : (rand() < 0.5 ? 0 : 1)), s: 0.75 + rand() * 0.5 }, geometry: { type: 'Point', coordinates: [x, y] } });
       made++;
     }
   }
@@ -300,6 +413,7 @@ const wallColor = () => (state.color === 'year' ? yearVar((b) => b.plan) : varCo
 const roofColor = () => (state.color === 'year' ? yearVar((b) => shade(b.plan, 0.28)) : (state.mode === 'illust' ? roofIll() : roofPlan()));
 const farColor = () => (state.color === 'year' ? ['match', ['get', 'yb']].concat(...YEAR.map((b, k) => [k, b.plan]), ['#dcdad4']) : ['match', ['get', 'u']].concat(...USE_ORDER.map((u) => [u, USE[u].plan]), ['#dcdad4']));
 const selColor = (base) => ['case', ['boolean', ['feature-state', 'sel'], false], '#ffc02e', base];   // 선택 건물: 용도 색과 겹치지 않는 노랑
+const roofPat = (mode) => ['concat', 'roof-' + mode + '-', ['to-string', ['get', 'u']], '-', ['to-string', ['%', ['get', 'i'], 3]]];
 function buildStyle() {
   const m = MODE.plan;
   const sources = {
@@ -311,6 +425,8 @@ function buildStyle() {
     emd: { type: 'geojson', data: DATA.emd },
     landcover: { type: 'geojson', data: DATA.landcover, tolerance: 0.6 },
     water: { type: 'geojson', data: DATA.water, tolerance: 0.5 },
+    'water-rim': { type: 'geojson', data: outline(DATA.water.features), tolerance: 0.5 },
+    'green-rim': { type: 'geojson', data: outline(DATA.landcover.features.filter((f) => f.properties.k === 'forest' || f.properties.k === 'park')), tolerance: 0.6 },
     waterline: { type: 'geojson', data: DATA.waterline },
     roads: { type: 'geojson', data: DATA.roads, tolerance: 0.4 },
     rail: { type: 'geojson', data: DATA.rail },
@@ -319,6 +435,7 @@ function buildStyle() {
     trees: { type: 'geojson', data: { type: 'FeatureCollection', features: [] }, maxzoom: 14 },
     traffic: { type: 'geojson', data: { type: 'FeatureCollection', features: [] }, maxzoom: 16, buffer: 4 },
     sel: { type: 'geojson', data: { type: 'FeatureCollection', features: [] } },
+    'sel-bld': { type: 'geojson', data: { type: 'FeatureCollection', features: [] } },
   };
   if (window.VWORLD_KEY) {
     sources.sat = { type: 'raster', tiles: ['https://api.vworld.kr/req/wmts/1.0.0/' + window.VWORLD_KEY + '/Satellite/{z}/{y}/{x}.jpeg'], tileSize: 256, maxzoom: 19, attribution: '위성 © 국토교통부 VWorld' };
@@ -334,30 +451,41 @@ function buildStyle() {
   if (sources.sat) layers.push({ id: 'sat', type: 'raster', source: 'sat', layout: { visibility: 'none' } });
   layers.push(
     { id: 'land', type: 'fill', source: 'boundary', paint: { 'fill-color': m.land } },
+    { id: 'land-pat', type: 'fill', source: 'boundary', minzoom: 12, layout: { visibility: 'none' }, paint: { 'fill-pattern': 'pat-land', 'fill-antialias': false } },
     { id: 'landcover', type: 'fill', source: 'landcover', paint: { 'fill-color': lcColor(m.lc), 'fill-antialias': false } },
-    { id: 'landcover-pat', type: 'fill', source: 'landcover', minzoom: 11, filter: ['in', ['get', 'k'], ['literal', ['farm', 'forest', 'park']]], layout: { visibility: 'none' }, paint: { 'fill-pattern': ['match', ['get', 'k'], 'farm', 'pat-farm', 'pat-green'], 'fill-antialias': false } },
+    { id: 'landcover-pat', type: 'fill', source: 'landcover', minzoom: 11, filter: ['in', ['get', 'k'], ['literal', ['farm', 'forest', 'park', 'grass']]], layout: { visibility: 'none' }, paint: { 'fill-pattern': ['match', ['get', 'k'], 'farm', 'pat-farm', 'forest', 'pat-forest', 'pat-green'], 'fill-antialias': false } },
+    { id: 'landcover-edge', type: 'line', source: 'green-rim', minzoom: 12, layout: { visibility: 'none', 'line-join': 'round' }, paint: { 'line-color': shade(m.lc.forest, -0.25), 'line-opacity': 0.34, 'line-blur': 1.4, 'line-width': ['interpolate', ['linear'], ['zoom'], 12, 1.4, 17, 5] } },
     { id: 'hillshade', type: 'hillshade', source: 'demhs', paint: { 'hillshade-exaggeration': m.hs.ex, 'hillshade-shadow-color': m.hs.shadow, 'hillshade-highlight-color': m.hs.highlight, 'hillshade-accent-color': m.hs.accent } },
-    { id: 'water', type: 'fill', source: 'water', paint: { 'fill-color': m.water } },
-    { id: 'water-edge', type: 'line', source: 'water', minzoom: 12, paint: { 'line-color': shade(m.water, -0.22), 'line-width': ['interpolate', ['linear'], ['zoom'], 12, 0.6, 17, 1.8] } },
+    // 물줄기 선은 강 면 아래에: 넓은 강 속을 지나는 선이 물 위에 비치지 않게, 강 면이 없는 실개천만 보인다
     { id: 'waterline', type: 'line', source: 'waterline', paint: { 'line-color': m.wline, 'line-width': ['interpolate', ['linear'], ['zoom'], 10, ['match', ['get', 'k'], 1, 1.2, 0.4], 16, ['match', ['get', 'k'], 1, 6, 2.5]] } },
+    { id: 'water-shore', type: 'line', source: 'water-rim', minzoom: 12, layout: { visibility: 'none', 'line-join': 'round' }, paint: { 'line-color': m.land, 'line-blur': 1, 'line-width': ['interpolate', ['exponential', 1.6], ['zoom'], 12, 2.4, 17, 15] } },
+    { id: 'water', type: 'fill', source: 'water', paint: { 'fill-color': m.water } },
+    { id: 'water-edge', type: 'line', source: 'water-rim', minzoom: 12, paint: { 'line-color': shade(m.water, -0.22), 'line-width': ['interpolate', ['linear'], ['zoom'], 12, 0.6, 17, 1.8] } },
     { id: 'road-case', type: 'line', source: 'roads', minzoom: 9, layout: { 'line-cap': 'round', 'line-join': 'round', 'line-sort-key': ['-', 10, ['get', 'r']] }, paint: { 'line-color': m.casing, 'line-width': caseW } },
     { id: 'road', type: 'line', source: 'roads', minzoom: 9, layout: { 'line-cap': 'round', 'line-join': 'round', 'line-sort-key': ['-', 10, ['get', 'r']] }, paint: { 'line-color': ['case', ['<=', ['get', 'r'], 2], m.roadMajor, m.road], 'line-width': roadW } },
     { id: 'road-center', type: 'line', source: 'roads', minzoom: 15, filter: ['all', ['<=', ['get', 'r'], 4], ['!=', ['get', 'o'], 1]], paint: { 'line-color': '#e9b949', 'line-width': ['interpolate', ['linear'], ['zoom'], 15, 0.6, 18, 2] } },
     { id: 'rail-tunnel', type: 'line', source: 'rail', filter: ['==', ['get', 't'], 1], paint: { 'line-color': LINE_COLOR, 'line-width': ['interpolate', ['linear'], ['zoom'], 10, 1.4, 17, 5], 'line-dasharray': [1.5, 1.5], 'line-opacity': 0.75 } },
     { id: 'rail-base', type: 'line', source: 'rail', filter: ['==', ['get', 't'], 0], paint: { 'line-color': LINE_COLOR, 'line-width': ['interpolate', ['linear'], ['zoom'], 10, 1.2, 17, 5] } },
     { id: 'rail-dash', type: 'line', source: 'rail', filter: ['==', ['get', 't'], 0], paint: { 'line-color': '#ffffff', 'line-width': ['interpolate', ['linear'], ['zoom'], 10, 0.6, 17, 2.6], 'line-dasharray': [3, 3] } },
+    // 건물 그늘: 바닥에 건물 모양을 해 반대쪽으로 밀어 깐다(높이에 따라 두 단계). 땅 그림의 일부라 지도를 돌려도 다시 그리지 않는다
+    { id: 'bld-shadow', type: 'fill', source: 'buildings', minzoom: 14, filter: ['<', ['get', 'h'], 14], layout: { visibility: 'none' }, paint: { 'fill-color': '#4c5a50', 'fill-opacity': 0.24 } },
+    { id: 'bld-shadow-hi', type: 'fill', source: 'buildings', minzoom: 14, filter: ['>=', ['get', 'h'], 14], layout: { visibility: 'none' }, paint: { 'fill-color': '#4c5a50', 'fill-opacity': 0.24 } },
     { id: 'sel-fill', type: 'fill', source: 'sel', paint: { 'fill-color': '#f0863a', 'fill-opacity': 0.14 } },
     { id: 'sel-ring', type: 'line', source: 'sel', paint: { 'line-color': '#f0863a', 'line-width': 3, 'line-dasharray': [2, 1.2] } },
     { id: 'mask', type: 'fill', source: 'mask', paint: { 'fill-color': m.mask, 'fill-opacity': m.maskOp } },
     { id: 'emd-line', type: 'line', source: 'emd', minzoom: 9, maxzoom: 15, paint: { 'line-color': '#8d968e', 'line-width': 0.9, 'line-dasharray': [3, 2], 'line-opacity': 0.55 } },
     { id: 'bnd-case', type: 'line', source: 'boundary', paint: { 'line-color': '#ffffff', 'line-width': 5, 'line-opacity': 0.9 } },
     { id: 'bnd', type: 'line', source: 'boundary', paint: { 'line-color': '#e0793a', 'line-width': 2 } },
-    { id: 'trees', type: 'symbol', source: 'trees', minzoom: 13.2, layout: { visibility: 'none', 'icon-image': ['match', ['get', 'v'], 0, 'tree0', 1, 'tree1', 'tree2'], 'icon-anchor': 'bottom', 'icon-allow-overlap': true, 'icon-ignore-placement': true, 'icon-pitch-alignment': 'viewport', 'icon-size': ['interpolate', ['exponential', 1.6], ['zoom'], 13.2, ['*', ['get', 's'], 0.18], 16, ['*', ['get', 's'], 0.6], 18, ['*', ['get', 's'], 1.5]] } },
+    { id: 'trees', type: 'symbol', source: 'trees', minzoom: 13.2, layout: { visibility: 'none', 'icon-image': ['concat', 'tree', ['to-string', ['get', 'v']]], 'icon-anchor': 'bottom', 'icon-allow-overlap': true, 'icon-ignore-placement': true, 'icon-pitch-alignment': 'viewport', 'icon-size': ['interpolate', ['exponential', 1.6], ['zoom'], 13.2, ['*', ['get', 's'], 0.18], 16, ['*', ['get', 's'], 0.6], 18, ['*', ['get', 's'], 1.5]] } },
     { id: 'bridge', type: 'fill-extrusion', source: 'bridges', minzoom: 11.5, paint: { 'fill-extrusion-color': ['case', ['==', ['get', 'k'], 1], '#c6ccd4', m.bridge], 'fill-extrusion-base': ['get', 'b'], 'fill-extrusion-height': ['get', 't'], 'fill-extrusion-opacity': 1 } },
     { id: 'bld-far', type: 'fill-extrusion', source: 'buildings', minzoom: 9, maxzoom: 13, filter: ['>=', ['get', 'h'], 24], paint: { 'fill-extrusion-color': selColor(farColor()), 'fill-extrusion-height': ['get', 'h'], 'fill-extrusion-opacity': 0.95 } },
     { id: 'bld', type: 'fill-extrusion', source: 'buildings', minzoom: 13, paint: { 'fill-extrusion-color': selColor(wallColor()), 'fill-extrusion-height': ['get', 'h'], 'fill-extrusion-opacity': 1, 'fill-extrusion-vertical-gradient': true } },
     { id: 'bld-ill', type: 'fill-extrusion', source: 'buildings', minzoom: 13, layout: { visibility: 'none' }, paint: { 'fill-extrusion-pattern': ['concat', 'win', ['to-string', ['get', 'u']]], 'fill-extrusion-height': ['get', 'h'], 'fill-extrusion-opacity': 1, 'fill-extrusion-vertical-gradient': true } },
     { id: 'bld-roof', type: 'fill-extrusion', source: 'buildings', minzoom: 13, paint: { 'fill-extrusion-color': selColor(roofColor()), 'fill-extrusion-base': ['get', 'h'], 'fill-extrusion-height': ['+', ['get', 'h'], 0.5] } },
+    // 무늬 3D 층은 MapLibre가 두 번 그려서 무겁다 → 지붕 무늬는 가까이(줌 15부터)만, 그 아래는 색만 칠한다
+    { id: 'bld-roof-far', type: 'fill-extrusion', source: 'buildings', minzoom: 13, maxzoom: 15, layout: { visibility: 'none' }, paint: { 'fill-extrusion-color': selColor(roofColor()), 'fill-extrusion-base': ['get', 'h'], 'fill-extrusion-height': ['+', ['get', 'h'], 0.5] } },
+    { id: 'bld-roof-ill', type: 'fill-extrusion', source: 'buildings', minzoom: 15, layout: { visibility: 'none' }, paint: { 'fill-extrusion-pattern': roofPat('illust'), 'fill-extrusion-base': ['get', 'h'], 'fill-extrusion-height': ['+', ['get', 'h'], 0.5] } },
+    { id: 'bld-sel', type: 'fill-extrusion', source: 'sel-bld', minzoom: 13, paint: { 'fill-extrusion-color': '#ffc02e', 'fill-extrusion-base': ['get', 'h'], 'fill-extrusion-height': ['+', ['get', 'h'], 0.7] } },   // 무늬 지붕에는 선택 색이 안 먹어서 노란 판을 얹는다
     { id: 'traffic', type: 'fill-extrusion', source: 'traffic', minzoom: 12.5, paint: { 'fill-extrusion-color': ['get', 'c'], 'fill-extrusion-height': ['get', 'h'], 'fill-extrusion-base': ['get', 'b'], 'fill-extrusion-opacity': 1 } },
   );
   return {
@@ -445,15 +573,19 @@ function paperTexture() {
   return paperURL;
 }
 // 수채 동화 물: 물감 번짐(밝은 붓질 + 가장자리 진한 결) 무늬
-function waterWash() {
+function waterWash(base, ripple) {
   // 무늬 판을 256px로 키워 반복이 덜 보이게, 붓질은 옅고 길게(10-19: 멀리서 줄무늬처럼 보이던 것 고침)
-  const S = 256, c = mkCanvas(S, S), g = c.getContext('2d');
-  g.fillStyle = '#68b6d8'; g.fillRect(0, 0, S, S);
-  let seed = 11; const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+  const S = 256, c = mkCanvas(S, S), g = c.getContext('2d'), rnd = lcg(11);
+  g.fillStyle = base; g.fillRect(0, 0, S, S);
   for (let i = 0; i < 46; i++) {
     const x = rnd() * S, y = rnd() * S, w = 30 + rnd() * 70, h = 4 + rnd() * 8, a = -0.25 + rnd() * 0.3;
     g.fillStyle = rnd() < 0.6 ? 'rgba(255,255,255,.09)' : 'rgba(40,110,160,.06)';
     for (const dx of [-S, 0, S]) for (const dy of [-S, 0, S]) { g.beginPath(); g.ellipse(x + dx, y + dy, w, h, a, 0, Math.PI * 2); g.fill(); }   // 이음매 없이
+  }
+  g.strokeStyle = `rgba(255,255,255,${ripple})`; g.lineWidth = 1.3; g.lineCap = 'round';     // 잔물결: 짧은 곡선 두 개씩
+  for (let i = 0; i < 34; i++) {
+    const x = 14 + rnd() * (S - 28), y = 8 + rnd() * (S - 16), w = 5 + rnd() * 5;
+    for (const dx of [-w, w * 1.1]) { g.beginPath(); g.moveTo(x + dx - w, y); g.quadraticCurveTo(x + dx, y - 3.2, x + dx + w, y); g.stroke(); }
   }
   return g.getImageData(0, 0, S, S);
 }
@@ -478,8 +610,18 @@ function setMode(mode) {
   if (m.lc) paint('landcover', 'fill-color', ['match', ['get', 'k'], 'forest', m.lc.forest, 'park', m.lc.park, 'grass', m.lc.grass, 'wetland', m.lc.wetland, 'farm', m.lc.farm, 'industrial', m.lc.industrial, m.lc.urban]);
   if (m.hs) { paint('hillshade', 'hillshade-exaggeration', m.hs.ex); paint('hillshade', 'hillshade-shadow-color', m.hs.shadow); paint('hillshade', 'hillshade-highlight-color', m.hs.highlight); paint('hillshade', 'hillshade-accent-color', m.hs.accent); }
   paint('water', 'fill-color', m.water);
-  if (map.getLayer('water')) map.setPaintProperty('water', 'fill-pattern', mode === 'paint' && map.hasImage('pat-water-paint') ? 'pat-water-paint' : undefined);   // 수채 동화만 물감 번짐
+  const art = ART.includes(mode), drawn = art || mode === 'illust';                  // drawn = 창·지붕·땅 무늬를 입히는 화면(도면·위성 제외)
+  if (map.getLayer('water')) map.setPaintProperty('water', 'fill-pattern', drawn && map.hasImage('pat-water-' + mode) ? 'pat-water-' + mode : undefined);   // 물감 번짐·잔물결
   paint('water-edge', 'line-color', m.waterEdge || shade(m.water, -0.22));
+  if (m.shore) paint('water-shore', 'line-color', m.shore);
+  if (m.shadow) {
+    const az = m.light.position[1] * Math.PI / 180, at = (r) => [Math.round(-Math.sin(az) * r * 100) / 100, Math.round(Math.cos(az) * r * 100) / 100];   // 해 반대쪽(화면 픽셀, 지도 기준)
+    [['bld-shadow', 0.7], ['bld-shadow-hi', 1.8]].forEach(([id, r]) => {
+      paint(id, 'fill-color', m.shadow[0]); paint(id, 'fill-opacity', m.shadow[1]); paint(id, 'fill-translate-anchor', 'map');
+      paint(id, 'fill-translate', ['interpolate', ['exponential', 2], ['zoom'], 14, ['literal', at(r)], 18, ['literal', at(r * 16)]]);   // 줌이 올라도 땅 위 거리는 그대로
+    });
+    if (m.lc) paint('landcover-edge', 'line-color', shade(m.lc.forest, -0.25));
+  }
   paint('water', 'fill-opacity', mode === 'sat' ? 0 : 1);
   paint('waterline', 'line-color', m.wline);
   paint('waterline', 'line-opacity', mode === 'sat' ? 0 : 1);
@@ -489,20 +631,17 @@ function setMode(mode) {
   paint('mask', 'fill-color', m.mask);
   paint('mask', 'fill-opacity', m.maskOp);
   paint('bld-roof', 'fill-extrusion-color', selColor(mRoof()));
+  paint('bld-roof-far', 'fill-extrusion-color', selColor(mRoof()));
   paint('bld', 'fill-extrusion-color', selColor(mWall(wallColor)));
   paint('bld-far', 'fill-extrusion-color', selColor(mWall(farColor)));
   paint('bridge', 'fill-extrusion-color', ['case', ['==', ['get', 'k'], 1], '#c6ccd4', m.bridge]);
   map.setSky(m.sky);
-  const art = ART.includes(mode);
   if (map.getLayer('bld-ill')) map.setPaintProperty('bld-ill', 'fill-extrusion-pattern', ['concat', art ? 'win-' + mode + '-' : 'win', ['to-string', ['get', 'u']]]);
-  if (map.getLayer('trees')) map.setLayoutProperty('trees', 'icon-image', ['match', ['get', 'v'], 0, art ? 'tree0-' + mode : 'tree0', 1, art ? 'tree1-' + mode : 'tree1', art ? 'tree2-' + mode : 'tree2']);
-  map.setLight(art ? { anchor: 'map', ...m.light } : LIGHT0);
-  // 실사풍: 큰 길(등급 1~3)에 노란 중앙선 점선 — 3D 화풍판 실사풍과 같은 색
-  if (m.center && !map.getLayer('road-center') && map.getLayer('road')) {
-    map.addLayer({ id: 'road-center', type: 'line', source: 'roads', minzoom: 14, filter: ['<=', ['get', 'r'], 3],
-      layout: { 'line-cap': 'butt', 'line-join': 'round' },
-      paint: { 'line-color': m.center, 'line-width': ['interpolate', ['linear'], ['zoom'], 14, 0.6, 17, 1.6], 'line-dasharray': [3, 3], 'line-opacity': 0.9 } }, map.getLayer('bridge') ? 'bridge' : undefined);
-  }
+  if (drawn) paint('bld-roof-ill', 'fill-extrusion-pattern', roofPat(mode));
+  if (map.getLayer('trees')) map.setLayoutProperty('trees', 'icon-image', ['concat', 'tree', ['to-string', ['get', 'v']], art ? '-' + mode : '']);
+  map.setLight(m.light ? { anchor: 'map', ...m.light } : LIGHT0);
+  // 그린 화풍의 큰 길(등급 1~4)에 중앙선 점선
+  if (m.center) { paint('road-center', 'line-color', m.center); paint('road-center', 'line-dasharray', [5, 4]); }
   if (map.getLayer('road-center')) map.setLayoutProperty('road-center', 'visibility', m.center ? 'visible' : 'none');
   Object.entries(art ? m.osm : OSM0).forEach(([k, v]) => paint('osm', k, v));   // 파주 밖 바탕도 화풍 톤으로
   paint('bnd', 'line-color', art ? m.bnd[0] : '#e0793a'); paint('bnd-case', 'line-color', art ? m.bnd[1] : '#ffffff');   // 시 경계선도 화풍 색
@@ -519,6 +658,7 @@ function setColorBy(c) {
   const paint = (id, k, v) => map.getLayer(id) && map.setPaintProperty(id, k, v);
   paint('bld', 'fill-extrusion-color', selColor(mWall(wallColor)));
   paint('bld-roof', 'fill-extrusion-color', selColor(mRoof()));
+  paint('bld-roof-far', 'fill-extrusion-color', selColor(mRoof()));
   paint('bld-far', 'fill-extrusion-color', selColor(mWall(farColor)));
   applyUseFilter();
   applyVisibility();
@@ -533,10 +673,10 @@ function applyVisibility() {
     if (id === 'sat') return mode === 'sat';
     if (['osm', 'land', 'landcover', 'hillshade'].includes(id)) return mode !== 'sat';
     const win = mode === 'illust' || ART.includes(mode);       // 일러스트·화풍은 창 무늬 건물
-    if (id === 'bld') return !win || state.color === 'year';
-    if (id === 'bld-ill') return win && state.color !== 'year';
-    if (id === 'landcover-pat') return mode === 'illust' || ART.includes(mode);   // 반투명 밭고랑·숲 결 — 화풍 바탕색 위에도 얹힌다
-    if (id === 'road-center') return !!(MODE[mode] && MODE[mode].center);   // 실사풍만
+    if (id === 'bld' || id === 'bld-roof') return !win || state.color === 'year';
+    if (id === 'bld-ill' || id === 'bld-roof-ill' || id === 'bld-roof-far') return win && state.color !== 'year';
+    if (['landcover-pat', 'landcover-edge', 'land-pat', 'water-shore', 'bld-shadow', 'bld-shadow-hi'].includes(id)) return win;   // 반투명 밭고랑·숲 결·물가·그늘 — 화풍 바탕색 위에도 얹힌다
+    if (id === 'road-center') return !!(MODE[mode] && MODE[mode].center);   // 그린 화풍만
     if (id.startsWith('castle-')) return mode === 'ash';                        // 잿빛 성곽만
     if (id === 'water-edge') return mode !== 'sat';
     return true;
@@ -555,8 +695,10 @@ function applyVisibility() {
 
 function applyUseFilter() {
   const on = state.color === 'year' ? ['in', ['get', 'yb'], ['literal', [...state.yearOn]]] : ['in', ['get', 'u'], ['literal', [...state.useOn]]];
-  ['bld', 'bld-ill', 'bld-roof'].forEach((id) => map.setFilter(id, on));
+  ['bld', 'bld-ill', 'bld-roof', 'bld-roof-far', 'bld-roof-ill'].forEach((id) => map.setFilter(id, on));
   map.setFilter('bld-far', ['all', ['>=', ['get', 'h'], 24], on]);
+  map.setFilter('bld-shadow', ['all', ['<', ['get', 'h'], 14], on]);
+  map.setFilter('bld-shadow-hi', ['all', ['>=', ['get', 'h'], 14], on]);
 }
 
 // ---------- 이름표 ----------
@@ -797,7 +939,7 @@ function clearSpot() {
   state.sel = null;
   selIds.forEach((id) => map.setFeatureState({ source: 'buildings', id }, { sel: false }));
   selIds = [];
-  if (map.getSource('sel')) map.getSource('sel').setData({ type: 'FeatureCollection', features: [] });
+  ['sel', 'sel-bld'].forEach((id) => map.getSource(id) && map.getSource(id).setData({ type: 'FeatureCollection', features: [] }));
   DATA.spots.forEach((l) => { l._el && l._el.classList.remove('now'); l._li && l._li.classList.remove('on'); });
 }
 function selectSpot(l) {
@@ -824,6 +966,7 @@ function selectSpot(l) {
     }
     if (!selIds.length && best !== null) selIds.push(best);
     selIds.forEach((id) => map.setFeatureState({ source: 'buildings', id }, { sel: true }));
+    map.getSource('sel-bld').setData({ type: 'FeatureCollection', features: DATA.bfc.features.filter((f) => selIds.includes(f.id)) });
   }
   l._el && l._el.classList.add('now');
   l._li && l._li.classList.add('on');
@@ -1216,16 +1359,21 @@ async function main(container, onReady) {
     map.addImage('tree0', treeIcon('#6fb556', '#468c3c'), { pixelRatio: 4 });
     map.addImage('tree1', treeIcon('#8cc35c', '#5a9a45'), { pixelRatio: 4 });
     map.addImage('tree2', treeIcon('#4f9a55', '#2f7040', 'pine'), { pixelRatio: 4 });
+    map.addImage('tree3', treeIcon('#5fa850', '#3b7f3e', 'tall'), { pixelRatio: 4 });
     ART.forEach((k) => {
       const m = MODE[k];
       USE_ORDER.forEach((u) => map.addImage('win-' + k + '-' + u, windowPattern(u, { wall: m.wall[WALL_IDX[u]], win: m.win, lit: m.lit }), { pixelRatio: 4 }));
       map.addImage('tree0-' + k, treeIcon(m.leaf[0], shade(m.leaf[0], -0.25)), { pixelRatio: 4 });
       map.addImage('tree1-' + k, treeIcon(m.leaf[1], shade(m.leaf[1], -0.25)), { pixelRatio: 4 });
       map.addImage('tree2-' + k, treeIcon(m.leaf[2], shade(m.leaf[2], -0.3), 'pine'), { pixelRatio: 4 });
+      map.addImage('tree3-' + k, treeIcon(m.leaf[2], shade(m.leaf[2], -0.25), 'tall'), { pixelRatio: 4 });
     });
-    map.addImage('pat-water-paint', waterWash(), { pixelRatio: 2 });
-    map.addImage('pat-farm', groundPattern('farm'), { pixelRatio: 2 });
-    map.addImage('pat-green', groundPattern('green'), { pixelRatio: 2 });
+    ['illust', ...ART].forEach((k) => {
+      const m = MODE[k], roof = (u) => (m.roof ? m.roof[WALL_IDX[u]] : USE[u].roof);
+      USE_ORDER.forEach((u) => [0, 1, 2].forEach((v) => map.addImage('roof-' + k + '-' + u + '-' + v, roofPattern(u, roof(u), v), { pixelRatio: 3 })));
+      map.addImage('pat-water-' + k, waterWash(m.water, m.ripple), { pixelRatio: 2 });
+    });
+    ['farm', 'forest', 'green', 'land'].forEach((k) => map.addImage('pat-' + k, groundPattern(k), { pixelRatio: 2 }));
     buildPanel();
     document.querySelectorAll('.maplibregl-ctrl-attrib').forEach((a) => a.classList.remove('maplibregl-compact-show'));
     addLabels();
